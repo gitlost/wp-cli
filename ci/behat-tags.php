@@ -17,9 +17,22 @@ function version_tags( $prefix, $current, $operator = '<' ) {
 	if ( ! $current )
 		return array();
 
-	exec( "grep '@{$prefix}-[0-9\.]*' -h -o features/*.feature | uniq", $existing_tags );
-
 	$skip_tags = array();
+
+	if ( 'require-wp' === $prefix ) {
+		if ( 'trunk' === $current ) {
+			// Exclude nothing.
+			return array();
+		}
+		// Exclude cutting-edge.
+		$skip_tags[] = '@require-wp-trunk';
+
+		if ( 'latest' === $current ) {
+			return $skip_tags;
+		}
+	}
+
+	exec( "grep '@{$prefix}-[0-9\.]*' -h -o features/*.feature | sort -u", $existing_tags );
 
 	foreach ( $existing_tags as $tag ) {
 		$compare = str_replace( "@{$prefix}-", '', $tag );
@@ -43,7 +56,7 @@ $skip_tags[] = '@github-api';
 # Require PHP extension, eg 'imagick'.
 function extension_tags() {
 	$extension_tags = array();
-	exec( "grep '@require-extension-[A-Za-z_]*' -h -o features/*.feature | uniq", $extension_tags );
+	exec( "grep '@require-extension-[A-Za-z_]*' -h -o features/*.feature | sort -u", $extension_tags );
 
 	$skip_tags = array();
 
