@@ -17,7 +17,7 @@ function version_tags( $prefix, $current, $operator = '<' ) {
 	if ( ! $current )
 		return array();
 
-	exec( "grep '@{$prefix}-[0-9\.]*' -h -o features/*.feature | uniq", $existing_tags );
+	exec( "grep '@{$prefix}-[0-9\.]*' -h -o features/*.feature | sort -u", $existing_tags );
 
 	$skip_tags = array();
 
@@ -46,7 +46,7 @@ $skip_tags[] = '@broken';
 # Require PHP extension, eg 'imagick'.
 function extension_tags() {
 	$extension_tags = array();
-	exec( "grep '@require-extension-[A-Za-z_]*' -h -o features/*.feature | uniq", $extension_tags );
+	exec( "grep '@require-extension-[A-Za-z_]*' -h -o features/*.feature | sort -u", $extension_tags );
 
 	$skip_tags = array();
 
