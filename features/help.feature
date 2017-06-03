@@ -5,27 +5,33 @@ Feature: Get help about WP-CLI commands
 
     When I run `wp help`
     Then STDOUT should not be empty
+    And STDERR should be empty
 
     When I run `wp help core`
     Then STDOUT should not be empty
+    And STDERR should be empty
 
     When I run `wp help core download`
     Then STDOUT should not be empty
+    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should not be empty
+    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should contain:
       """
       GLOBAL PARAMETERS
       """
+    And STDERR should be empty
 
     When I run `wp post list --post_type=post --posts_per_page=5 --help`
     Then STDOUT should contain:
       """
       wp post list
       """
+    And STDERR should be empty
 
   Scenario: Help when WordPress is downloaded but not installed
     Given an empty directory
@@ -84,12 +90,14 @@ Feature: Get help about WP-CLI commands
       """
       A dummy command.
       """
+    And STDERR should be empty
 
     When I run `wp help test-help`
     Then STDOUT should contain:
       """
       wp test-help
       """
+    And STDERR should be empty
 
   Scenario: Help for incomplete commands
     Given an empty directory
@@ -335,6 +343,7 @@ Feature: Get help about WP-CLI commands
             the target site is specified.
 
       """
+    And STDERR should be empty
 
     When I run `TERM=vt100 COLUMNS=80 wp help test-wordwrap my_command | wc -L`
     Then STDOUT should be:
@@ -410,6 +419,8 @@ Feature: Get help about WP-CLI commands
             specified.
 
       """
+    And STDERR should be empty
+
     When I run `TERM=vt100 COLUMNS=40 wp help test-wordwrap my_command | wc -L`
     Then STDOUT should be:
       """
@@ -441,6 +452,7 @@ Feature: Get help about WP-CLI commands
             Pretend request came from given URL. In multisite, this argument is how the target site is specified.
 
       """
+    And STDERR should be empty
 
   Scenario: Help for commands with subcommands should wordwrap well
     Given a WP install
@@ -535,6 +547,7 @@ Feature: Get help about WP-CLI commands
                             theme.
  
       """
+    And STDERR should be empty
 
     When I run `TERM=vt100 COLUMNS=80 wp help test-wordwrap | wc -L`
     Then STDOUT should be:
