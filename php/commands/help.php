@@ -60,7 +60,7 @@ class Help_Command extends WP_CLI_Command {
 
 		// Remove subcommands if in columns - will wordwrap separately.
 		$subcommands = '';
-		$column_subpattern = '[ \t]+#?[^\t]+\t+';
+		$column_subpattern = '[ \t]+(?:\* )?[^\t]+\t+';
 		if ( preg_match( '/^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+\z/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
 			$subcommands = $matches[0][0];
 			$subcommands_header = "## SUBCOMMANDS\n";
@@ -94,9 +94,9 @@ class Help_Command extends WP_CLI_Command {
 				$matches[1] = str_replace( "\t", $tab, $matches[1] );
 				$matches[2] = str_replace( "\t", $tab, $matches[2] );
 				$padding_len = strlen( $matches[1] );
-				// Allow for embolden hash.
-				if ( false !== strpos( $matches[1], '#' ) ) {
-					$padding_len--;
+				// Allow for embolden asterisk space.
+				if ( false !== strpos( $matches[1], '* ' ) ) {
+					$padding_len -= 2;
 				}
 				$padding = str_repeat( ' ', $padding_len );
 				return $matches[1] . str_replace( "\n", "\n$padding", wordwrap( $matches[2], $wordwrap_width - $padding_len ) ) . "\n";
@@ -112,8 +112,8 @@ class Help_Command extends WP_CLI_Command {
 		// Embolden commands.
 		$out = preg_replace( '/^( +)(wp [a-z_][a-z_-]+)( [a-z_][a-z_-]+)?/m', WP_CLI::colorize( '$1%9$2$3%n' ), $out );
 
-		// Embolden subcommands/options/parameters marked with an initial hash.
-		$out = preg_replace( '/^( +)#(\[?)([][<a-z_|-]+[>a-z_-])/m', WP_CLI::colorize( '$1$2%9$3%n' ), $out );
+		// Embolden subcommands/options/parameters marked with an initial asterick space "* ".
+		$out = preg_replace( '/^( +)\* (\[?)([][<a-z_|-]+[>a-z_-])/m', WP_CLI::colorize( '$1$2%9$3%n' ), $out );
 
 		// Embolden example commands.
 		$out = preg_replace( '/^( +)(\$ wp(?: [a-z_][a-z_-]+){1,2})/m', WP_CLI::colorize( '$1%9$2%n' ), $out );
@@ -124,7 +124,7 @@ class Help_Command extends WP_CLI_Command {
 	private static function rewrap_param_desc( $matches ) {
 		$param = $matches[1];
 		$desc = self::indent( "\t\t", $matches[2] );
-		return "\t#$param\n$desc\n\n";
+		return "\t* $param\n$desc\n\n";
 	}
 
 	private static function indent( $whitespace, $text ) {
