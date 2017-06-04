@@ -486,7 +486,6 @@ Feature: Get help about WP-CLI commands
         /**
          * Generate GitHub configuration files for your command.
          *
-         *
          * @when       before_wp_load
          * @subcommand package-github
          */
