@@ -58,6 +58,15 @@ class Help_Command extends WP_CLI_Command {
 	private static function show_help( $command ) {
 		$out = self::get_initial_markdown( $command );
 
+		// Remove subcommands if in columns - will wordwrap separately.
+		$subcommands = '';
+		$column_subpattern = '[ \t]+(?:\* )?[^\t]+\t+';
+		if ( preg_match( '/^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+\z/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
+			$subcommands = $matches[0][0];
+			$subcommands_header = "## SUBCOMMANDS\n";
+			$out = substr( $out, 0, $matches[0][1] ) . $subcommands_header;
+		}
+
 		$out .= $command->get_longdesc();
 
 		// definition lists
@@ -66,21 +75,48 @@ class Help_Command extends WP_CLI_Command {
 		// Ensure all non-section headers are indented.
 		$out = preg_replace( '#^([^\s^\#])#m', "\t$1", $out );
 
+		$tab = str_repeat( ' ', 2 ); // TODO: 4 would be nicer.
+
+		// Need to de-tab for wordwrapping to work properly.
+		$out = str_replace( "\t", $tab, $out );
+
+		$wordwrap_width = \cli\Shell::columns();
+
 		// Wordwrap with indent.
-		$wordwrap_width = 80;
-		if ( false !== ( $env_wordwrap_width = getenv( 'WP_CLI_HELP_WORDWRAP_WIDTH' ) ) ) {
-			$wordwrap_width = (int) $env_wordwrap_width;
-		}
-		if ( $wordwrap_width > 0 ) {
-			$out = preg_replace_callback( '/([ \t]*)[^\n]+\n/', function ( $matches ) use ( $wordwrap_width ) {
-				return wordwrap( $matches[0], $wordwrap_width, "\n{$matches[1]}" );
-			}, $out );
+		$out = preg_replace_callback( '/^( *)([^\n]+)\n/m', function ( $matches ) use ( $wordwrap_width ) {
+			return $matches[1] . str_replace( "\n", "\n{$matches[1]}", wordwrap( $matches[2], $wordwrap_width - strlen( $matches[1] ) ) ) . "\n";
+		}, $out );
+
+		if ( $subcommands ) {
+			// Wordwrap with column indent.
+			$subcommands = preg_replace_callback( '/^(' . $column_subpattern . ')([^\n]+)\n/m', function ( $matches ) use ( $wordwrap_width, $tab ) {
+				// Need to de-tab for wordwrapping to work properly.
+				$matches[1] = str_replace( "\t", $tab, $matches[1] );
+				$matches[2] = str_replace( "\t", $tab, $matches[2] );
+				$padding_len = strlen( $matches[1] );
+				// Allow for embolden asterisk space.
+				if ( false !== strpos( $matches[1], '* ' ) ) {
+					$padding_len -= 2;
+				}
+				$padding = str_repeat( ' ', $padding_len );
+				return $matches[1] . str_replace( "\n", "\n$padding", wordwrap( $matches[2], $wordwrap_width - $padding_len ) ) . "\n";
+			}, $subcommands );
+
+			// Put subcommands back.
+			$out = str_replace( $subcommands_header, $subcommands, $out );
 		}
 
-		// section headers
+		// Embolden section headers.
 		$out = preg_replace( '/^## ([A-Z ]+)/m', WP_CLI::colorize( '%9\1%n' ), $out );
 
-		$out = str_replace( "\t", '  ', $out );
+		// Embolden commands.
+		$out = preg_replace( '/^( +)(wp [a-z_][a-z_-]+)( [a-z_][a-z_-]+)?/m', WP_CLI::colorize( '$1%9$2$3%n' ), $out );
+
+		// Embolden subcommands/options/parameters marked with an initial asterick space "* ".
+		$out = preg_replace( '/^( +)\* (\[?)([][<a-z_|-]+[>a-z_-])/m', WP_CLI::colorize( '$1$2%9$3%n' ), $out );
+
+		// Embolden example commands.
+		$out = preg_replace( '/^( +)(\$ wp(?: [a-z_][a-z_-]+){1,2})/m', WP_CLI::colorize( '$1%9$2%n' ), $out );
 
 		self::pass_through_pager( $out );
 	}
@@ -88,7 +124,7 @@ class Help_Command extends WP_CLI_Command {
 	private static function rewrap_param_desc( $matches ) {
 		$param = $matches[1];
 		$desc = self::indent( "\t\t", $matches[2] );
-		return "\t$param\n$desc\n\n";
+		return "\t* $param\n$desc\n\n";
 	}
 
 	private static function indent( $whitespace, $text ) {
@@ -142,24 +178,25 @@ class Help_Command extends WP_CLI_Command {
 	}
 
 	private static function render_subcommands( $command ) {
-		$subcommands = array();
+		$subcommands = $names = $descs = array();
 		foreach ( $command->get_subcommands() as $subcommand ) {
 
 			if ( WP_CLI::get_runner()->is_command_disabled( $subcommand ) ) {
 				continue;
 			}
 
-			$subcommands[ $subcommand->get_name() ] = $subcommand->get_shortdesc();
+			$names[] = $subcommand->get_name();
+			$descs[] = $subcommand->get_shortdesc();
 		}
 
-		$max_len = self::get_max_len( array_keys( $subcommands ) );
+		// Get max length of names for padding.
+		$max_len = $max_len = self::get_max_len( $names );
 
-		$lines = array();
-		foreach ( $subcommands as $name => $desc ) {
-			$lines[] = str_pad( $name, $max_len ) . "\t\t\t" . $desc;
+		foreach ( $names as $i => $name ) {
+			$subcommands[] = array( 'name' => str_pad( $name, $max_len ), 'desc' => $descs[ $i ] );
 		}
 
-		return $lines;
+		return $subcommands;
 	}
 
 	private static function get_max_len( $strings ) {
