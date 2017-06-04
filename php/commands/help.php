@@ -61,10 +61,10 @@ class Help_Command extends WP_CLI_Command {
 		// Remove subcommands if in columns - will wordwrap separately.
 		$subcommands = '';
 		$column_subpattern = '[ \t]+[^\t]+\t+';
-		if ( preg_match( '/^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+\z/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
-			$subcommands = $matches[0][0];
+		if ( preg_match( '/(^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+?)(?:^##|\z)/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
+			$subcommands = $matches[1][0];
 			$subcommands_header = "## SUBCOMMANDS\n";
-			$out = substr( $out, 0, $matches[0][1] ) . $subcommands_header;
+			$out = substr_replace( $out, $subcommands_header, $matches[1][1], strlen( $subcommands ) );
 		}
 
 		$out .= $command->get_longdesc();
