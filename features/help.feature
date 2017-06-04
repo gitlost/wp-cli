@@ -277,11 +277,11 @@ Feature: Get help about WP-CLI commands
          *     3/3 Regenerated "large" thumbnail for "Even Yooger than the Yoogest Image Ever, Really" (ID 9997).
          *     Success: Regenerated 3 of 3 images.
          *
-         *     # 6 initial spaces + 74 = 80 & + 75 = 81
+         *     # 6 initial spaces + 74 = 80; 6 + 75 = 81
          *     # 123456789 123456789 123456789 123456789 123456789 123456789 123456789 1234
          *     # 123456789 123456789 123456789 123456789 123456789 123456789 123456789 12345
          *
-         *     # 6 initial spaces + 34 = 40 & + 35 = 41
+         *     # 6 initial spaces + 34 = 40; 6 + 35 = 41
          *     # 123456789 123456789 123456789 1234
          *     # 123456789 123456789 123456789 12345
          *
@@ -521,11 +521,18 @@ Feature: Get help about WP-CLI commands
         public function eighty( $args, $assoc_args ) {}
 
         /**
-         * 2 chars initial + 20 padded command + 59 these = 81 chars?!
+         * 2 chars initial + 20 padded command + 59 these = 81 chars..
          *
          * @subcommand eighty-one
          */
         public function eighty_one( $args, $assoc_args ) {}
+
+        /**
+         * A very long description a very longgggggggggg description a very longgggg description a very long description a very longgggggggggggggggg description a very long description a very long description a very long description a very longgg description.
+         *
+         * @subcommand very-long
+         */
+        public function very_long( $args, $assoc_args ) {}
       }
 
       WP_CLI::add_command( 'test-wordwrap', 'Test_Wordwrap' );
@@ -540,7 +547,7 @@ Feature: Get help about WP-CLI commands
         _s                  Generate starter code for a theme based on _s.
         eighty              2 chars initial + 20 padded command + 58 these = 80 chars.
         eighty-one          2 chars initial + 20 padded command + 59 these = 81
-                            chars?!
+                            chars..
         package-github      Generate GitHub configuration files for your command.
         package-tests       Generate files needed for writing Behat tests for your
                             command.
@@ -549,6 +556,11 @@ Feature: Get help about WP-CLI commands
         post-type           Generate PHP code for registering a custom post type.
         theme-tests         Generate files needed for running PHPUnit tests in a
                             theme.
+        very-long           A very long description a very longgggggggggg description
+                            a very longgggg description a very long description a very
+                            longgggggggggggggggg description a very long description a
+                            very long description a very long description a very
+                            longgg description.
  
       """
     And STDERR should be empty
