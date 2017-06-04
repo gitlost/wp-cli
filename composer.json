@@ -21,19 +21,14 @@
 		{
 			"type": "vcs",
 			"url": "https://github.com/wp-cli/composer-changelogs"
-		},
-		{
-			"type": "git",
-			"url": "https://github.com/gitlost/php-cli-tools.git"
 		}
-
 	],
 	"minimum-stability": "dev",
 	"prefer-stable": true,
 	"require": {
 		"php": ">=5.3.29",
 		"wp-cli/autoload-splitter": "^0.1",
-		"wp-cli/php-cli-tools": "dev-issue_4127",
+		"wp-cli/php-cli-tools": "~0.11.2",
 		"mustache/mustache": "~2.4",
 		"wp-cli/mustangostang-spyc": "^0.6.3",
 		"composer/semver": "~1.0",

@@ -570,4 +570,3 @@ Feature: Get help about WP-CLI commands
       """
       80
       """
-
