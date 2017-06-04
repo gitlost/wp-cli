@@ -60,7 +60,7 @@ class Help_Command extends WP_CLI_Command {
 
 		// Remove subcommands if in columns - will wordwrap separately.
 		$subcommands = '';
-		$column_subpattern = '[ \t]+[^\t]+\t+';
+		$column_subpattern = '[ \t]+#?[^\t]+\t+';
 		if ( preg_match( '/^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+\z/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
 			$subcommands = $matches[0][0];
 			$subcommands_header = "## SUBCOMMANDS\n";
@@ -75,7 +75,7 @@ class Help_Command extends WP_CLI_Command {
 		// Ensure all non-section headers are indented.
 		$out = preg_replace( '#^([^\s^\#])#m', "\t$1", $out );
 
-		$tab = str_repeat( ' ', 2 );
+		$tab = str_repeat( ' ', 2 ); // TODO: 4 would be nicer.
 
 		// Need to de-tab for wordwrapping to work properly.
 		$out = str_replace( "\t", $tab, $out );
@@ -94,6 +94,10 @@ class Help_Command extends WP_CLI_Command {
 				$matches[1] = str_replace( "\t", $tab, $matches[1] );
 				$matches[2] = str_replace( "\t", $tab, $matches[2] );
 				$padding_len = strlen( $matches[1] );
+				// Allow for embolden hash.
+				if ( false !== strpos( $matches[1], '#' ) ) {
+					$padding_len--;
+				}
 				$padding = str_repeat( ' ', $padding_len );
 				return $matches[1] . str_replace( "\n", "\n$padding", wordwrap( $matches[2], $wordwrap_width - $padding_len ) ) . "\n";
 			}, $subcommands );
@@ -102,8 +106,17 @@ class Help_Command extends WP_CLI_Command {
 			$out = str_replace( $subcommands_header, $subcommands, $out );
 		}
 
-		// section headers
+		// Embolden section headers.
 		$out = preg_replace( '/^## ([A-Z ]+)/m', WP_CLI::colorize( '%9\1%n' ), $out );
+
+		// Embolden commands.
+		$out = preg_replace( '/^( +)(wp [a-z_][a-z_-]+)( [a-z_][a-z_-]+)?/m', WP_CLI::colorize( '$1%9$2$3%n' ), $out );
+
+		// Embolden subcommands/options/parameters marked with an initial hash.
+		$out = preg_replace( '/^( +)#(\[?)([][<a-z_|-]+[>a-z_-])/m', WP_CLI::colorize( '$1$2%9$3%n' ), $out );
+
+		// Embolden example commands.
+		$out = preg_replace( '/^( +)(\$ wp(?: [a-z_][a-z_-]+){1,2})/m', WP_CLI::colorize( '$1%9$2%n' ), $out );
 
 		self::pass_through_pager( $out );
 	}
@@ -111,7 +124,7 @@ class Help_Command extends WP_CLI_Command {
 	private static function rewrap_param_desc( $matches ) {
 		$param = $matches[1];
 		$desc = self::indent( "\t\t", $matches[2] );
-		return "\t$param\n$desc\n\n";
+		return "\t#$param\n$desc\n\n";
 	}
 
 	private static function indent( $whitespace, $text ) {
@@ -165,24 +178,25 @@ class Help_Command extends WP_CLI_Command {
 	}
 
 	private static function render_subcommands( $command ) {
-		$subcommands = array();
+		$subcommands = $names = $descs = array();
 		foreach ( $command->get_subcommands() as $subcommand ) {
 
 			if ( WP_CLI::get_runner()->is_command_disabled( $subcommand ) ) {
 				continue;
 			}
 
-			$subcommands[ $subcommand->get_name() ] = $subcommand->get_shortdesc();
+			$names[] = $subcommand->get_name();
+			$descs[] = $subcommand->get_shortdesc();
 		}
 
-		$max_len = self::get_max_len( array_keys( $subcommands ) );
+		// Get max length of names for padding.
+		$max_len = $max_len = self::get_max_len( $names );
 
-		$lines = array();
-		foreach ( $subcommands as $name => $desc ) {
-			$lines[] = str_pad( $name, $max_len ) . "\t\t\t" . $desc;
+		foreach ( $names as $i => $name ) {
+			$subcommands[] = array( 'name' => str_pad( $name, $max_len ), 'desc' => $descs[ $i ] );
 		}
 
-		return $lines;
+		return $subcommands;
 	}
 
 	private static function get_max_len( $strings ) {

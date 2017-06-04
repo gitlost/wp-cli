@@ -510,14 +510,14 @@ Feature: Get help about WP-CLI commands
         public function theme_tests( $args, $assoc_args ) {}
 
         /**
-         * 2 chars initial + 20 padded command + 58 these = 80 chars.
+         * 2 chars initial + 18 padded command + 60 these = 80 chars...
          *
          * @subcommand eighty
          */
         public function eighty( $args, $assoc_args ) {}
 
         /**
-         * 2 chars initial + 20 padded command + 59 these = 81 chars?!
+         * 2 chars initial + 18 padded command + 61 these = 81 chars.....
          *
          * @subcommand eighty-one
          */
@@ -533,18 +533,16 @@ Feature: Get help about WP-CLI commands
       """
       SUBCOMMANDS
 
-        _s                  Generate starter code for a theme based on _s.
-        eighty              2 chars initial + 20 padded command + 58 these = 80 chars.
-        eighty-one          2 chars initial + 20 padded command + 59 these = 81
-                            chars?!
-        package-github      Generate GitHub configuration files for your command.
-        package-tests       Generate files needed for writing Behat tests for your
-                            command.
-        plugin-tests        Generate files needed for running PHPUnit tests in a
-                            plugin.
-        post-type           Generate PHP code for registering a custom post type.
-        theme-tests         Generate files needed for running PHPUnit tests in a
-                            theme.
+        _s                Generate starter code for a theme based on _s.
+        eighty            2 chars initial + 18 padded command + 60 these = 80 chars...
+        eighty-one        2 chars initial + 18 padded command + 61 these = 81
+                          chars.....
+        package-github    Generate GitHub configuration files for your command.
+        package-tests     Generate files needed for writing Behat tests for your
+                          command.
+        plugin-tests      Generate files needed for running PHPUnit tests in a plugin.
+        post-type         Generate PHP code for registering a custom post type.
+        theme-tests       Generate files needed for running PHPUnit tests in a theme.
  
       """
     And STDERR should be empty
