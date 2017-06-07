@@ -56,7 +56,7 @@
 		"wp-cli/shell-command": "^1.0",
 		"wp-cli/eval-command": "^1.0",
 		"wp-cli/entity-command": "^1.0",
-		"wp-cli/extension-command": "^1.0",
+		"wp-cli/extension-command": "*",
 		"wp-cli/config-command": "^1.0",
 		"wp-cli/rewrite-command": "^1.0",
 		"wp-cli/super-admin-command": "^1.0",
