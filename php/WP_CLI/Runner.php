@@ -740,6 +740,12 @@ class Runner {
 		);
 	}
 
+	private function check_opcache() {
+		if ( ini_get( 'opcache.enable_cli' ) && ! ini_get( 'opcache.save_comments' ) ) {
+			WP_CLI::debug( 'Warning: opcache.save_comments disabled.', 'bootstrap' );
+		}
+	}
+
 	private function run_alias_group( $aliases ) {
 		$php_bin = WP_CLI::get_php_binary();
 
@@ -781,6 +787,7 @@ class Runner {
 		WP_CLI::debug( 'argv: ' . implode( ' ', $GLOBALS['argv'] ), 'bootstrap' );
 
 		$this->check_root();
+		$this->check_opcache();
 		if ( $this->alias ) {
 			if ( '@all' === $this->alias && ! isset( $this->aliases['@all'] ) ) {
 				WP_CLI::error( "Cannot use '@all' when no aliases are registered." );
