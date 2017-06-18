@@ -6,7 +6,7 @@ Feature: Review CLI information
 
   Scenario: Get the path to the packages directory
     Given an empty directory
-	And I run `if [ -d "{PACKAGE_PATH}" ]; then rm -rf {PACKAGE_PATH}; fi`
+	And an empty {PACKAGE_PATH} directory
 
     When I run `wp cli info --format=json`
     Then STDOUT should be JSON containing:

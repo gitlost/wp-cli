@@ -316,7 +316,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	private function set_cache_dir() {
 		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
-		$this->proc( Utils\esc_cmd( 'mkdir -p %s', $path ) )->run_check();
+		if ( ! file_exists( $path ) ) {
+			mkdir( $path, 0777, true );
+		}
 		$this->variables['CACHE_DIR'] = $path;
 	}
 
@@ -384,6 +386,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		rename( $this->variables['RUN_DIR'] . "/$src", $this->variables['RUN_DIR'] . "/$dest" );
 	}
 
+	/**
+	 * Remove a directory (recursive).
+	 */
+	public function remove_dir( $dir ) {
+		self::$fs->remove( $dir );
+	}
+
 	public function add_line_to_wp_config( &$wp_config_code, $line ) {
 		$token = "/* That's all, stop editing!";
 
@@ -397,7 +406,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			mkdir( $dest_dir );
 		}
 
-		$this->proc( Utils\esc_cmd( "cp -r %s/* %s", self::$cache_dir, $dest_dir ) )->run_check();
+		self::$fs-mirror( self::$cache_dir, $dest_dir );
 
 		// disable emailing
 		mkdir( $dest_dir . '/wp-content/mu-plugins' );
