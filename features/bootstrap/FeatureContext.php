@@ -406,7 +406,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			mkdir( $dest_dir );
 		}
 
-		self::$fs-mirror( self::$cache_dir, $dest_dir );
+		self::$fs->mirror( self::$cache_dir, $dest_dir );
 
 		// disable emailing
 		mkdir( $dest_dir . '/wp-content/mu-plugins' );
