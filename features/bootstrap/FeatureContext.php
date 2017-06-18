@@ -8,6 +8,9 @@ use Behat\Behat\Context\ClosuredContextInterface,
 use \WP_CLI\Process;
 use \WP_CLI\Utils;
 
+use Symfony\Component\Filesystem\Filesystem,
+	Symfony\Component\Filesystem\Exception\IOExceptionInterface;
+
 // Inside a community package
 if ( file_exists( __DIR__ . '/utils.php' ) ) {
 	require_once __DIR__ . '/utils.php';
@@ -44,7 +47,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir, $suite_cache_dir;
+	private static $cache_dir, $suite_cache_dir, $fs;
 
 	private static $db_settings = array(
 		'dbname' => 'wp_cli_test',
@@ -113,7 +116,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public static function afterSuite( SuiteEvent $event ) {
 		if ( self::$suite_cache_dir ) {
-			Process::create( Utils\esc_cmd( 'rm -r %s', self::$suite_cache_dir ), null, self::get_process_env_variables() )->run();
+			self::$fs->remove( self::$suite_cache_dir );
 		}
 	}
 
@@ -131,13 +134,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( isset( $this->variables['RUN_DIR'] ) ) {
 			// remove altered WP install, unless there's an error
 			if ( $event->getResult() < 4 && 0 === strpos( $this->variables['RUN_DIR'], sys_get_temp_dir() ) ) {
-				$this->proc( Utils\esc_cmd( 'rm -rf %s', $this->variables['RUN_DIR'] ) )->run();
+				self::$fs->remove( $this->variables['RUN_DIR'] );
 			}
 		}
 
 		// Remove WP-CLI package directory
 		if ( isset( $this->variables['PACKAGE_PATH'] ) ) {
-			$this->proc( Utils\esc_cmd( 'rm -rf %s', $this->variables['PACKAGE_PATH'] ) )->run();
+			self::$fs->remove( $this->variables['PACKAGE_PATH'] );
 		}
 
 		foreach ( $this->running_procs as $proc ) {
@@ -192,6 +195,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$this->drop_db();
 		$this->set_cache_dir();
 		$this->variables['CORE_CONFIG_SETTINGS'] = Utils\assoc_args_to_str( self::$db_settings );
+		if ( ! self::$fs ) {
+			self::$fs = new FileSystem;
+		}
 	}
 
 	public function getStepDefinitionResources() {
@@ -294,20 +300,17 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		                                . '.phar';
 
 		Process::create( \WP_CLI\Utils\esc_cmd(
-			'curl -sSL %s > %s',
+			'curl -sSL %1$s > %2$s && chmod +x %2$s',
 			$download_url,
-			$this->variables['PHAR_PATH']
-		) )->run_check();
-
-		Process::create( \WP_CLI\Utils\esc_cmd(
-			'chmod +x %s',
 			$this->variables['PHAR_PATH']
 		) )->run_check();
 	}
 
 	private function set_cache_dir() {
 		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
-		$this->proc( Utils\esc_cmd( 'mkdir -p %s', $path ) )->run_check();
+		if ( ! file_exists( $path ) ) {
+			mkdir( $path, 0777, true );
+		}
 		$this->variables['CACHE_DIR'] = $path;
 	}
 
@@ -375,6 +378,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		rename( $this->variables['RUN_DIR'] . "/$src", $this->variables['RUN_DIR'] . "/$dest" );
 	}
 
+	/**
+	 * Remove a directory (recursive).
+	 */
+	public function remove_dir( $dir ) {
+		self::$fs->remove( $dir );
+	}
+
 	public function add_line_to_wp_config( &$wp_config_code, $line ) {
 		$token = "/* That's all, stop editing!";
 
@@ -388,7 +398,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			mkdir( $dest_dir );
 		}
 
-		$this->proc( Utils\esc_cmd( "cp -r %s/* %s", self::$cache_dir, $dest_dir ) )->run_check();
+		self::$fs->mirror( self::$cache_dir, $dest_dir );
 
 		// disable emailing
 		mkdir( $dest_dir . '/wp-content/mu-plugins' );

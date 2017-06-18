@@ -343,7 +343,14 @@ class CLI_Command extends WP_CLI_Command {
 	 * Returns update information.
 	 */
 	private function get_updates( $assoc_args ) {
-		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases';
+		$github_server = 'https://api.github.com';
+		$cache_server = 'http://github-api-cache.unyson.io';
+
+		if ( getenv( 'WP_CLI_TEST_USE_GITHUB_API_CACHE' ) ) {
+			$url = $cache_server . '/repos/wp-cli/wp-cli/releases';
+		} else {
+			$url = $github_server . '/repos/wp-cli/wp-cli/releases';
+		}
 
 		$options = array(
 			'timeout' => 30
@@ -352,13 +359,23 @@ class CLI_Command extends WP_CLI_Command {
 		$headers = array(
 			'Accept' => 'application/json'
 		);
-		$response = Utils\http_request( 'GET', $url, $headers, $options );
 
-		if ( ! $response->success || 200 !== $response->status_code ) {
-			WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
+		$release_data = array();
+
+		while ( true ) {
+			$response = Utils\http_request( 'GET', $url, $headers, $options );
+
+			if ( ! $response->success || 200 !== $response->status_code ) {
+				WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
+			}
+
+			$release_data = array_merge( $release_data, json_decode( $response->body ) );
+
+			if ( empty( $response->headers['link'] ) || ! preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) ) {
+				break;
+			}
+			$url = $matches[1];
 		}
-
-		$release_data = json_decode( $response->body );
 
 		$updates = array(
 			'major'      => false,

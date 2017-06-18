@@ -15,19 +15,17 @@ Feature: `wp cli` tasks
     {TRUE_VERSION}
     """
 
-  @github-api
   Scenario: Check for updates
     Given an empty directory
     And a new Phar with version "0.0.0"
 
-    When I run `{PHAR_PATH} cli check-update`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update`
     Then STDOUT should contain:
     """
     package_url
     """
     And STDERR should be empty
 
-  @github-api
   Scenario: Do WP-CLI Update
     Given an empty directory
     And a new Phar with version "0.0.0"
@@ -42,7 +40,7 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-    When I run `{PHAR_PATH} cli update --yes`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --yes`
     Then STDOUT should contain:
       """
       md5 hash verified:
@@ -64,7 +62,7 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-  @github-api
+  # The WP_CLI_TEST_USE_GITHUB_API_CACHE (github-api-cache.unyson.io) server doesn't do paging so can't use here.
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -93,12 +91,11 @@ Feature: `wp cli` tasks
       WP-CLI 0.14.1
       """
 
-  @github-api
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
     And a new Phar with version "0.14.0"
 
-    When I run `{PHAR_PATH} cli update --no-patch --yes`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --no-patch --yes`
     Then STDOUT should contain:
     """
     Success:
@@ -110,12 +107,11 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-  @require-php-5.6
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0"
 
-    When I run `{PHAR_PATH} cli update --nightly --yes`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --nightly --yes`
     Then STDOUT should contain:
       """
       md5 hash verified:
@@ -128,7 +124,6 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-  @github-api @less-than-php-7
   Scenario: Install WP-CLI stable
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -137,11 +132,11 @@ Feature: `wp cli` tasks
       y
       """
 
-    When I run `{PHAR_PATH} cli check-update --minor --field=version`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update --field=version | head -1`
     Then STDOUT should not be empty
     And save STDOUT as {UPDATE_VERSION}
 
-    When I run `{PHAR_PATH} cli update --stable < session`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --stable < session`
     Then STDOUT should contain:
       """
       You have version 0.14.0. Would you like to update to the latest stable release? [y/n]
@@ -157,7 +152,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    When I run `{PHAR_PATH} cli check-update`
+    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update`
     Then STDOUT should be:
       """
       Success: WP-CLI is at the latest version.
