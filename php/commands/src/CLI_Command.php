@@ -352,23 +352,13 @@ class CLI_Command extends WP_CLI_Command {
 		$headers = array(
 			'Accept' => 'application/json'
 		);
+		$response = Utils\http_request( 'GET', $url, $headers, $options );
 
-		$release_data = array();
-
-		while ( true ) {
-			$response = Utils\http_request( 'GET', $url, $headers, $options );
-
-			if ( ! $response->success || 200 !== $response->status_code ) {
-				WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
-			}
-
-			$release_data = array_merge( $release_data, json_decode( $response->body ) );
-
-			if ( empty( $response->headers['link'] ) || ! preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) ) {
-				break;
-			}
-			$url = $matches[1];
+		if ( ! $response->success || 200 !== $response->status_code ) {
+			WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
 		}
+
+		$release_data = json_decode( $response->body );
 
 		$updates = array(
 			'major'      => false,

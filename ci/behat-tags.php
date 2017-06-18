@@ -74,7 +74,3 @@ if ( !empty( $skip_tags ) ) {
 	echo '--tags=~' . implode( '&&~', $skip_tags );
 }
 
-# Require opcache.save_comments enabled for tests involving non-supporting wp-cli versions.
-if ( ! ( ini_get( 'opcache.enable_cli' ) && ! ini_get( 'opcache.save_comments' ) ) ) {
-	$skip_tags[] = '@require-opcache-save-comments';
-}
