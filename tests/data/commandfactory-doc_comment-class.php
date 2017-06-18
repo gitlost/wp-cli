@@ -10,7 +10,7 @@
  */
 class CommandFactoryTests_Get_Doc_Comment_1_Command extends WP_CLI_Command {
 	/**
-	 * Command1 method 
+	 * Command1 method
 	 *
 	 * ## OPTIONS
 	 *

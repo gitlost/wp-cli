@@ -172,7 +172,7 @@ class CommandFactory {
 			return false;
 		}
 		// Make sure comment end belongs to this class/function.
-		if ( preg_match_all( '/(?:^|[\s;}])(?:class|function)\s+/', substr( $content, $comment_end_pos + 2 ) ) > 1 ) {
+		if ( preg_match_all( '/(?:^|[\s;}])(?:class|function)\s+/', substr( $content, $comment_end_pos + 2 ), $dummy /*needed for PHP 5.3*/ ) > 1 ) {
 			return false;
 		}
 		$content = substr( $content, 0, $comment_end_pos + 2 );
