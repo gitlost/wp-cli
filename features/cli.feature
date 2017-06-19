@@ -15,6 +15,7 @@ Feature: `wp cli` tasks
     {TRUE_VERSION}
     """
 
+  @github-api
   Scenario: Check for updates
     Given an empty directory
     And a new Phar with version "0.0.0"
@@ -26,6 +27,7 @@ Feature: `wp cli` tasks
     """
     And STDERR should be empty
 
+  @github-api
   Scenario: Do WP-CLI Update
     Given an empty directory
     And a new Phar with version "0.0.0"
@@ -62,6 +64,7 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
+  @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -90,6 +93,7 @@ Feature: `wp cli` tasks
       WP-CLI 0.14.1
       """
 
+  @github-api
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -106,6 +110,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
+  @github-api
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -123,6 +128,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
+  @github-api
   Scenario: Install WP-CLI stable
     Given an empty directory
     And a new Phar with version "0.14.0"
