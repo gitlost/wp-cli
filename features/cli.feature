@@ -19,7 +19,7 @@ Feature: `wp cli` tasks
     Given an empty directory
     And a new Phar with version "0.0.0"
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update`
+    When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should contain:
     """
     package_url
@@ -40,7 +40,7 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --yes`
+    When I run `{PHAR_PATH} cli update --yes`
     Then STDOUT should contain:
       """
       md5 hash verified:
@@ -62,7 +62,6 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-  # The WP_CLI_TEST_USE_GITHUB_API_CACHE (github-api-cache.unyson.io) server doesn't do paging so can't use here.
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -95,7 +94,7 @@ Feature: `wp cli` tasks
     Given an empty directory
     And a new Phar with version "0.14.0"
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --no-patch --yes`
+    When I run `{PHAR_PATH} cli update --no-patch --yes`
     Then STDOUT should contain:
     """
     Success:
@@ -111,7 +110,7 @@ Feature: `wp cli` tasks
     Given an empty directory
     And a new Phar with version "0.14.0"
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --nightly --yes`
+    When I run `{PHAR_PATH} cli update --nightly --yes`
     Then STDOUT should contain:
       """
       md5 hash verified:
@@ -132,11 +131,11 @@ Feature: `wp cli` tasks
       y
       """
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update --field=version | head -1`
+    When I run `{PHAR_PATH} cli check-update --field=version | head -1`
     Then STDOUT should not be empty
     And save STDOUT as {UPDATE_VERSION}
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli update --stable < session`
+    When I run `{PHAR_PATH} cli update --stable < session`
     Then STDOUT should contain:
       """
       You have version 0.14.0. Would you like to update to the latest stable release? [y/n]
@@ -152,7 +151,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    When I run `WP_CLI_TEST_USE_GITHUB_API_CACHE=1 {PHAR_PATH} cli check-update`
+    When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should be:
       """
       Success: WP-CLI is at the latest version.

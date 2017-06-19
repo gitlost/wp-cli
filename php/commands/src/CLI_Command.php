@@ -343,14 +343,7 @@ class CLI_Command extends WP_CLI_Command {
 	 * Returns update information.
 	 */
 	private function get_updates( $assoc_args ) {
-		$github_server = 'https://api.github.com';
-		$cache_server = 'http://github-api-cache.unyson.io';
-
-		if ( getenv( 'WP_CLI_TEST_USE_GITHUB_API_CACHE' ) ) {
-			$url = $cache_server . '/repos/wp-cli/wp-cli/releases';
-		} else {
-			$url = $github_server . '/repos/wp-cli/wp-cli/releases';
-		}
+		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases';
 
 		$options = array(
 			'timeout' => 30
@@ -362,19 +355,47 @@ class CLI_Command extends WP_CLI_Command {
 
 		$release_data = array();
 
-		while ( true ) {
-			$response = Utils\http_request( 'GET', $url, $headers, $options );
+		// Cache results.
+		$cache = WP_CLI::get_cache();
+		$cache_key = 'github_releases';
 
-			if ( ! $response->success || 200 !== $response->status_code ) {
-				WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
+		if ( $cache->has( $cache_key ) ) {
+			$data = unserialize( $cache->read( $cache_key ) );
+			if ( time() < $data['time'] + $data['max_age'] ) {
+				$release_data = $data['release_data'];
+			} else {
+				$cache->remove( $cache_key );
 			}
+			unset( $data );
+		}
 
-			$release_data = array_merge( $release_data, json_decode( $response->body ) );
+		if ( ! $release_data ) {
+			$max_age = $time = 0;
+			while ( true ) {
+				$response = Utils\http_request( 'GET', $url, $headers, $options );
 
-			if ( empty( $response->headers['link'] ) || ! preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) ) {
-				break;
+				if ( ! $response->success || 200 !== $response->status_code ) {
+					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
+				}
+
+				$release_data = array_merge( $release_data, json_decode( $response->body ) );
+
+				if ( ! $max_age && isset( $response->headers['cache-control'] ) && preg_match( '/max-age=([0-9]+)/', $response->headers['cache-control'], $matches ) ) {
+					$max_age = (int) $matches[1];
+					if ( empty( $response->headers['date'] ) || false === ( $time = strtotime( $response->headers['date'] ) ) ) {
+						$time = time();
+					}
+				}
+
+				if ( empty( $response->headers['link'] ) || ! preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) ) {
+					break;
+				}
+
+				$url = $matches[1];
 			}
-			$url = $matches[1];
+			if ( $max_age ) {
+				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
+			}
 		}
 
 		$updates = array(

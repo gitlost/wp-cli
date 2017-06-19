@@ -118,6 +118,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( self::$suite_cache_dir ) {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
+		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+			arsort( Process::$run_times );
+			error_log( "afterSuite: run_times\n" . print_r( Process::$run_times, true ) );
+		}
 	}
 
 	/**
@@ -278,7 +282,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 
 		$this->proc( Utils\esc_cmd(
-			'php -dphar.readonly=0 %1$s %2$s --version=%3$s && chmod +x %2$s',
+			'php -dphar.readonly=0 %1$s %2$s --version=%3$s --quiet --min-build && chmod +x %2$s',
 			$make_phar_path,
 			$this->variables['PHAR_PATH'],
 			$version
@@ -300,7 +304,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		                                . '.phar';
 
 		Process::create( \WP_CLI\Utils\esc_cmd(
-			'curl -sSL %1$s > %2$s && chmod +x %2$s',
+			'curl -sSfL %1$s > %2$s && chmod +x %2$s',
 			$download_url,
 			$this->variables['PHAR_PATH']
 		) )->run_check();

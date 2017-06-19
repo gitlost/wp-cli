@@ -26,5 +26,12 @@ return array(
 		'default' => false,
 		'desc' => 'Suppress informational messages',
 	),
+
+	'min-build' => array(
+		'runtime' => '',
+		'file' => '<bool>',
+		'default' => false,
+		'desc' => 'Create minimum build, leaving out support files',
+	),
 );
 

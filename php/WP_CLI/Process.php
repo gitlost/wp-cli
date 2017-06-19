@@ -23,6 +23,13 @@ class Process {
 	}
 
 	private $command, $cwd, $env;
+	private static $descriptors = array(
+		0 => STDIN,
+		1 => array( 'pipe', 'w' ),
+		2 => array( 'pipe', 'w' ),
+	);
+
+	static $run_times = array();
 
 	private function __construct() {}
 
@@ -32,15 +39,9 @@ class Process {
 	 * @return ProcessRun
 	 */
 	public function run() {
-		$cwd = $this->cwd;
+		$start_time = microtime( true );
 
-		$descriptors = array(
-			0 => STDIN,
-			1 => array( 'pipe', 'w' ),
-			2 => array( 'pipe', 'w' ),
-		);
-
-		$proc = proc_open( $this->command, $descriptors, $pipes, $cwd, $this->env );
+		$proc = proc_open( $this->command, self::$descriptors, $pipes, $this->cwd, $this->env );
 
 		$stdout = stream_get_contents( $pipes[1] );
 		fclose( $pipes[1] );
@@ -48,13 +49,25 @@ class Process {
 		$stderr = stream_get_contents( $pipes[2] );
 		fclose( $pipes[2] );
 
+		$return_code = proc_close( $proc );
+
+		$run_time = microtime( true ) - $start_time;
+
+		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+			if ( ! isset( self::$run_times[ $this->command ] ) ) {
+				self::$run_times[ $this->command ] = 0;
+			}
+			self::$run_times[ $this->command ] += $run_time;
+		}
+
 		return new ProcessRun( array(
 			'stdout' => $stdout,
 			'stderr' => $stderr,
-			'return_code' => proc_close( $proc ),
+			'return_code' => $return_code,
 			'command' => $this->command,
-			'cwd' => $cwd,
-			'env' => $this->env
+			'cwd' => $this->cwd,
+			'env' => $this->env,
+			'run_time' => $run_time,
 		) );
 	}
 

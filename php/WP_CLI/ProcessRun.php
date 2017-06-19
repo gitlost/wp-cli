@@ -7,6 +7,8 @@ namespace WP_CLI;
  */
 class ProcessRun {
 
+	var $stdout, $stderr, $return_code, $command, $cwd, $env, $run_time;
+
 	/**
 	 * @var array $props Properties of executed command.
 	 */
@@ -25,6 +27,7 @@ class ProcessRun {
 		$out  = "$ $this->command\n";
 		$out .= "$this->stdout\n$this->stderr";
 		$out .= "cwd: $this->cwd\n";
+		$out .= "run time: $this->run_time\n";
 		$out .= "exit status: $this->return_code";
 
 		return $out;
