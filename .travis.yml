@@ -26,6 +26,7 @@ cache:
   directories:
   - vendor
   - $HOME/.composer/cache
+  - /tmp/wp-cli-home/.wp-cli/cache
 
 branches:
   only:
