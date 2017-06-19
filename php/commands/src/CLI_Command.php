@@ -361,7 +361,7 @@ class CLI_Command extends WP_CLI_Command {
 
 		if ( $cache->has( $cache_key ) ) {
 			$data = unserialize( $cache->read( $cache_key ) );
-			if ( time() < $data['time'] + $data['max_age'] ) {
+			if ( time() <= $data['time'] + $data['max_age'] ) {
 				$release_data = $data['release_data'];
 			} else {
 				$cache->remove( $cache_key );
@@ -371,7 +371,7 @@ class CLI_Command extends WP_CLI_Command {
 
 		if ( ! $release_data ) {
 			$max_age = $time = 0;
-			while ( true ) {
+			do {
 				$response = Utils\http_request( 'GET', $url, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
@@ -382,17 +382,16 @@ class CLI_Command extends WP_CLI_Command {
 
 				if ( ! $max_age && isset( $response->headers['cache-control'] ) && preg_match( '/max-age=([0-9]+)/', $response->headers['cache-control'], $matches ) ) {
 					$max_age = (int) $matches[1];
+					if ( getenv( 'BEHAT_RUN' ) ) {
+						// Bump it up artificially for behat test runs.
+						$max_age = max( $max_age, 600 );
+					}
 					if ( empty( $response->headers['date'] ) || false === ( $time = strtotime( $response->headers['date'] ) ) ) {
 						$time = time();
 					}
 				}
+			} while ( ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
 
-				if ( empty( $response->headers['link'] ) || ! preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) ) {
-					break;
-				}
-
-				$url = $matches[1];
-			}
 			if ( $max_age ) {
 				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
 			}

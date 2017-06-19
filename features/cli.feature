@@ -110,7 +110,6 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-  @github-api
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0"
