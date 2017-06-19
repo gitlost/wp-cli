@@ -32,7 +32,7 @@ define( 'DEST_PATH', $args[0] );
 
 define( 'BE_QUIET', isset( $runtime_config['quiet'] ) && $runtime_config['quiet'] );
 
-define( 'MIN_BUILD', isset( $runtime_config['min-build'] ) && $runtime_config['min-build'] );
+define( 'BUILD', isset( $runtime_config['build'] ) ? $runtime_config['build'] : '' );
 
 $current_version = trim( file_get_contents( WP_CLI_ROOT . '/VERSION' ) );
 
@@ -53,7 +53,12 @@ function add_file( $phar, $path ) {
 	if ( !BE_QUIET )
 		echo "$key - $path\n";
 
-	$phar[ $key ] = file_get_contents( $path );
+	if ( 'min' === BUILD || 'test' === BUILD ) {
+		// Maybe strip autoload maps.
+		$phar[ $key ] = file_get_contents( $path );
+	} else {
+		$phar[ $key ] = file_get_contents( $path );
+	}
 }
 
 function set_file_contents( $phar, $path, $content ) {
@@ -71,7 +76,37 @@ $phar->startBuffering();
 
 // PHP files
 $finder = new Finder();
-if ( MIN_BUILD ) {
+if ( 'min' === BUILD ) {
+	$finder
+		->files()
+		->ignoreVCS(true)
+		->name('*.php')
+		->in(WP_CLI_ROOT . '/php')
+		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
+		->in(WP_CLI_VENDOR_DIR . '/mustache')
+		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
+		->in(WP_CLI_VENDOR_DIR . '/composer')
+		->in(WP_CLI_VENDOR_DIR . '/psr')
+		->in(WP_CLI_VENDOR_DIR . '/seld')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/console')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/filesystem')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/process')
+		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
+		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
+		->notName('behat-tags.php')
+		->exclude('composer/ca-bundle')
+		->exclude('composer/semver')
+		->exclude('composer/spdx-licenses')
+		->exclude('examples')
+		->exclude('features')
+		->exclude('test')
+		->exclude('tests')
+		->exclude('Test')
+		->exclude('Tests')
+		;
+} elseif ( 'test' === BUILD ) {
 	$finder
 		->files()
 		->ignoreVCS(true)
@@ -90,8 +125,8 @@ if ( MIN_BUILD ) {
 		->notName('behat-tags.php')
 		->exclude('composer/ca-bundle')
 		->exclude('composer/semver')
-		->exclude('composer/spdx-licenses')
 		->exclude('composer/src')
+		->exclude('composer/spdx-licenses')
 		->exclude('examples')
 		->exclude('features')
 		->exclude('test')
@@ -187,7 +222,7 @@ foreach ( $finder as $file ) {
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_commands.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_framework.php' );
-if ( ! MIN_BUILD ) {
+if ( 'min' !== BUILD && 'test' !== BUILD ) {
 	add_file( $phar, WP_CLI_ROOT . '/ci/behat-tags.php' );
 }
 add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/ca-bundle/res/cacert.pem' );

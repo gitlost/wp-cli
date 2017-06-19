@@ -27,11 +27,11 @@ return array(
 		'desc' => 'Suppress informational messages',
 	),
 
-	'min-build' => array(
-		'runtime' => '',
-		'file' => '<bool>',
-		'default' => false,
-		'desc' => 'Create minimum build, leaving out support files',
+	'build' => array(
+		'runtime' => '=<min|test>',
+		'file' => '<min|test>',
+		'default' => '',
+		'desc' => 'Create minimum build "min", leaving out test files, or test build "test", leaving out composer and test files',
 	),
 );
 
