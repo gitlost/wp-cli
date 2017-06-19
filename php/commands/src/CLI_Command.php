@@ -357,28 +357,35 @@ class CLI_Command extends WP_CLI_Command {
 			'Accept' => 'application/json'
 		);
 
-		$release_data = array();
+		$query_str = '';
+		if ( ( $client_id = getenv( 'WP_CLI_GITHUB_CLIENT_ID' ) ) && ( $client_secret = getenv( 'WP_CLI_GITHUB_CLIENT_SECRET' ) ) ) {
+			$query_str = "?client_id={$client_id}&client_secret={$client_secret}";
+		}
+
+		$release_data = $cache_data = array();
 
 		// Cache results.
 		$cache = WP_CLI::get_cache();
 		$cache_key = 'github_releases';
 
 		if ( $cache->has( $cache_key ) ) {
-			$data = unserialize( $cache->read( $cache_key ) );
-			if ( time() <= $data['time'] + $data['max_age'] ) {
-				$release_data = $data['release_data'];
-			} else {
-				$cache->remove( $cache_key );
+			$cache_data = unserialize( $cache->read( $cache_key ) );
+			if ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
+				$release_data = $cache_data['release_data'];
 			}
-			unset( $data );
 		}
 
 		if ( ! $release_data ) {
 			$max_age = $time = 0;
 			do {
-				$response = Utils\http_request( 'GET', $url, $headers, $options );
+				$response = Utils\http_request( 'GET', $url . $query_str, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
+					if ( 403 === $response->status_code && ! empty( $cache_data ) ) {
+						WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
+						$release_data = $cache_data;
+						break;
+					}
 					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
 				}
 
@@ -390,7 +397,7 @@ class CLI_Command extends WP_CLI_Command {
 						// Bump it up artificially for behat test runs.
 						$max_age = max( $max_age, 600 );
 					}
-					if ( empty( $response->headers['date'] ) || false === ( $time = strtotime( $response->headers['date'] ) ) ) {
+					if ( empty( $response->headers['date'] ) || false === ( $time = @strtotime( $response->headers['date'] ) ) ) {
 						$time = time();
 					}
 				}

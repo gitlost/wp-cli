@@ -70,18 +70,48 @@ function set_file_contents( $phar, $path, $content ) {
 	$phar[ $key ] = $content;
 }
 
+unlink( DEST_PATH );
 $phar = new Phar( DEST_PATH, 0, 'wp-cli.phar' );
 
 $phar->startBuffering();
 
 // PHP files
 $finder = new Finder();
-if ( 'min' === BUILD ) {
+if ( 'test' === BUILD ) {
 	$finder
 		->files()
 		->ignoreVCS(true)
 		->name('*.php')
 		->in(WP_CLI_ROOT . '/php')
+		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
+		->in(WP_CLI_VENDOR_DIR . '/mustache')
+		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
+		->in(WP_CLI_VENDOR_DIR . '/composer')
+		->in(WP_CLI_VENDOR_DIR . '/seld/cli-prompt')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
+		->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
+		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
+		->notName('behat-tags.php')
+		->exclude('composer/ca-bundle')
+		->exclude('composer/semver')
+		->exclude('composer/src')
+		->exclude('composer/spdx-licenses')
+		->exclude('examples')
+		->exclude('features')
+		->exclude('test')
+		->exclude('tests')
+		->exclude('Test')
+		->exclude('Tests')
+		;
+} elseif ( 'min' === BUILD ) {
+	$finder
+		->files()
+		->ignoreVCS(true)
+		->name('*.php')
+		->in(WP_CLI_ROOT . '/php')
+		->in(WP_CLI_ROOT . '/features/bootstrap')
+		->in(WP_CLI_ROOT . '/features/steps')
+		->in(WP_CLI_ROOT . '/features/extra')
 		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
 		->in(WP_CLI_VENDOR_DIR . '/mustache')
 		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
@@ -98,34 +128,6 @@ if ( 'min' === BUILD ) {
 		->notName('behat-tags.php')
 		->exclude('composer/ca-bundle')
 		->exclude('composer/semver')
-		->exclude('composer/spdx-licenses')
-		->exclude('examples')
-		->exclude('features')
-		->exclude('test')
-		->exclude('tests')
-		->exclude('Test')
-		->exclude('Tests')
-		;
-} elseif ( 'test' === BUILD ) {
-	$finder
-		->files()
-		->ignoreVCS(true)
-		->name('*.php')
-		->in(WP_CLI_ROOT . '/php')
-		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
-		->in(WP_CLI_VENDOR_DIR . '/mustache')
-		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
-		->in(WP_CLI_VENDOR_DIR . '/composer')
-		->in(WP_CLI_VENDOR_DIR . '/psr')
-		->in(WP_CLI_VENDOR_DIR . '/seld')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
-		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
-		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
-		->notName('behat-tags.php')
-		->exclude('composer/ca-bundle')
-		->exclude('composer/semver')
-		->exclude('composer/src')
 		->exclude('composer/spdx-licenses')
 		->exclude('examples')
 		->exclude('features')
@@ -197,37 +199,39 @@ foreach ( $finder as $file ) {
 	add_file( $phar, $file );
 }
 
-$finder = new Finder();
-$finder
-	->files()
-	->ignoreVCS(true)
-	->ignoreDotFiles(false)
-	->in( WP_CLI_VENDOR_DIR . '/wp-cli/config-command/templates')
-	;
-foreach ( $finder as $file ) {
-	add_file( $phar, $file );
-}
+if ( 'test' !== BUILD ) {
+	$finder = new Finder();
+	$finder
+		->files()
+		->ignoreVCS(true)
+		->ignoreDotFiles(false)
+		->in( WP_CLI_VENDOR_DIR . '/wp-cli/config-command/templates')
+		;
+	foreach ( $finder as $file ) {
+		add_file( $phar, $file );
+	}
 
-$finder = new Finder();
-$finder
-	->files()
-	->ignoreVCS(true)
-	->ignoreDotFiles(false)
-	->in( WP_CLI_VENDOR_DIR . '/wp-cli/scaffold-command/templates')
-	;
-foreach ( $finder as $file ) {
-	add_file( $phar, $file );
+	$finder = new Finder();
+	$finder
+		->files()
+		->ignoreVCS(true)
+		->ignoreDotFiles(false)
+		->in( WP_CLI_VENDOR_DIR . '/wp-cli/scaffold-command/templates')
+		;
+	foreach ( $finder as $file ) {
+		add_file( $phar, $file );
+	}
 }
 
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_commands.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_framework.php' );
-if ( 'min' !== BUILD && 'test' !== BUILD ) {
+if ( 'test' !== BUILD ) {
 	add_file( $phar, WP_CLI_ROOT . '/ci/behat-tags.php' );
+	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/ca-bundle/res/cacert.pem' );
+	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/LICENSE' );
+	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/res/composer-schema.json' );
 }
-add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/ca-bundle/res/cacert.pem' );
-add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/LICENSE' );
-add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/res/composer-schema.json' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/rmccue/requests/library/Requests/Transport/cacert.pem' );
 
 set_file_contents( $phar, WP_CLI_ROOT . '/VERSION', $current_version );
@@ -237,7 +241,7 @@ $phar->setStub( <<<EOB
 #!/usr/bin/env php
 <?php
 Phar::mapPhar();
-include 'phar://wp-cli.phar/{$phar_boot}';
+include 'phar://wp-cli.phar{$phar_boot}';
 __HALT_COMPILER();
 ?>
 EOB
