@@ -8,8 +8,8 @@ env:
 
 matrix:
   include:
-    - php: 5.3
-      env: WP_VERSION=3.7.11 DEPLOY_BRANCH=master
+    - php: 5.4
+      env: WP_VERSION=3.7.11
 
 before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
