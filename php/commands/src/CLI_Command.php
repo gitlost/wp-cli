@@ -283,7 +283,9 @@ class CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::log( sprintf( 'Downloading from %s...', $download_url ) );
 
-		$temp = \WP_CLI\Utils\get_temp_dir() . uniqid('wp_') . '.phar';
+		$temp_dir = \WP_CLI\Utils\get_temp_dir() . uniqid( 'wp_' );
+		mkdir( $temp_dir );
+		$temp = $temp_dir . '/wp-cli.phar';
 
 		$headers = array();
 		$options = array(
@@ -332,6 +334,7 @@ class CLI_Command extends WP_CLI_Command {
 		if ( false === @rename( $temp, $old_phar ) ) {
 			WP_CLI::error( sprintf( "Cannot move %s to %s", $temp, $old_phar ) );
 		}
+		@rmdir( $temp_dir );
 
 		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
 			$updated_version = 'the latest nightly release';
