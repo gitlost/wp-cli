@@ -45,7 +45,7 @@ $skip_tags = array_merge(
 );
 
 # Skip Github API tests by default for PHP < 5.6 because of rate limiting. See https://github.com/wp-cli/wp-cli/issues/1612
-if ( versions_compare( PHP_VERSION, '5.6', '<' ) {
+if ( versions_compare( PHP_VERSION, '5.6', '<' ) ) {
 	$skip_tags[] = '@github-api';
 }
 
