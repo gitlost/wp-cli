@@ -312,7 +312,7 @@ class CLI_Command extends WP_CLI_Command {
 		if ( 0 !== $result->return_code || false === stripos( $result->stdout, 'WP-CLI version:' ) ) {
 			$multi_line = explode( PHP_EOL, $result->stderr );
 			$multi_line[] = '-----------------------';
-			$multi_line[] = "php_binary=$php_binary, file_exists=" . file_exists( $php_binary ) . ", is_executable=" . is_executable( $php_binary ) ", temp=$temp";
+			$multi_line[] = "php_binary=$php_binary, file_exists=" . file_exists( $php_binary ) . ", is_executable=" . is_executable( $php_binary ) . ", temp=$temp";
 			$multi_line[] = "result=$result";
 			$multi_line[] = '-----------------------';
 			WP_CLI::error_multi_line( $multi_line );
