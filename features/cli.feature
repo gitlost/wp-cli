@@ -161,11 +161,12 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    When I run `{PHAR_PATH} cli check-update`
-    Then STDOUT should be:
-      """
-      Success: WP-CLI is at the latest version.
-      """
+    # This will hit github rate limiting on travis.
+    #When I run `{PHAR_PATH} cli check-update`
+    #Then STDOUT should be:
+      #"""
+      #Success: WP-CLI is at the latest version.
+      #"""
 
     When I run `{PHAR_PATH} cli version`
     Then STDOUT should be:
