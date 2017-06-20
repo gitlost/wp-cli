@@ -251,6 +251,4 @@ EOB
 
 $phar->stopBuffering();
 
-file_put_contents( DEST_PATH . '.md5',  md5( file_get_contents( DEST_PATH ) ) );
-
 echo "Generated " . DEST_PATH . "\n";

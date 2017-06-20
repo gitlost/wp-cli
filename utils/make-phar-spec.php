@@ -31,7 +31,7 @@ return array(
 		'runtime' => '=<min|test>',
 		'file' => '<min|test>',
 		'default' => '',
-		'desc' => 'Create minimum build "min", leaving out test files, or test build "test", leaving out composer and test files',
+		'desc' => 'Create minimum build "min", leaving out test files, or test build "test", leaving out lots that can only run cli commands',
 	),
 );
 

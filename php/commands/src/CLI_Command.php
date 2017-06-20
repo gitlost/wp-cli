@@ -279,10 +279,6 @@ class CLI_Command extends WP_CLI_Command {
 
 			$download_url = $newest['package_url'];
 			$md5_url = str_replace( '.phar', '.phar.md5', $download_url );
-			if ( ' ' === $this->get_update_type_str( $assoc_args ) ) {
-				$download_url = 'https://gitlostbonger.com/wp-cli/wp-cli-min.phar';
-				$md5_url = str_replace( '.phar', '.phar.md5', $download_url );
-			}
 		}
 
 		WP_CLI::log( sprintf( 'Downloading from %s...', $download_url ) );
@@ -315,10 +311,6 @@ class CLI_Command extends WP_CLI_Command {
 		$result = $process->run();
 		if ( 0 !== $result->return_code || false === stripos( $result->stdout, 'WP-CLI version:' ) ) {
 			$multi_line = explode( PHP_EOL, $result->stderr );
-			$multi_line[] = '-----------------------';
-			$multi_line[] = "php_binary=$php_binary, file_exists=" . file_exists( $php_binary ) . ", is_executable=" . is_executable( $php_binary ) . ", temp=$temp";
-			$multi_line[] = "result=$result";
-			$multi_line[] = '-----------------------';
 			WP_CLI::error_multi_line( $multi_line );
 			WP_CLI::error( 'The downloaded PHAR is broken, try running wp cli update again.' );
 		}

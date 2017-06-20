@@ -179,8 +179,8 @@ $steps->Given('/^a misconfigured WP_CONTENT_DIR constant directory$/',
 );
 
 // Takes comma-separated file names.
-$steps->Given( '/^a wp-cli cache primed with ([^\s]+)$/',
-	function ( $world, $files ) {
-		$world->prime_wp_cli_cache( $world->replace_variables( $files ) );
+$steps->Given( '/^a wp-cli cache primed with ([^\s]+)( always)?$/',
+	function ( $world, $files, $always = '' ) {
+		$world->prime_wp_cli_cache( $world->replace_variables( $files ), $always );
 	}
 );

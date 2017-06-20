@@ -118,10 +118,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( self::$suite_cache_dir ) {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
-		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
-			arsort( Process::$run_times );
-			error_log( "afterSuite: run_times\n" . print_r( Process::$run_times, true ) );
-		}
 	}
 
 	/**
