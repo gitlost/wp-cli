@@ -63,7 +63,7 @@ class FileCache {
 
 		if ( null === self::$finderDummy ) {
 			// Make sure Finder & all its ilk are loaded as otherwise calling clean() in a register_shutdown_function can fail.
-			self::$finderDummy = (bool) $this->get_finder()->date( '> 1999-01-01' )->sortByAccessedTime()->getIterator();
+			self::$finderDummy = (bool) $this->get_finder()->files()->in( __DIR__ )->date( '> 1999-01-01' )->sortByAccessedTime()->getIterator()->current()->getRealPath();
 		}
 	}
 
