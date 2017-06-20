@@ -41,9 +41,9 @@ class FileCache {
 	 */
 	protected $whitelist;
 	/**
-	 * @var void dummy reference to Finder constant to cause Finder to autoload.
+	 * @var bool finderDummy dummy to autoload Finder classes.
 	 */
-	static private $dummy;
+	static private $finderDummy = null;
 
 	/**
 	 * @param string $cacheDir   location of the cache
@@ -61,8 +61,10 @@ class FileCache {
 			$this->enabled = false;
 		}
 
-		// Make sure Finder is loaded as otherwise calling clean() in a register_shutdown_function can fail to load it.
-		self::$dummy = Finder::IGNORE_VCS_FILES;
+		if ( null === self::$finderDummy ) {
+			// Make sure Finder & all its ilk are loaded as otherwise calling clean() in a register_shutdown_function can fail.
+			self::$finderDummy = (bool) $this->get_finder()->date( '> 1999-01-01' )->sortByAccessedTime()->getIterator();
+		}
 	}
 
 	/**
