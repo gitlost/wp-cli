@@ -435,12 +435,17 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	/**
-	 * Copy mock data to wp-cli cache.
+	 * Copy mock data to wp-cli cache for Travis.
 	 *
 	 * @param strings $files  Comma-separated list of files.
 	 * @param bool    $always Optional. If true, files will always be copied. If false, files will only be copied if not already in cache. Default false.
 	 */
 	public function prime_wp_cli_cache( $files, $always = false ) {
+		// If not running on Travis, do nothing (for local non-mocked testing).
+		if ( ! getenv( 'TRAVIS' ) ) {
+			return;
+		}
+
 		$data_dir = dirname( __DIR__ ) . '/data/';
 
 		$env = self::get_process_env_variables();

@@ -30,7 +30,7 @@ Feature: `wp cli` tasks
     """
     And STDERR should be empty
 
-  # The latest 1.2.1 phar craps out on .travis PHP 5.3 due to double slash in boot-phar.php path.
+  # The latest 1.2.1 phar craps out on Travis PHP 5.3 due to double slash in boot-phar.php path.
   @github-api @require-php-5.4
   Scenario: Do WP-CLI Update
     Given an empty directory
@@ -161,7 +161,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    # This will hit github rate limiting on travis.
+    # This will hit github rate limiting on Travis.
     #When I run `{PHAR_PATH} cli check-update`
     #Then STDOUT should be:
       #"""
