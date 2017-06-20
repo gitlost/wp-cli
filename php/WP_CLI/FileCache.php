@@ -40,6 +40,10 @@ class FileCache {
 	 * @var string key allowed chars (regex class)
 	 */
 	protected $whitelist;
+	/**
+	 * @var void dummy reference to Finder constant to cause Finder to autoload.
+	 */
+	static private $dummy;
 
 	/**
 	 * @param string $cacheDir   location of the cache
@@ -57,6 +61,8 @@ class FileCache {
 			$this->enabled = false;
 		}
 
+		// Make sure Finder is loaded as otherwise calling clean() in a register_shutdown_function can fail to load it.
+		self::$dummy = Finder::IGNORE_VCS_FILES;
 	}
 
 	/**

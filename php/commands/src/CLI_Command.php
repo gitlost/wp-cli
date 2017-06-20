@@ -283,9 +283,7 @@ class CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::log( sprintf( 'Downloading from %s...', $download_url ) );
 
-		$temp_dir = \WP_CLI\Utils\get_temp_dir() . uniqid( 'wp_' );
-		mkdir( $temp_dir );
-		$temp = $temp_dir . '/wp-cli.phar';
+		$temp = \WP_CLI\Utils\get_temp_dir() . uniqid('wp_') . '.phar';
 
 		$headers = array();
 		$options = array(
@@ -334,7 +332,6 @@ class CLI_Command extends WP_CLI_Command {
 		if ( false === @rename( $temp, $old_phar ) ) {
 			WP_CLI::error( sprintf( "Cannot move %s to %s", $temp, $old_phar ) );
 		}
-		@rmdir( $temp_dir );
 
 		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
 			$updated_version = 'the latest nightly release';
@@ -360,11 +357,6 @@ class CLI_Command extends WP_CLI_Command {
 			'Accept' => 'application/json'
 		);
 
-		$query_str = '';
-		if ( ( $client_id = getenv( 'WP_CLI_GITHUB_CLIENT_ID' ) ) && ( $client_secret = getenv( 'WP_CLI_GITHUB_CLIENT_SECRET' ) ) ) {
-			$query_str = "?client_id={$client_id}&client_secret={$client_secret}";
-		}
-
 		$release_data = $cache_data = array();
 
 		// Cache results.
@@ -375,19 +367,24 @@ class CLI_Command extends WP_CLI_Command {
 			$cache_data = unserialize( $cache->read( $cache_key ) );
 			if ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
 				$release_data = $cache_data['release_data'];
+				unset( $cache_data );
 			}
 		}
 
 		if ( ! $release_data ) {
 			$max_age = $time = 0;
 			do {
-				$response = Utils\http_request( 'GET', $url . $query_str, $headers, $options );
+				$response = Utils\http_request( 'GET', $url, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
-					if ( 403 === $response->status_code && ! empty( $cache_data ) ) {
-						WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
-						$release_data = $cache_data;
-						break;
+					if ( 403 === $response->status_code ) {
+						if ( ! empty( $cache_data ) ) {
+							WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
+							$max_age = 0;
+							$release_data = $cache_data['release_data'];
+							unset( $cache_data );
+							break;
+						}
 					}
 					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
 				}
@@ -396,11 +393,7 @@ class CLI_Command extends WP_CLI_Command {
 
 				if ( ! $max_age && isset( $response->headers['cache-control'] ) && preg_match( '/max-age=([0-9]+)/', $response->headers['cache-control'], $matches ) ) {
 					$max_age = (int) $matches[1];
-					if ( getenv( 'BEHAT_RUN' ) ) {
-						// Bump it up artificially for behat test runs.
-						$max_age = max( $max_age, 600 );
-					}
-					if ( empty( $response->headers['date'] ) || false === ( $time = @strtotime( $response->headers['date'] ) ) ) {
+					if ( empty( $response->headers['date'] ) || false === ( $time = Utils\strtotime_gmt( $response->headers['date'] ) ) ) {
 						$time = time();
 					}
 				}
