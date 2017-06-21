@@ -363,7 +363,6 @@ class CLI_Command extends WP_CLI_Command {
 			$cache_data = unserialize( $cache->read( $cache_key ) );
 			if ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
 				$release_data = $cache_data['release_data'];
-				unset( $cache_data );
 			}
 		}
 
@@ -378,7 +377,6 @@ class CLI_Command extends WP_CLI_Command {
 							WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
 							$max_age = 0;
 							$release_data = $cache_data['release_data'];
-							unset( $cache_data );
 							break;
 						}
 					}
@@ -399,6 +397,7 @@ class CLI_Command extends WP_CLI_Command {
 				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
 			}
 		}
+		unset( $cache_data );
 
 		$updates = array(
 			'major'      => false,

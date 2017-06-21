@@ -14,7 +14,7 @@ class FileCacheTest extends PHPUnit_Framework_TestCase {
 		$ttl = 60;
 
 		$cache_dir = Utils\get_temp_dir() . '/' . uniqid( "wp-cli-test-file-cache", TRUE );
-		
+
 		$cache = new FileCache( $cache_dir, $ttl, $max_size );
 
 		$after_construct_classes = get_declared_classes();
