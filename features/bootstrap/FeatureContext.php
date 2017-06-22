@@ -449,22 +449,21 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			return;
 		}
 
-		$data_dir = dirname( __DIR__ ) . '/data/';
-
+		$test_cache_dir = $this->variables['CACHE_DIR'];
 		$env = self::get_process_env_variables();
-		$cache_dir = $env['HOME'] . '/.wp-cli/cache';
+		$home_cache_dir = $env['HOME'] . '/.wp-cli/cache';
 
 		$files = explode( ',', $files );
 		foreach ( $files as $file ) {
-			$data_file = $data_dir . $file;
-			$cache_file = $cache_dir . '/' . $file;
+			$test_cache_file = $test_cache_dir . '/' . $file;
+			$home_cache_file = $home_cache_dir . '/' . $file;
 
-			if ( file_exists( $data_file ) && ( $always || ! file_exists( $cache_file ) ) ) {
+			if ( file_exists( $test_cache_file ) && ( $always || ! file_exists( $home_cache_file ) ) ) {
 				if ( 'github_releases' === $file ) {
 					// Bump up the max_age and make the time now.
-					file_put_contents( $cache_file, preg_replace( '/^(a:3:{s:7:"max_age";i):[0-9]+(;s:4:"time";i):[0-9]+/', '$1:600$2:' . time(), file_get_contents( $data_file ) ) );
+					file_put_contents( $home_cache_file, preg_replace( '/^(a:3:{s:7:"max_age";i):[0-9]+(;s:4:"time";i):[0-9]+/', '$1:600$2:' . time(), file_get_contents( $test_cache_file ) ) );
 				} else {
-					copy( $data_file, $cache_file );
+					copy( $test_cache_file, $home_cache_file );
 				}
 			}
 		}

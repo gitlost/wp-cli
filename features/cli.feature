@@ -1,7 +1,10 @@
 Feature: `wp cli` tasks
 
   Background:
-    Given a wp-cli cache primed with github_releases
+    Given download:
+      | path                        | url                                                  |
+      | {CACHE_DIR}/github_releases | https://gitlostbonger.com/behat-data/github_releases |
+    And a wp-cli cache primed with github_releases
 
   Scenario: Ability to set a custom version when building
     Given an empty directory

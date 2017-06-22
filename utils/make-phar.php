@@ -53,8 +53,9 @@ function add_file( $phar, $path ) {
 	if ( !BE_QUIET )
 		echo "$key - $path\n";
 
-	if ( 'min' === BUILD || 'test' === BUILD ) {
-		// Maybe strip autoload maps.
+	$basename = basename( $path );
+	if ( 0 === strpos( $basename, 'autoload_' ) ) {
+		// Should strip autoload maps of unused stuff.
 		$phar[ $key ] = file_get_contents( $path );
 	} else {
 		$phar[ $key ] = file_get_contents( $path );
@@ -105,7 +106,7 @@ if ( 'test' === BUILD ) {
 		->exclude('Test')
 		->exclude('Tests')
 		;
-} elseif ( 'min' === BUILD ) {
+} else {
 	$finder
 		->files()
 		->ignoreVCS(true)
@@ -137,29 +138,6 @@ if ( 'test' === BUILD ) {
 		->exclude('tests')
 		->exclude('Test')
 		->exclude('Tests')
-		;
-} else {
-	$finder
-		->files()
-		->ignoreVCS(true)
-		->name('*.php')
-		->in(WP_CLI_ROOT . '/php')
-		->in(WP_CLI_ROOT . '/features')
-		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
-		->in(WP_CLI_VENDOR_DIR . '/mustache')
-		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
-		->in(WP_CLI_VENDOR_DIR . '/composer')
-		->in(WP_CLI_VENDOR_DIR . '/psr')
-		->in(WP_CLI_VENDOR_DIR . '/seld')
-		->in(WP_CLI_VENDOR_DIR . '/symfony')
-		->in(WP_CLI_VENDOR_DIR . '/nb/oxymel')
-		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
-		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
-		->exclude('test')
-		->exclude('tests')
-		->exclude('Test')
-		->exclude('Tests')
-		->exclude('php-cli-tools/examples')
 		;
 }
 

@@ -28,10 +28,10 @@ return array(
 	),
 
 	'build' => array(
-		'runtime' => '=<min|test>',
-		'file' => '<min|test>',
+		'runtime' => '=<test>',
+		'file' => '<test>',
 		'default' => '',
-		'desc' => 'Create minimum build "min", leaving out test files, or test build "test", leaving out lots that can only run cli commands',
+		'desc' => 'Create a minimum test build "test", leaving out lots (including composer) that is only guaranteed to run cli commands',
 	),
 );
 
