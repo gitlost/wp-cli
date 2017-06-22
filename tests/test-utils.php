@@ -160,8 +160,8 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 
 		$date = 'Fri, 30 May 2008 04:20:12';
 
-		date_default_timezone_set( 'Antarctica/Troll' ); // +2h in northern summer.
-		$this->assertSame( strtotime( $date ) + 2 * 60 * 60, Utils\strtotime_gmt( $date ) );
+		date_default_timezone_set( 'America/Godthab' ); // -2h in northern summer.
+		$this->assertSame( strtotime( $date ) - 2 * 60 * 60, Utils\strtotime_gmt( $date ) );
 
 		date_default_timezone_set( $get );
 	}
