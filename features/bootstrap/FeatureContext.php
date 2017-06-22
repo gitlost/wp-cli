@@ -121,6 +121,12 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( self::$suite_cache_dir ) {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
+		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+			uasort( Process::$run_times, function ( $a, $b ) {
+				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
+			} );
+			echo "\nTop 20 run_times\n" . print_r( array_slice( Process::$run_times, 0, 20, true ), true );
+		}
 	}
 
 	/**

@@ -29,6 +29,8 @@ class Process {
 		2 => array( 'pipe', 'w' ),
 	);
 
+	static $run_times = array();
+
 	private function __construct() {}
 
 	/**
@@ -50,6 +52,14 @@ class Process {
 		$return_code = proc_close( $proc );
 
 		$run_time = microtime( true ) - $start_time;
+
+		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+			if ( ! isset( self::$run_times[ $this->command ] ) ) {
+				self::$run_times[ $this->command ] = array( 0, 0 );
+			}
+			self::$run_times[ $this->command ][0] += $run_time;
+			self::$run_times[ $this->command ][1]++;
+		}
 
 		return new ProcessRun( array(
 			'stdout' => $stdout,
