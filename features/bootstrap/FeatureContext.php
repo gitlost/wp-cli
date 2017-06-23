@@ -47,7 +47,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir, $suite_cache_dir, $fs;
+	private static $cache_dir, $suite_cache_dir, $install_dir, $fs;
 
 	private static $db_settings = array(
 		'dbname' => 'wp_cli_test',
@@ -125,7 +125,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			uasort( Process::$run_times, function ( $a, $b ) {
 				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
 			} );
-			echo "\nTop 20 run_times\n" . print_r( array_slice( Process::$run_times, 0, 20, true ), true );
+			if ( getenv( 'TRAVIS' ) ) {
+				echo( "\nTop 10 run_times\n" . print_r( array_slice( Process::$run_times, 0, 10, true ), true ) );
+			} else {
+				error_log( "\nTop 10 run_times\n" . print_r( array_slice( Process::$run_times, 0, 10, true ), true ) );
+			}
 		}
 	}
 
@@ -421,10 +425,26 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$params['dbprefix'] = $subdir ? preg_replace( '#[^a-zA-Z\_0-9]#', '_', $subdir ) : 'wp_';
 
 		$params['skip-salts'] = true;
-		$this->proc( 'wp core config', $params, $subdir )->run_check();
+		$params['skip-check'] = true;
+
+		$config_path = self::$install_dir ? ( self::$install_dir . '/config_' . md5( implode( ':', $params ) . ':subdir=' . $subdir ) ) : '';
+
+		if ( $config_path && file_exists( $config_path ) ) {
+			copy( $config_path, $this->variables['RUN_DIR'] . "/$subdir/wp-config.php" );
+		} else {
+			$this->proc( 'wp core config', $params, $subdir )->run_check();
+			if ( $config_path ) {
+				copy( $this->variables['RUN_DIR'] . "/$subdir/wp-config.php", $config_path);
+			}
+		}
 	}
 
 	public function install_wp( $subdir = '' ) {
+		self::$install_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache';
+		if ( ! file_exists( self::$install_dir ) ) {
+			mkdir( self::$install_dir );
+		}
+
 		$subdir = $this->replace_variables( $subdir );
 
 		$this->create_db();
@@ -440,7 +460,18 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'admin_password' => 'password1'
 		);
 
-		$this->proc( 'wp core install', $install_args, $subdir )->run_check();
+		$install_path = self::$install_dir ? ( self::$install_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir ) ) : '';
+
+		if ( $install_path && file_exists( $install_path ) ) {
+			$cmd = Utils\esc_cmd( '/usr/bin/env mysql -u%s -p%s -e%s %s', self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source $install_path;", self::$db_settings['dbname'] );
+			Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
+		} else {
+			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
+			if ( $install_path ) {
+				$cmd = Utils\esc_cmd( '/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s', self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_path );
+				Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
+			}
+		}
 	}
 
 	/**

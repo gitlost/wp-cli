@@ -1007,7 +1007,7 @@ function force_env_on_nix_systems( $command ) {
 }
 
 /**
- * strtotime() returning timestamp in UTC (rather than default timezone).
+ * Wrapper around strtotime() that always interprets the string with a default timezone of UTC.
  *
  * @param string $time A date/time string.
  * @param int    $now  Optional. The timestamp which is used as a base for the calculation of relative dates.
