@@ -55,8 +55,27 @@ function add_file( $phar, $path ) {
 
 	$basename = basename( $path );
 	if ( 0 === strpos( $basename, 'autoload_' ) ) {
-		// Should strip autoload maps of unused stuff.
-		$phar[ $key ] = file_get_contents( $path );
+		// Strip autoload maps of unused stuff.
+		$contents = file_get_contents( $path );
+		if ( 'cli' === BUILD ) {
+			$strips = array(
+				'\/(?:behat|composer|gherkin)\/src\/',
+				'\/phpunit\/',
+				'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
+			);
+		} else {
+			$strips = array(
+				'\/(?:behat|gherkin)\/src\/',
+				'\/phpunit\/',
+				'\/symfony\/(?:config|debug|dependency-injection|event-dispatcher|translation|yaml)\/',
+				'\/composer\/spdx-licenses\/',
+				'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
+			);
+		}
+		$strip_res = array_map( function ( $v ) {
+			return '/^[^,\n]+?' . $v . '[^,\n]+?, *\n/m';
+		}, $strips );
+		$phar[ $key ] = preg_replace( $strip_res, '', $contents );
 	} else {
 		$phar[ $key ] = file_get_contents( $path );
 	}
@@ -80,7 +99,7 @@ $phar->startBuffering();
 
 // PHP files
 $finder = new Finder();
-if ( 'test' === BUILD ) {
+if ( 'cli' === BUILD ) {
 	$finder
 		->files()
 		->ignoreVCS(true)
@@ -129,9 +148,16 @@ if ( 'test' === BUILD ) {
 		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
 		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
 		->notName('behat-tags.php')
-		->exclude('composer/ca-bundle')
-		->exclude('composer/semver')
 		->exclude('composer/spdx-licenses')
+		->exclude('composer/composer/src/Composer/Command')
+		->exclude('composer/composer/src/Composer/Compiler.php')
+		->exclude('composer/composer/src/Composer/Console')
+		->exclude('composer/composer/src/Composer/Downloader/PearPackageExtractor.php') // Assuming Pear install isn't supported by wp-cli.
+		->exclude('composer/composer/src/Composer/Installer/PearBinaryInstaller.php')
+		->exclude('composer/composer/src/Composer/Installer/PearInstaller.php')
+		->exclude('composer/composer/src/Composer/Question')
+		->exclude('composer/composer/src/Composer/Repository/Pear')
+		->exclude('composer/composer/src/Composer/SelfUpdate')
 		->exclude('examples')
 		->exclude('features')
 		->exclude('test')
@@ -179,7 +205,7 @@ foreach ( $finder as $file ) {
 	add_file( $phar, $file );
 }
 
-if ( 'test' !== BUILD ) {
+if ( 'cli' !== BUILD ) {
 	$finder = new Finder();
 	$finder
 		->files()
@@ -206,9 +232,8 @@ if ( 'test' !== BUILD ) {
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_commands.php' );
 add_file( $phar, WP_CLI_VENDOR_DIR . '/autoload_framework.php' );
-if ( 'test' !== BUILD ) {
+if ( 'cli' !== BUILD ) {
 	add_file( $phar, WP_CLI_ROOT . '/ci/behat-tags.php' );
-	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/ca-bundle/res/cacert.pem' );
 	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/LICENSE' );
 	add_file( $phar, WP_CLI_VENDOR_DIR . '/composer/composer/res/composer-schema.json' );
 }

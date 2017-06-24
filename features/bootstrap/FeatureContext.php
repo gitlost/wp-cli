@@ -62,7 +62,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	/**
 	 * Get the environment variables required for launched `wp` processes
-	 * @beforeSuite
+	 * @BeforeSuite
 	 */
 	private static function get_process_env_variables() {
 		// Ensure we're using the expected `wp` binary
@@ -88,7 +88,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	// We cache the results of `wp core download` to improve test performance
 	// Ideally, we'd cache at the HTTP layer for more reliable tests
 	private static function cache_wp_files() {
-		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test core-download-cache';
+		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-download-cache';
 
 		if ( is_readable( self::$cache_dir . '/wp-config-sample.php' ) )
 			return;
@@ -121,14 +121,26 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( self::$suite_cache_dir ) {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
+
 		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+
+			list( $time, $calls ) = array_reduce( Process::$run_times, function( $carry, $item ) {
+				return array( $carry[0] + $item[0], $carry[1] + $item[1] );
+			}, array( 0, 0 ) );
+			$mins = floor( $time / 60 );
+			$secs = round( $time - ( $mins * 60 ), 3 );
+			$log = "\nTotal run time=$time ({$mins}m{$secs}s), calls=$calls, unique=" . count( Process::$run_times );
+
 			uasort( Process::$run_times, function ( $a, $b ) {
 				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
 			} );
+			$top = getenv( 'TRAVIS' ) ? 5 : 20;
+			$log .= "\nTop $top run_times\n" . print_r( array_slice( Process::$run_times, 0, $top, true ), true );
+
 			if ( getenv( 'TRAVIS' ) ) {
-				echo( "\nTop 10 run_times\n" . print_r( array_slice( Process::$run_times, 0, 10, true ), true ) );
+				echo $log;
 			} else {
-				error_log( "\nTop 10 run_times\n" . print_r( array_slice( Process::$run_times, 0, 10, true ), true ) );
+				error_log( $log );
 			}
 		}
 	}

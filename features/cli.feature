@@ -9,7 +9,7 @@ Feature: `wp cli` tasks
   Scenario: Ability to set a custom version when building
     Given an empty directory
     And save the {SRC_DIR}/VERSION file as {TRUE_VERSION}
-    And a new Phar with version "1.2.3" and test build
+    And a new Phar with version "1.2.3" and cli build
 
     When I run `{PHAR_PATH} cli version`
     Then STDOUT should be:
@@ -24,7 +24,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Check for updates
     Given an empty directory
-    And a new Phar with version "0.0.0" and test build
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should contain:
@@ -37,7 +37,7 @@ Feature: `wp cli` tasks
   @github-api @require-php-5.4
   Scenario: Do WP-CLI Update
     Given an empty directory
-    And a new Phar with version "0.0.0" and test build
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -74,7 +74,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
-    And a new Phar with version "0.14.0" and test build
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -103,7 +103,7 @@ Feature: `wp cli` tasks
   @github-api @require-php-5.4
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
-    And a new Phar with version "0.14.0" and test build
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --no-patch --yes`
     Then STDOUT should contain:
@@ -120,7 +120,7 @@ Feature: `wp cli` tasks
   @require-php-5.4
   Scenario: Install WP-CLI nightly
     Given an empty directory
-    And a new Phar with version "0.14.0" and test build
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --nightly --yes`
     Then STDOUT should contain:
@@ -138,7 +138,7 @@ Feature: `wp cli` tasks
   @github-api @require-php-5.4
   Scenario: Install WP-CLI stable
     Given an empty directory
-    And a new Phar with version "0.14.0" and test build
+    And a new Phar with version "0.14.0" and cli build
     And a session file:
       """
       y

@@ -136,7 +136,7 @@ $steps->Given( '/^save (STDOUT|STDERR) ([\'].+[^\'])?\s?as \{(\w+)\}$/',
 	}
 );
 
-$steps->Given( '/^a new Phar with (?:the same version|version "([^"]+)")(?: and (test) build)?$/',
+$steps->Given( '/^a new Phar with (?:the same version|version "([^"]+)")(?: and (cli) build)?$/',
 	function ( $world, $version = 'same', $build = '' ) {
 		$world->build_phar( $version, $build );
 	}
