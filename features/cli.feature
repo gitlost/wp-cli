@@ -21,7 +21,6 @@ Feature: `wp cli` tasks
     {TRUE_VERSION}
     """
 
-  @github-api
   Scenario: Check for updates
     Given an empty directory
     And a new Phar with version "0.0.0" and cli build
@@ -34,7 +33,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
 
   # The latest 1.2.1 phar craps out on Travis PHP 5.3 due to double slash in boot-phar.php path.
-  @github-api @require-php-5.4
+  @require-php-5.4
   Scenario: Do WP-CLI Update
     Given an empty directory
     And a new Phar with version "0.0.0" and cli build
@@ -71,7 +70,6 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-  @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -100,7 +98,7 @@ Feature: `wp cli` tasks
       WP-CLI 0.14.1
       """
 
-  @github-api @require-php-5.4
+  @require-php-5.4
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -135,7 +133,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-  @github-api @require-php-5.4
+  @require-php-5.4
   Scenario: Install WP-CLI stable
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
