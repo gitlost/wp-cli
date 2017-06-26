@@ -10,6 +10,12 @@ $steps->Given( '/^an empty directory$/',
 	}
 );
 
+$steps->Given( '/^an empty ([^\s]+) directory$/',
+	function ( $world, $dir ) {
+		$world->remove_dir( $world->replace_variables( $dir ) );
+	}
+);
+
 $steps->Given( '/^an empty cache/',
 	function ( $world ) {
 		$world->variables['SUITE_CACHE_DIR'] = FeatureContext::create_cache_dir();
@@ -20,7 +26,10 @@ $steps->Given( '/^an? ([^\s]+) file:$/',
 	function ( $world, $path, PyStringNode $content ) {
 		$content = (string) $content . "\n";
 		$full_path = $world->variables['RUN_DIR'] . "/$path";
-		Process::create( \WP_CLI\utils\esc_cmd( 'mkdir -p %s', dirname( $full_path ) ) )->run_check();
+		$dir = dirname( $full_path );
+		if ( ! file_exists( $dir ) ) {
+			mkdir( $dir, 0777, true );
+		}
 		file_put_contents( $full_path, $content );
 	}
 );
