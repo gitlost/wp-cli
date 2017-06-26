@@ -53,29 +53,30 @@ function add_file( $phar, $path ) {
 	if ( !BE_QUIET )
 		echo "$key - $path\n";
 
-	$basename = basename( $path );
-	if ( 0 === strpos( $basename, 'autoload_' ) ) {
+	if ( 0 === strpos( basename( $path ), 'autoload_' ) ) {
 		// Strip autoload maps of unused stuff.
-		$contents = file_get_contents( $path );
-		if ( 'cli' === BUILD ) {
-			$strips = array(
-				'\/(?:behat|composer|gherkin)\/src\/',
-				'\/phpunit\/',
-				'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
-			);
-		} else {
-			$strips = array(
-				'\/(?:behat|gherkin)\/src\/',
-				'\/phpunit\/',
-				'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+\/',
-				'\/composer\/spdx-licenses\/',
-				'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
-			);
+		static $strip_res = null;
+		if ( null === $strip_res ) {
+			if ( 'cli' === BUILD ) {
+				$strips = array(
+					'\/(?:behat|composer|gherkin)\/src\/',
+					'\/phpunit\/',
+					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
+				);
+			} else {
+				$strips = array(
+					'\/(?:behat|gherkin)\/src\/',
+					'\/phpunit\/',
+					'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+\/',
+					'\/composer\/spdx-licenses\/',
+					'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
+				);
+			}
+			$strip_res = array_map( function ( $v ) {
+				return '/^[^,\n]+?' . $v . '[^,\n]+?, *\n/m';
+			}, $strips );
 		}
-		$strip_res = array_map( function ( $v ) {
-			return '/^[^,\n]+?' . $v . '[^,\n]+?, *\n/m';
-		}, $strips );
-		$phar[ $key ] = preg_replace( $strip_res, '', $contents );
+		$phar[ $key ] = preg_replace( $strip_res, '', file_get_contents( $path ) );
 	} else {
 		$phar[ $key ] = file_get_contents( $path );
 	}
@@ -99,56 +100,46 @@ $phar->startBuffering();
 
 // PHP files
 $finder = new Finder();
+$finder
+	->files()
+	->ignoreVCS(true)
+	->name('*.php')
+	->in(WP_CLI_ROOT . '/php')
+	->in(WP_CLI_VENDOR_DIR . '/wp-cli')
+	->in(WP_CLI_VENDOR_DIR . '/mustache')
+	->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
+	->in(WP_CLI_VENDOR_DIR . '/composer')
+	->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
+	->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
+	->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
+	->notName('behat-tags.php')
+	->exclude('examples')
+	->exclude('features')
+	->exclude('test')
+	->exclude('tests')
+	->exclude('Test')
+	->exclude('Tests')
+	;
 if ( 'cli' === BUILD ) {
 	$finder
-		->files()
-		->ignoreVCS(true)
-		->name('*.php')
-		->in(WP_CLI_ROOT . '/php')
-		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
-		->in(WP_CLI_VENDOR_DIR . '/mustache')
-		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
-		->in(WP_CLI_VENDOR_DIR . '/composer')
 		->in(WP_CLI_VENDOR_DIR . '/seld/cli-prompt')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
-		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
-		->notName('behat-tags.php')
 		->exclude('composer/ca-bundle')
 		->exclude('composer/semver')
 		->exclude('composer/src')
 		->exclude('composer/spdx-licenses')
-		->exclude('examples')
-		->exclude('features')
-		->exclude('test')
-		->exclude('tests')
-		->exclude('Test')
-		->exclude('Tests')
 		;
 } else {
 	$finder
-		->files()
-		->ignoreVCS(true)
-		->name('*.php')
-		->in(WP_CLI_ROOT . '/php')
-		->in(WP_CLI_ROOT . '/features/bootstrap')
+		->in(WP_CLI_ROOT . '/features/bootstrap') // These are required for scaffold-command.
 		->in(WP_CLI_ROOT . '/features/steps')
 		->in(WP_CLI_ROOT . '/features/extra')
-		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
-		->in(WP_CLI_VENDOR_DIR . '/mustache')
 		->in(WP_CLI_VENDOR_DIR . '/nb/oxymel')
-		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
-		->in(WP_CLI_VENDOR_DIR . '/composer')
 		->in(WP_CLI_VENDOR_DIR . '/psr')
 		->in(WP_CLI_VENDOR_DIR . '/seld')
 		->in(WP_CLI_VENDOR_DIR . '/symfony/console')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/filesystem')
 		->in(WP_CLI_VENDOR_DIR . '/symfony/finder')
-		->in(WP_CLI_VENDOR_DIR . '/symfony/polyfill-mbstring')
 		->in(WP_CLI_VENDOR_DIR . '/symfony/process')
-		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
 		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
-		->notName('behat-tags.php')
 		->exclude('nb/oxymel/OxymelTest.php')
 		->exclude('composer/spdx-licenses')
 		->exclude('composer/composer/src/Composer/Command')
@@ -160,13 +151,6 @@ if ( 'cli' === BUILD ) {
 		->exclude('composer/composer/src/Composer/Question')
 		->exclude('composer/composer/src/Composer/Repository/Pear')
 		->exclude('composer/composer/src/Composer/SelfUpdate')
-		->exclude('examples')
-		->exclude('features')
-		->exclude('test')
-		->exclude('tests')
-		->exclude('Test')
-		->exclude('Tests')
-		->exclude('Tests')
 		;
 }
 
