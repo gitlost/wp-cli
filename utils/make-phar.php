@@ -54,7 +54,7 @@ function add_file( $phar, $path ) {
 		echo "$key - $path\n";
 
 	$basename = basename( $path );
-	if ( 0 === strpos( $basename, 'autoload_' ) && preg_match( '/(?:classmap|namespaces|psr4|static)\.php$/', $basename ) ) {
+	if ( 0 === strpos( $basename, 'autoload_' ) && preg_match( '/(?:classmap|files|namespaces|psr4|static)\.php$/', $basename ) ) {
 		// Strip autoload maps of unused stuff.
 		static $strip_res = null;
 		if ( null === $strip_res ) {
