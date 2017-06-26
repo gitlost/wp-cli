@@ -504,6 +504,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	/**
 	 * Copy files in new directory that are not in old directory to destination directory.
+	 *
+	 * @param string $new_dir  The directory to search looking for files/directories not in `$old_dir`.
+	 * @param string $old_dir  The directory to be compared to `$new_dir`.
+	 * @param string $dest_dir Where to copy any files/directories in `$new_dir` but not in `$old_dir` to.
+	 * @return bool Whether files copied or not.
 	 */
 	private static function dir_diff_cp( $new_dir, $old_dir, $dest_dir ) {
 		$copied = false;
@@ -534,8 +539,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	/**
 	 * Copy mock data to wp-cli cache for Travis.
 	 *
-	 * @param strings $files  Comma-separated list of files.
-	 * @param bool    $always Optional. If true, files will always be copied. If false, files will only be copied if not already in cache. Default false.
+	 * @param string $files  Comma-separated list of files.
+	 * @param bool   $always Optional. If true, files will always be copied. If false, files will only be copied if not already in cache. Default false.
 	 */
 	public function prime_wp_cli_cache( $files, $always = false ) {
 		// If not running on Travis, do nothing (for local non-mocked testing).
