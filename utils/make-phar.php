@@ -67,7 +67,7 @@ function add_file( $phar, $path ) {
 			$strips = array(
 				'\/(?:behat|gherkin)\/src\/',
 				'\/phpunit\/',
-				'\/symfony\/(?:config|debug|dependency-injection|event-dispatcher|translation|yaml)\/',
+				'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+\/',
 				'\/composer\/spdx-licenses\/',
 				'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
 			);
@@ -136,6 +136,7 @@ if ( 'cli' === BUILD ) {
 		->in(WP_CLI_ROOT . '/features/extra')
 		->in(WP_CLI_VENDOR_DIR . '/wp-cli')
 		->in(WP_CLI_VENDOR_DIR . '/mustache')
+		->in(WP_CLI_VENDOR_DIR . '/nb/oxymel')
 		->in(WP_CLI_VENDOR_DIR . '/rmccue/requests')
 		->in(WP_CLI_VENDOR_DIR . '/composer')
 		->in(WP_CLI_VENDOR_DIR . '/psr')
@@ -148,6 +149,7 @@ if ( 'cli' === BUILD ) {
 		->in(WP_CLI_VENDOR_DIR . '/ramsey/array_column')
 		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
 		->notName('behat-tags.php')
+		->exclude('nb/oxymel/OxymelTest.php')
 		->exclude('composer/spdx-licenses')
 		->exclude('composer/composer/src/Composer/Command')
 		->exclude('composer/composer/src/Composer/Compiler.php')
@@ -164,32 +166,12 @@ if ( 'cli' === BUILD ) {
 		->exclude('tests')
 		->exclude('Test')
 		->exclude('Tests')
+		->exclude('Tests')
 		;
 }
 
 foreach ( $finder as $file ) {
 	add_file( $phar, $file );
-}
-
-// Include base project files, because the autoloader will load them
-if ( WP_CLI_BASE_PATH !== WP_CLI_ROOT ) {
-	$finder = new Finder();
-	$finder
-		->files()
-		->ignoreVCS(true)
-		->name('*.php')
-		->in(WP_CLI_BASE_PATH . '/src')
-		->exclude('test')
-		->exclude('tests')
-		->exclude('Test')
-		->exclude('Tests');
-	foreach ( $finder as $file ) {
-		add_file( $phar, $file );
-	}
-	// Any PHP files in the project root
-	foreach ( glob( WP_CLI_BASE_PATH . '/*.php' ) as $file ) {
-		add_file( $phar, $file );
-	}
 }
 
 // other files

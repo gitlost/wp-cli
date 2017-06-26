@@ -124,18 +124,21 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
 
-			list( $time, $calls ) = array_reduce( Process::$run_times, function( $carry, $item ) {
+			list( $time, $calls ) = array_reduce( Process::$run_times, function ( $carry, $item ) {
 				return array( $carry[0] + $item[0], $carry[1] + $item[1] );
 			}, array( 0, 0 ) );
 			$mins = floor( $time / 60 );
 			$secs = round( $time - ( $mins * 60 ), 3 );
-			$log = "\nTotal run time=$time ({$mins}m{$secs}s), calls=$calls, unique=" . count( Process::$run_times );
+			$log = "\nTotal run time=" . round( $time, 3 ) . " ({$mins}m{$secs}s), calls=$calls, unique=" . count( Process::$run_times );
 
 			uasort( Process::$run_times, function ( $a, $b ) {
 				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
 			} );
 			$top = getenv( 'TRAVIS' ) ? 5 : 20;
-			$log .= "\nTop $top run_times\n" . print_r( array_slice( Process::$run_times, 0, $top, true ), true );
+			$tops = array_slice( Process::$run_times, 0, $top, true );
+			$log .= "\nTop $top run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
+				return sprintf( '%2d. %6.3f %2d %s', $i + 1, round( $v[0], 3 ), $v[1], $k );
+			}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) );
 
 			if ( getenv( 'TRAVIS' ) ) {
 				echo $log;
@@ -472,18 +475,60 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'admin_password' => 'password1'
 		);
 
-		$install_path = self::$install_dir ? ( self::$install_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir ) ) : '';
+		$install_path = '';
+		if ( self::$install_dir ) {
+			$install_path = self::$install_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir );
+			$dest_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
+		}
 
 		if ( $install_path && file_exists( $install_path ) ) {
-			$cmd = Utils\esc_cmd( '/usr/bin/env mysql -u%s -p%s -e%s %s', self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source $install_path;", self::$db_settings['dbname'] );
+			self::$fs->mirror( $install_path, $dest_dir );
+			$cmd = Utils\esc_cmd(
+				'/usr/bin/env mysql --no-defaults -q -s --skip-auto-rehash -u%s -p%s -e%s %s',
+				self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source {$install_path}.sql;", self::$db_settings['dbname']
+			);
 			Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 		} else {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_path ) {
-				$cmd = Utils\esc_cmd( '/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s', self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_path );
+				mkdir( $install_path );
+				self::dir_diff_cp( $dest_dir, self::$cache_dir, $install_path );
+				$cmd = Utils\esc_cmd(
+					'/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s',
+					self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_path . '.sql'
+				);
 				Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 			}
 		}
+	}
+
+	/**
+	 * Copy files in new directory that are not in old directory to destination directory.
+	 */
+	private static function dir_diff_cp( $new_dir, $old_dir, $dest_dir ) {
+		$copied = false;
+		$fd = opendir( $new_dir );
+		while ( false !== ( $file = readdir( $fd ) ) ) {
+			if ( '.' === $file || '..' === $file ) {
+				continue;
+			}
+			$new_file = $new_dir . '/' . $file;
+			$old_file = $old_dir . '/' . $file;
+			$dest_file = $dest_dir . '/' . $file;
+			if ( ! file_exists( $old_file ) ) {
+				if ( is_dir( $new_file ) ) {
+					self::$fs->mirror( $new_file, $dest_file );
+					$copied = true;
+				} else {
+					copy( $new_file, $dest_file );
+					$copied = true;
+				}
+			} elseif ( is_dir( $new_file ) && self::dir_diff_cp( $new_file, $old_file, $dest_file ) ) {
+				$copied = true;
+			}
+		}
+		closedir( $fd );
+		return $copied;
 	}
 
 	/**
@@ -518,4 +563,3 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 }
-
