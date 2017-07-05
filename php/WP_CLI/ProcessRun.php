@@ -6,8 +6,40 @@ namespace WP_CLI;
  * Results of an executed command.
  */
 class ProcessRun {
+	/**
+	 * @var string The full command executed by the system.
+	 */
+	public $command;
 
-	var $stdout, $stderr, $return_code, $command, $cwd, $env, $run_time;
+	/**
+	 * @var string Captured output from the process' STDOUT.
+	 */
+	public $stdout;
+
+	/**
+	 * @var string Captured output from the process' STDERR.
+	 */
+	public $stderr;
+
+	/**
+	 * @var string|null The path of the working directory for the process or NULL if not specified (defaults to current working directory).
+	 */
+	public $cwd;
+
+	/**
+	 * @var array Environment variables set for this process.
+	 */
+	public $env;
+
+	/**
+	 * @var int Exit code of the process.
+	 */
+	public $return_code;
+
+	/**
+	 * @var float The run time of the process.
+	 */
+	public $run_time;
 
 	/**
 	 * @var array $props Properties of executed command.
