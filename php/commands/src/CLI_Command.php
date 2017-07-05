@@ -352,7 +352,12 @@ class CLI_Command extends WP_CLI_Command {
 		$headers = array(
 			'Accept' => 'application/json'
 		);
-		$response = Utils\http_request( 'GET', $url, $headers, $options );
+
+		if ( $github_token = getenv( 'WP_CLI_GITHUB_TOKEN' ) ) {
+			$headers['Authorization'] = 'token ' . $github_token;
+		}
+
+		$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
 		if ( ! $response->success || 200 !== $response->status_code ) {
 			WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d).", $response->status_code ) );
