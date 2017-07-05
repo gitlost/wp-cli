@@ -137,7 +137,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			uasort( Process::$run_times, function ( $a, $b ) {
 				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
 			} );
-			$top = getenv( 'TRAVIS' ) ? 5 : 20;
+			$top = getenv( 'TRAVIS' ) ? 10 : 40;
 			$tops = array_slice( Process::$run_times, 0, $top, true );
 			$log .= "\nTop $top run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
 				return sprintf( '%2d. %6.3f %2d %s', $i + 1, round( $v[0], 3 ), $v[1], $k );
@@ -433,9 +433,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	public function download_wp( $subdir = '' ) {
-		$dest_dir = $this->variables['RUN_DIR'] . "/$subdir";
+		$dest_dir = $this->variables['RUN_DIR'];
 
 		if ( $subdir ) {
+			$dest_dir = $this->variables['RUN_DIR'] . "/$subdir";
 			mkdir( $dest_dir );
 		}
 
@@ -459,14 +460,18 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$params['extra-php'] = $extra_php;
 		}
 
-		$config_path = self::$install_dir ? ( self::$install_dir . '/config_' . md5( implode( ':', $params ) . ':subdir=' . $subdir ) ) : '';
+		$config_path = '';
+		if ( self::$install_dir ) {
+			$config_path = self::$install_dir . '/config_' . md5( implode( ':', $params ) . ':subdir=' . $subdir );
+			$run_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
+		}
 
 		if ( $config_path && file_exists( $config_path ) ) {
-			copy( $config_path, $this->variables['RUN_DIR'] . "/$subdir/wp-config.php" );
+			copy( $config_path, $run_dir . '/wp-config.php' );
 		} else {
 			$this->proc( 'wp core config', $params, $subdir )->run_check();
 			if ( $config_path ) {
-				copy( $this->variables['RUN_DIR'] . "/$subdir/wp-config.php", $config_path);
+				copy( $run_dir . '/wp-config.php', $config_path );
 			}
 		}
 	}
@@ -495,11 +500,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$install_path = '';
 		if ( self::$install_dir ) {
 			$install_path = self::$install_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir );
-			$dest_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
+			$run_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
 		}
 
 		if ( $install_path && file_exists( $install_path ) ) {
-			self::$fs->mirror( $install_path, $dest_dir );
+			self::$fs->mirror( $install_path, $run_dir );
 			$cmd = Utils\esc_cmd(
 				'/usr/bin/env mysql --no-defaults -q -s --skip-auto-rehash -u%s -p%s -e%s %s',
 				self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source {$install_path}.sql;", self::$db_settings['dbname']
@@ -509,7 +514,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_path ) {
 				mkdir( $install_path );
-				self::dir_diff_cp( $dest_dir, self::$cache_dir, $install_path );
+				self::dir_diff_cp( $run_dir, self::$cache_dir, $install_path );
 				$cmd = Utils\esc_cmd(
 					'/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s',
 					self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_path . '.sql'
@@ -522,12 +527,12 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	/**
 	 * Copy files in new directory that are not in old directory to destination directory.
 	 *
-	 * @param string $new_dir  The directory to search looking for files/directories not in `$old_dir`.
-	 * @param string $old_dir  The directory to be compared to `$new_dir`.
-	 * @param string $dest_dir Where to copy any files/directories in `$new_dir` but not in `$old_dir` to.
+	 * @param string $new_dir The directory to search looking for files/directories not in `$old_dir`.
+	 * @param string $old_dir The directory to be compared to `$new_dir`.
+	 * @param string $cp_dir  Where to copy any files/directories in `$new_dir` but not in `$old_dir` to.
 	 * @return bool Whether files copied or not.
 	 */
-	private static function dir_diff_cp( $new_dir, $old_dir, $dest_dir ) {
+	private static function dir_diff_cp( $new_dir, $old_dir, $cp_dir ) {
 		$copied = false;
 		$fd = opendir( $new_dir );
 		while ( false !== ( $file = readdir( $fd ) ) ) {
@@ -536,7 +541,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			}
 			$new_file = $new_dir . '/' . $file;
 			$old_file = $old_dir . '/' . $file;
-			$dest_file = $dest_dir . '/' . $file;
+			$dest_file = $cp_dir . '/' . $file;
 			if ( ! file_exists( $old_file ) ) {
 				if ( is_dir( $new_file ) ) {
 					self::$fs->mirror( $new_file, $dest_file );
@@ -558,14 +563,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$this->create_db();
 
 		$yml_path = $this->variables['RUN_DIR'] . "/wp-cli.yml";
-		Process::create( Utils\esc_cmd( 'mkdir -p %s', dirname( $yml_path ) ) )->run_check();
 		file_put_contents( $yml_path, 'path: wordpress' );
 
 		$this->proc( 'composer init --name="wp-cli/composer-test" --type="project" --no-interaction' )->run_check();
 		$this->proc( 'composer require johnpbloch/wordpress --optimize-autoloader --no-interaction' )->run_check();
 
 		$config_extra_php = "require_once dirname(__DIR__) . '/vendor/autoload.php';";
-		$this->create_config( '', $config_extra_php );
+		$this->create_config( 'wordpress', $config_extra_php );
 
 		$install_args = array(
 			'url' => 'http://localhost:8080',
@@ -587,9 +591,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 			$dest = $this->variables['COMPOSER_LOCAL_REPOSITORY'] . '/';
 
-			$this->proc( Utils\esc_cmd( "cp -r %s %s", $src, $dest ) )->run_check();
-			$this->proc( Utils\esc_cmd( "rm -rf %s", $dest . '/.git' ) )->run_check();
-			$this->proc( Utils\esc_cmd( "rm -rf %s", $dest . '/vendor' ) )->run_check();
+			self::$fs->mirror( $src, $dest );
+			self::$fs->remove( $dest . '/.git' );
+			self::$fs->remove( $dest . '/vendor' );
 
 			$this->proc( "composer config repositories.wp-cli '{\"type\": \"path\", \"url\": \"$dest\", \"options\": {\"symlink\": false}}'" )->run_check();
 		}
