@@ -26,7 +26,7 @@ Feature: `wp cli` tasks
     """
     And STDERR should be empty
 
-  # The latest 1.2.1 phar fails on Travis PHP 5.3 due to double slash in boot-phar.php path so need >= 5.4 to do cli update
+  # The latest 1.2.1 phar fails on Travis PHP 5.3 due to double slash in boot-phar.php path so need >= 5.4 to do cli update.
   @require-php-5.4
   Scenario: Do WP-CLI Update
     Given an empty directory
