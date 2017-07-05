@@ -374,7 +374,7 @@ class CLI_Command extends WP_CLI_Command {
 			// Not cached.
 			$max_age = $time = 0;
 			do {
-				$response = Utils\http_request( 'GET', $url, $headers, $options );
+				$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
 					if ( 403 === $response->status_code ) {
