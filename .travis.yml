@@ -5,6 +5,8 @@ language: php
 env:
   global:
     - WP_CLI_BIN_DIR=/tmp/wp-cli-phar
+  matrix:
+    secure: AT4gaEJlw3atKF7Q40wxdVGrHMLj5GhYy3RNrSF3XiHoW2iQKKG/kmnArGd8x6YtHjjXfE/7Gvb+9hKfIDM15Rn75rBJWHRI0M+Y1+0kbZLWhrkkgx6zBRvbqFZO0maBYCOW1ov5FIQe6YSKfy/I+IUuNwdL4XMv6JqduyCxVN/+oxvF2zX5pP4ontXwze36GxGIebzj4dFgMXf2ra4z7HDcoYLCinymp7z1M8wgB9QioQfdkdQ6Oq8mQUX4eOE3uQKvsGDR3eVe74aL3l49Rrwarz0bkeOWrKwX8ljQNOc2CZv/vAF1bkj0si7V6DeZ1EL/hhCO5YVLFnK+cCV2V9nkKOJ0KG6KVrjQE5fr4Iw1wXSPgsjI5ta79e4jN2KwBzPADMlE1lK7Br6F9l5T+n2d85YL4im2x5ynCOAsMIsuJI8WJz9Ml2l+v6OUg765RhmvYMuGPom9TwJwl4MRHX3i6d2/C+1yoONXa3N582vyLuPAxaoS49DfnTKrBVsLsyuV4mpoZVYy40i5HJ1e2xL9PLmJFlj5qihWRXHylm5zp01+Zydrk+3lUc4HhvZG/pnxu0v1wUzf5d4JKrJfZY1srh+Xh6Z2wPgDnCYvs+XlQOWOJAElwjj/zlU42361GFQoeJpjCFoAK1505CTcmXpx3Nj2LjTriO6ms1sTK5c=
 
 matrix:
   include:

@@ -195,10 +195,3 @@ $steps->Given( '/^a PHP built-in web server$/',
 		$world->start_php_server();
 	}
 );
-
-// Takes comma-separated file names.
-$steps->Given( '/^a wp-cli cache primed with ([^\s]+)( always)?$/',
-	function ( $world, $files, $always = '' ) {
-		$world->prime_wp_cli_cache( $world->replace_variables( $files ), $always );
-	}
-);

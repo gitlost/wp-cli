@@ -553,38 +553,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return $copied;
 	}
 
-	/**
-	 * Copy mock data to wp-cli cache for Travis.
-	 *
-	 * @param string $files  Comma-separated list of files.
-	 * @param bool   $always Optional. If true, files will always be copied. If false, files will only be copied if not already in cache. Default false.
-	 */
-	public function prime_wp_cli_cache( $files, $always = false ) {
-		// If not running on Travis, do nothing (for local non-mocked testing).
-		if ( ! getenv( 'TRAVIS' ) ) {
-			return;
-		}
-
-		$test_cache_dir = $this->variables['CACHE_DIR'];
-		$env = self::get_process_env_variables();
-		$home_cache_dir = $env['HOME'] . '/.wp-cli/cache';
-
-		$files = explode( ',', $files );
-		foreach ( $files as $file ) {
-			$test_cache_file = $test_cache_dir . '/' . $file;
-			$home_cache_file = $home_cache_dir . '/' . $file;
-
-			if ( file_exists( $test_cache_file ) && ( $always || ! file_exists( $home_cache_file ) ) ) {
-				if ( 'github_releases' === $file ) {
-					// Bump up the max_age and make the time now.
-					file_put_contents( $home_cache_file, preg_replace( '/^(a:3:{s:7:"max_age";i):[0-9]+(;s:4:"time";i):[0-9]+/', '$1:600$2:' . time(), file_get_contents( $test_cache_file ) ) );
-				} else {
-					copy( $test_cache_file, $home_cache_file );
-				}
-			}
-		}
-	}
-
 	public function install_wp_with_composer() {
 		$this->create_run_dir();
 		$this->create_db();

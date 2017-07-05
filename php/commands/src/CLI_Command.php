@@ -353,6 +353,10 @@ class CLI_Command extends WP_CLI_Command {
 			'Accept' => 'application/json'
 		);
 
+		if ( $github_token = getenv( 'WP_CLI_GITHUB_TOKEN' ) ) {
+			$headers['Authorization'] = 'token ' . $github_token;
+		}
+
 		$release_data = $cache_data = array();
 
 		// Cache results.
@@ -367,6 +371,7 @@ class CLI_Command extends WP_CLI_Command {
 		}
 
 		if ( ! $release_data ) {
+			// Not cached.
 			$max_age = $time = 0;
 			do {
 				$response = Utils\http_request( 'GET', $url, $headers, $options );
@@ -375,7 +380,7 @@ class CLI_Command extends WP_CLI_Command {
 					if ( 403 === $response->status_code ) {
 						if ( ! empty( $cache_data ) ) {
 							WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
-							$max_age = 0;
+							$max_age = 0; // Make sure not to write stale data to cache.
 							$release_data = $cache_data['release_data'];
 							break;
 						}
@@ -391,6 +396,7 @@ class CLI_Command extends WP_CLI_Command {
 						$time = time();
 					}
 				}
+				// Loop while have paged data ("next" link).
 			} while ( ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
 
 			if ( $max_age ) {
