@@ -385,7 +385,7 @@ class CLI_Command extends WP_CLI_Command {
 							break;
 						}
 					}
-					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d) (%susing WP_CLI_GITHUB_TOKEN).", $response->status_code, $github_token ? '' : ' NOT' ) );
+					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d) (%susing WP_CLI_GITHUB_TOKEN).", $response->status_code, $github_token ? '' : 'NOT ' ) );
 				}
 
 				$release_data = array_merge( $release_data, json_decode( $response->body ) );
