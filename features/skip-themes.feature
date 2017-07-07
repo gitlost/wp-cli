@@ -2,8 +2,12 @@ Feature: Skipping themes
 
   Scenario: Skipping themes via global flag
     Given a WP install
-    And I run `wp theme install classic`
-    And I run `wp theme install default --activate`
+    And download:
+      | path                    | url                                                     |
+      | {CACHE_DIR}/classic.zip | https://downloads.wordpress.org/theme/classic.1.6.zip   |
+      | {CACHE_DIR}/default.zip | https://downloads.wordpress.org/theme/default.1.7.2.zip |
+    And I run `wp theme install {CACHE_DIR}/classic.zip`
+    And I run `wp theme install {CACHE_DIR}/default.zip --activate`
 
     When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
     Then STDOUT should be:
@@ -116,14 +120,18 @@ Feature: Skipping themes
 
   Scenario: Skipping multiple themes via config file
     Given a WP install
+    And download:
+      | path                    | url                                                     |
+      | {CACHE_DIR}/classic.zip | https://downloads.wordpress.org/theme/classic.1.6.zip   |
+      | {CACHE_DIR}/default.zip | https://downloads.wordpress.org/theme/default.1.7.2.zip |
     And a wp-cli.yml file:
       """
       skip-themes:
         - classic
         - default
       """
-    And I run `wp theme install classic --activate`
-    And I run `wp theme install default`
+    And I run `wp theme install {CACHE_DIR}/classic.zip --activate`
+    And I run `wp theme install {CACHE_DIR}/default.zip`
     
     # The classic theme should show up as an active theme
     When I run `wp theme status`

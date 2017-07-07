@@ -47,7 +47,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir, $suite_cache_dir, $install_dir, $fs;
+	private static $cache_dir, $suite_cache_dir, $install_cache_dir, $fs;
 
 	private static $scenario_run_times = array();
 
@@ -144,14 +144,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			} );
 			$top = getenv( 'TRAVIS' ) ? 10 : 40;
 			$tops = array_slice( Process::$run_times, 0, $top, true );
-			$log .= "\n\nTop $top process run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
+			$log .= "\n\nTop $top process run times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
 				return sprintf( '%2d. %6.3f %2d %s', $i + 1, round( $v[0], 3 ), $v[1], $k );
 			}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) );
 
 			arsort( self::$scenario_run_times );
 			$top = getenv( 'TRAVIS' ) ? 10 : 20;
 			$tops = array_slice( self::$scenario_run_times, 0, $top, true );
-			$log .= "\n\nTop $top scenario run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
+			$log .= "\n\nTop $top scenario run times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
 				return sprintf( '%2d. %6.3f %s', $i + 1, round( $v, 3 ), $k );
 			}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) );
 
@@ -199,6 +199,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) && method_exists( $event, 'getScenario' ) ) {
 			$scenario = $event->getScenario();
 			self::$scenario_run_times[ basename( $scenario->getFile() ) . ':' . $scenario->getLine() ] += microtime( true );
+			$top = getenv( 'TRAVIS' ) ? 10 : 20;
+			if ( count( self::$scenario_run_times ) > $top ) {
+				arsort( self::$scenario_run_times );
+				self::$scenario_run_times = array_slice( self::$scenario_run_times, 0, $top, true );
+			}
 		}
 	}
 
@@ -417,7 +422,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	/**
 	 * Start a background process. Will automatically be closed when the tests finish.
 	 */
-	public function background_proc( $cmd ) {
+	public function background_proc( $cmd, $sleep = 1 ) {
 		$descriptors = array(
 			0 => STDIN,
 			1 => array( 'pipe', 'w' ),
@@ -426,14 +431,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['RUN_DIR'], self::get_process_env_variables() );
 
-		sleep(1);
-
-		$status = proc_get_status( $proc );
-
-		if ( !$status['running'] ) {
+		if ( false === $proc ) {
 			throw new RuntimeException( stream_get_contents( $pipes[2] ) );
 		} else {
 			$this->running_procs[] = $proc;
+		}
+
+		if ( $sleep ) {
+			sleep( $sleep );
 		}
 	}
 
@@ -482,26 +487,26 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$params['extra-php'] = $extra_php;
 		}
 
-		$config_path = '';
-		if ( self::$install_dir ) {
-			$config_path = self::$install_dir . '/config_' . md5( implode( ':', $params ) . ':subdir=' . $subdir );
+		$config_cache_path = '';
+		if ( self::$install_cache_dir ) {
+			$config_cache_path = self::$install_cache_dir . '/config_' . md5( implode( ':', $params ) . ':subdir=' . $subdir );
 			$run_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
 		}
 
-		if ( $config_path && file_exists( $config_path ) ) {
-			copy( $config_path, $run_dir . '/wp-config.php' );
+		if ( $config_cache_path && file_exists( $config_cache_path ) ) {
+			copy( $config_cache_path, $run_dir . '/wp-config.php' );
 		} else {
 			$this->proc( 'wp core config', $params, $subdir )->run_check();
-			if ( $config_path ) {
-				copy( $run_dir . '/wp-config.php', $config_path );
+			if ( $config_cache_path && file_exists( $run_dir . '/wp-config.php' ) ) {
+				copy( $run_dir . '/wp-config.php', $config_cache_path );
 			}
 		}
 	}
 
 	public function install_wp( $subdir = '' ) {
-		self::$install_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache';
-		if ( ! file_exists( self::$install_dir ) ) {
-			mkdir( self::$install_dir );
+		self::$install_cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache';
+		if ( ! file_exists( self::$install_cache_dir ) ) {
+			mkdir( self::$install_cache_dir );
 		}
 
 		$subdir = $this->replace_variables( $subdir );
@@ -519,27 +524,27 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'admin_password' => 'password1'
 		);
 
-		$install_path = '';
-		if ( self::$install_dir ) {
-			$install_path = self::$install_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir );
+		$install_cache_path = '';
+		if ( self::$install_cache_dir ) {
+			$install_cache_path = self::$install_cache_dir . '/install_' . md5( implode( ':', $install_args ) . ':subdir=' . $subdir );
 			$run_dir = '' !== $subdir ? ( $this->variables['RUN_DIR'] . "/$subdir" ) : $this->variables['RUN_DIR'];
 		}
 
-		if ( $install_path && file_exists( $install_path ) ) {
-			self::$fs->mirror( $install_path, $run_dir );
+		if ( $install_cache_path && file_exists( $install_cache_path ) ) {
+			self::$fs->mirror( $install_cache_path, $run_dir );
 			$cmd = Utils\esc_cmd(
-				'/usr/bin/env mysql --no-defaults -q -s --skip-auto-rehash -u%s -p%s -e%s %s',
-				self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source {$install_path}.sql;", self::$db_settings['dbname']
+				'/usr/bin/env mysql --no-defaults -q -s -u%s -p%s -e%s %s',
+				self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source {$install_cache_path}.sql;", self::$db_settings['dbname']
 			);
 			Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 		} else {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
-			if ( $install_path ) {
-				mkdir( $install_path );
-				self::dir_diff_cp( $run_dir, self::$cache_dir, $install_path );
+			if ( $install_cache_path ) {
+				mkdir( $install_cache_path );
+				self::dir_diff_cp( $run_dir, self::$cache_dir, $install_cache_path );
 				$cmd = Utils\esc_cmd(
 					'/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s',
-					self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_path . '.sql'
+					self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_cache_path . '.sql'
 				);
 				Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 			}
@@ -547,37 +552,34 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	/**
-	 * Copy files in new directory that are not in old directory to destination directory.
+	 * Copy files in updated directory that are not in source directory to copy directory. ("Incremental backup".)
 	 *
-	 * @param string $new_dir The directory to search looking for files/directories not in `$old_dir`.
-	 * @param string $old_dir The directory to be compared to `$new_dir`.
-	 * @param string $cp_dir  Where to copy any files/directories in `$new_dir` but not in `$old_dir` to.
-	 * @return bool Whether files copied or not.
+	 * @param string $upd_dir The directory to search looking for files/directories not in `$src_dir`.
+	 * @param string $src_dir The directory to be compared to `$upd_dir`.
+	 * @param string $cop_dir Where to copy any files/directories in `$upd_dir` but not in `$src_dir` to.
 	 */
-	private static function dir_diff_cp( $new_dir, $old_dir, $cp_dir ) {
-		$copied = false;
-		$fd = opendir( $new_dir );
+	private static function dir_diff_cp( $upd_dir, $src_dir, $cop_dir ) {
+		if ( false === ( $fd = opendir( $upd_dir ) ) ) {
+			throw new RuntimeException( $upd_dir );
+		}
 		while ( false !== ( $file = readdir( $fd ) ) ) {
 			if ( '.' === $file || '..' === $file ) {
 				continue;
 			}
-			$new_file = $new_dir . '/' . $file;
-			$old_file = $old_dir . '/' . $file;
-			$dest_file = $cp_dir . '/' . $file;
-			if ( ! file_exists( $old_file ) ) {
-				if ( is_dir( $new_file ) ) {
-					self::$fs->mirror( $new_file, $dest_file );
-					$copied = true;
+			$upd_file = $upd_dir . '/' . $file;
+			$src_file = $src_dir . '/' . $file;
+			$cop_file = $cop_dir . '/' . $file;
+			if ( ! file_exists( $src_file ) ) {
+				if ( is_dir( $upd_file ) ) {
+					self::$fs->mirror( $upd_file, $cop_file );
 				} else {
-					copy( $new_file, $dest_file );
-					$copied = true;
+					copy( $upd_file, $cop_file );
 				}
-			} elseif ( is_dir( $new_file ) && self::dir_diff_cp( $new_file, $old_file, $dest_file ) ) {
-				$copied = true;
+			} elseif ( is_dir( $upd_file ) ) {
+				self::dir_diff_cp( $upd_file, $src_file, $cop_file );
 			}
 		}
 		closedir( $fd );
-		return $copied;
 	}
 
 	public function install_wp_with_composer() {
