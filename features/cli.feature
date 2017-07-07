@@ -15,6 +15,7 @@ Feature: `wp cli` tasks
     {TRUE_VERSION}
     """
 
+  @travis-github-token
   Scenario: Check for updates
     Given an empty directory
     And a new Phar with version "0.0.0" and cli build
@@ -27,7 +28,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
 
   # The latest 1.2.1 phar fails on Travis PHP 5.3 due to double slash in boot-phar.php path so need >= 5.4 to do cli update
-  @require-php-5.4
+  @travis-github-token @require-php-5.4
   Scenario: Do WP-CLI Update
     Given an empty directory
     And a new Phar with version "0.0.0" and cli build
@@ -64,6 +65,7 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
+  @travis-github-token
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -93,7 +95,7 @@ Feature: `wp cli` tasks
       """
 
   # See above
-  @require-php-5.4
+  @travis-github-token @require-php-5.4
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -111,7 +113,7 @@ Feature: `wp cli` tasks
     And the return code should be 0
 
   # See above
-  @require-php-5.4
+  @travis-github-token @require-php-5.4
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -130,7 +132,7 @@ Feature: `wp cli` tasks
     And the return code should be 0
 
   # See above
-  @require-php-5.4
+  @travis-github-token @require-php-5.4
   Scenario: Install WP-CLI stable
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -159,7 +161,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    # This can hit github rate limiting on Travis as the latest 1.2.1 phar doesn't use WP_CLI_GITHUB_TOKEN.
+    # This can hit github rate limiting on Travis as the latest 1.2.1 phar doesn't use GITHUB_TOKEN.
     #When I run `{PHAR_PATH} cli check-update`
     #Then STDOUT should be:
       #"""

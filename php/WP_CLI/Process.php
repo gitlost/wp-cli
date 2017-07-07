@@ -68,7 +68,7 @@ class Process {
 
 		$run_time = microtime( true ) - $start_time;
 
-		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) ) {
 			if ( ! isset( self::$run_times[ $this->command ] ) ) {
 				self::$run_times[ $this->command ] = array( 0, 0 );
 			}

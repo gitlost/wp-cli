@@ -255,11 +255,19 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( "%s is not writable by current user.", dirname( $old_phar ) ) );
 		}
 
-		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
+		$nightly = Utils\get_flag_value( $assoc_args, 'nightly' );
+		$stable = Utils\get_flag_value( $assoc_args, 'stable' );
+
+		// If no version options given, default to stable.
+		if ( ! $nightly && ! $stable && ! Utils\get_flag_value( $assoc_args, 'patch' ) && ! Utils\get_flag_value( $assoc_args, 'minor' ) && ! Utils\get_flag_value( $assoc_args, 'major' ) ) {
+			$stable = true;
+		}
+
+		if ( $nightly ) {
 			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest nightly?', WP_CLI_VERSION ), $assoc_args );
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar.md5';
-		} else if ( Utils\get_flag_value( $assoc_args, 'stable' ) ) {
+		} elseif ( $stable ) {
 			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest stable release?', WP_CLI_VERSION ), $assoc_args );
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar.md5';
@@ -329,9 +337,9 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( "Cannot move %s to %s", $temp, $old_phar ) );
 		}
 
-		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
+		if ( $nightly ) {
 			$updated_version = 'the latest nightly release';
-		} else if ( Utils\get_flag_value( $assoc_args, 'stable' ) ) {
+		} elseif ( $stable ) {
 			$updated_version = 'the latest stable release';
 		} else {
 			$updated_version = $newest['version'];
@@ -353,7 +361,7 @@ class CLI_Command extends WP_CLI_Command {
 			'Accept' => 'application/json'
 		);
 
-		if ( $github_token = getenv( 'WP_CLI_GITHUB_TOKEN' ) ) {
+		if ( $github_token = getenv( 'GITHUB_TOKEN' ) ) {
 			$headers['Authorization'] = 'token ' . $github_token;
 		}
 
@@ -377,15 +385,16 @@ class CLI_Command extends WP_CLI_Command {
 				$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
+					$msg = sprintf( 'Failed to get latest version (HTTP code %d) (%susing GITHUB_TOKEN).', $response->status_code, $github_token ? '' : 'NOT ' );
 					if ( 403 === $response->status_code ) {
 						if ( ! empty( $cache_data ) ) {
-							WP_CLI::warning( sprintf( "Failed to get latest version (HTTP code %d) - using stale cache data.", $response->status_code ) );
+							WP_CLI::warning( $msg . ' - using stale cache data.' );
 							$max_age = 0; // Make sure not to write stale data to cache.
 							$release_data = $cache_data['release_data'];
 							break;
 						}
 					}
-					WP_CLI::error( sprintf( "Failed to get latest version (HTTP code %d) (%susing WP_CLI_GITHUB_TOKEN).", $response->status_code, $github_token ? '' : 'NOT ' ) );
+					WP_CLI::error( $msg );
 				}
 
 				$release_data = array_merge( $release_data, json_decode( $response->body ) );

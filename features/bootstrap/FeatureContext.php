@@ -49,6 +49,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	private static $cache_dir, $suite_cache_dir, $install_dir, $fs;
 
+	private static $scenario_run_times = array();
+
 	private static $db_settings = array(
 		'dbname' => 'wp_cli_test',
 		'dbuser' => 'wp_cli_test',
@@ -85,8 +87,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( $travis_build_dir = getenv( 'TRAVIS_BUILD_DIR' ) ) {
 			$env['TRAVIS_BUILD_DIR'] = $travis_build_dir;
 		}
-		if ( $github_token = getenv( 'WP_CLI_GITHUB_TOKEN' ) ) {
-			$env['WP_CLI_GITHUB_TOKEN'] = $github_token;
+		if ( $github_token = getenv( 'GITHUB_TOKEN' ) ) {
+			$env['GITHUB_TOKEN'] = $github_token;
 		}
 		return $env;
 	}
@@ -128,22 +130,29 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
 
-		if ( getenv( 'WP_CLI_TEST_PROCESS_RUN_TIMES' ) ) {
+		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) ) {
 
 			list( $time, $calls ) = array_reduce( Process::$run_times, function ( $carry, $item ) {
 				return array( $carry[0] + $item[0], $carry[1] + $item[1] );
 			}, array( 0, 0 ) );
 			$mins = floor( $time / 60 );
 			$secs = round( $time - ( $mins * 60 ), 3 );
-			$log = "\nTotal run time=" . round( $time, 3 ) . " ({$mins}m{$secs}s), calls=$calls, unique=" . count( Process::$run_times );
+			$log = "\n\nTotal process run time=" . round( $time, 3 ) . " ({$mins}m{$secs}s), calls=$calls, unique=" . count( Process::$run_times );
 
 			uasort( Process::$run_times, function ( $a, $b ) {
 				return $a[0] === $b[0] ? 0 : ( $a[0] < $b[0] ? 1 : -1 ); // Reverse sort.
 			} );
 			$top = getenv( 'TRAVIS' ) ? 10 : 40;
 			$tops = array_slice( Process::$run_times, 0, $top, true );
-			$log .= "\nTop $top run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
+			$log .= "\n\nTop $top process run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
 				return sprintf( '%2d. %6.3f %2d %s', $i + 1, round( $v[0], 3 ), $v[1], $k );
+			}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) );
+
+			arsort( self::$scenario_run_times );
+			$top = getenv( 'TRAVIS' ) ? 10 : 20;
+			$tops = array_slice( self::$scenario_run_times, 0, $top, true );
+			$log .= "\n\nTop $top scenario run_times\n" . implode( "\n", array_map( function ( $k, $v, $i ) {
+				return sprintf( '%2d. %6.3f %s', $i + 1, round( $v, 3 ), $k );
 			}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) );
 
 			if ( getenv( 'TRAVIS' ) ) {
@@ -158,6 +167,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * @BeforeScenario
 	 */
 	public function beforeScenario( $event ) {
+		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) && method_exists( $event, 'getScenario' ) ) {
+			$scenario = $event->getScenario();
+			self::$scenario_run_times[ basename( $scenario->getFile() ) . ':' . $scenario->getLine() ] = -microtime( true );
+		}
+
 		$this->variables['SRC_DIR'] = realpath( __DIR__ . '/../..' );
 	}
 
@@ -180,6 +194,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		foreach ( $this->running_procs as $proc ) {
 			$status = proc_get_status( $proc );
 			self::terminate_proc( $status['pid'] );
+		}
+
+		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) && method_exists( $event, 'getScenario' ) ) {
+			$scenario = $event->getScenario();
+			self::$scenario_run_times[ basename( $scenario->getFile() ) . ':' . $scenario->getLine() ] += microtime( true );
 		}
 	}
 

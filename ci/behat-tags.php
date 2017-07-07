@@ -45,7 +45,11 @@ $skip_tags = array_merge(
 );
 
 # Skip Github API tests by default because of rate limiting. See https://github.com/wp-cli/wp-cli/issues/1612
-$skip_tags[] = '@github-api';
+$skip_tags[] = '@github-api'; // Deprecated.
+# Skip Github API tests that require GITHUB_TOKEN if on Travis and it's not available.
+if ( getenv( 'TRAVIS' ) && ! getenv( 'GITHUB_TOKEN' ) ) {
+	$skip_tags[] = '@travis-github-token';
+}
 
 # Skip tests known to be broken.
 $skip_tags[] = '@broken';
