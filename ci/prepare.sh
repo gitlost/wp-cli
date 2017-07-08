@@ -9,9 +9,7 @@ WP_CLI_BIN_DIR=${WP_CLI_BIN_DIR-/tmp/wp-cli-phar}
 # Disable XDebug to speed up Composer and test suites.
 phpenv config-rm xdebug.ini
 
-composer global require hirak/prestissimo
-
-composer install --no-interaction --prefer-dist
+composer install --no-interaction --prefer-source
 
 CLI_VERSION=$(head -n 1 VERSION)
 if [[ $CLI_VERSION == *"-alpha"* ]]
