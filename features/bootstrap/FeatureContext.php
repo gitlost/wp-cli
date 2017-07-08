@@ -47,7 +47,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir, $suite_cache_dir, $install_cache_dir, $fs;
+	private static $cache_dir, $suite_cache_dir, $install_cache_dir, $composer_local_repository, $fs;
 
 	private static $scenario_run_times = array();
 
@@ -130,6 +130,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			self::$fs->remove( self::$suite_cache_dir );
 		}
 
+		if ( self::$composer_local_repository ) {
+			self::$fs->remove( self::$composer_local_repository );
+		}
+
 		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) ) {
 
 			list( $time, $calls ) = array_reduce( Process::$run_times, function ( $carry, $item ) {
@@ -199,10 +203,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) && method_exists( $event, 'getScenario' ) ) {
 			$scenario = $event->getScenario();
 			self::$scenario_run_times[ basename( $scenario->getFile() ) . ':' . $scenario->getLine() ] += microtime( true );
-			$top = getenv( 'TRAVIS' ) ? 10 : 20;
-			if ( count( self::$scenario_run_times ) > $top ) {
+			if ( count( self::$scenario_run_times ) > 20 ) {
 				arsort( self::$scenario_run_times );
-				self::$scenario_run_times = array_slice( self::$scenario_run_times, 0, $top, true );
+				array_pop( self::$scenario_run_times );
 			}
 		}
 	}
@@ -607,19 +610,17 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	public function composer_add_wp_cli_local_repository() {
-		if ( ! isset( $this->variables['COMPOSER_LOCAL_REPOSITORY'] ) ) {
-			$this->variables['COMPOSER_LOCAL_REPOSITORY'] = sys_get_temp_dir() . '/' . uniqid( "wp-cli-composer-local-", TRUE );
+		if ( ! self::$composer_local_repository ) {
+			self::$composer_local_repository = sys_get_temp_dir() . '/' . uniqid( "wp-cli-composer-local-", TRUE );
 
 			$env = self::get_process_env_variables();
 			$src = isset( $env['TRAVIS_BUILD_DIR'] ) ? $env['TRAVIS_BUILD_DIR'] : realpath( __DIR__ . '/../../' );
 
-			$dest = $this->variables['COMPOSER_LOCAL_REPOSITORY'] . '/';
+			self::$fs->mirror( $src, self::$composer_local_repository );
+			self::$fs->remove( self::$composer_local_repository . '/.git' );
+			self::$fs->remove( self::$composer_local_repository . '/vendor' );
 
-			self::$fs->mirror( $src, $dest );
-			self::$fs->remove( $dest . '/.git' );
-			self::$fs->remove( $dest . '/vendor' );
-
-			$this->proc( "composer config repositories.wp-cli '{\"type\": \"path\", \"url\": \"$dest\", \"options\": {\"symlink\": false}}'" )->run_check();
+			$this->proc( 'composer config repositories.wp-cli \'{"type": "path", "url": "' . self::$composer_local_repository. '/", "options": {"symlink": false}}\'' )->run_check();
 		}
 	}
 

@@ -365,8 +365,7 @@ class CLI_Command extends WP_CLI_Command {
 			$headers['Authorization'] = 'token ' . $github_token;
 		}
 
-		$release_data = array();
-		$cache_data = null;
+		$release_data = $cache_data = array();
 
 		// Cache results.
 		$cache = WP_CLI::get_cache();
@@ -374,13 +373,12 @@ class CLI_Command extends WP_CLI_Command {
 
 		if ( $cache->has( $cache_key ) ) {
 			$cache_data = unserialize( $cache->read( $cache_key ) );
-			if ( $cache_data && isset( $cache_data['time'] ) && is_int( $cache_data['time'] ) && isset( $cache_data['max_age'] ) && is_int( $cache_data['max_age'] )
-					&& isset( $cache_data['release_data'] ) && is_array( $cache_data['release_data'] ) && count( $cache_data['release_data'] ) ) {
+			if ( ! $cache_data || ! isset( $cache_data['time'] ) || ! isset( $cache_data['max_age'] ) || ! isset( $cache_data['release_data'] ) || ! is_array( $cache_data['release_data'] ) ) {
+				$cache_data = array();
+			} else {
 				if ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
 					$release_data = $cache_data['release_data'];
 				}
-			} else {
-				$cache_data = null;
 			}
 		}
 

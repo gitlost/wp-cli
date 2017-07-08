@@ -58,63 +58,67 @@ Feature: Skipping themes
 
   Scenario: Skip parent and child themes
     Given a WP install
-    And I run `wp theme install jolene biker`
+    And download:
+      | path                          | url                                                     |
+      | {CACHE_DIR}/default.zip       | https://downloads.wordpress.org/theme/default.1.7.2.zip |
+      | {CACHE_DIR}/default-child.zip | https://gitlostbonger.com/behat-data/default-child.zip  |
+    And I run `wp theme install {CACHE_DIR}/default.zip {CACHE_DIR}/default-child.zip`
 
-    When I run `wp theme activate jolene`
-    When I run `wp eval 'var_export( function_exists( "jolene_setup" ) );'`
+    When I run `wp theme activate default`
+    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=jolene eval 'var_export( function_exists( "jolene_setup" ) );'`
+    When I run `wp --skip-themes=default eval 'var_export( function_exists( "kubrick_head" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp theme activate biker`
-    When I run `wp eval 'var_export( function_exists( "jolene_setup" ) );'`
+    When I run `wp theme activate default-child`
+    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp eval 'var_export( function_exists( "biker_setup" ) );'`
+    When I run `wp eval 'var_export( function_exists( "default_child_theme_setup" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=biker eval 'var_export( function_exists( "jolene_setup" ) );'`
+    When I run `wp --skip-themes=default-child eval 'var_export( function_exists( "kubrick_head" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=biker eval 'var_export( function_exists( "biker_setup" ) );'`
+    When I run `wp --skip-themes=default-child eval 'var_export( function_exists( "default_child_theme_setup" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=biker eval 'echo get_template_directory();'`
+    When I run `wp --skip-themes=default-child eval 'echo get_template_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/jolene
+      wp-content/themes/default
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=biker eval 'echo get_stylesheet_directory();'`
+    When I run `wp --skip-themes=default-child eval 'echo get_stylesheet_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/biker
+      wp-content/themes/default-child
       """
     And STDERR should be empty
 
