@@ -11,7 +11,7 @@ phpenv config-rm xdebug.ini
 
 composer global require hirak/prestissimo
 
-composer install --no-interaction --prefer-source
+composer install --no-interaction --prefer-dist
 
 CLI_VERSION=$(head -n 1 VERSION)
 if [[ $CLI_VERSION == *"-alpha"* ]]
