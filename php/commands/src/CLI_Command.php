@@ -351,7 +351,8 @@ class CLI_Command extends WP_CLI_Command {
 	 * Returns update information.
 	 */
 	private function get_updates( $assoc_args ) {
-		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?per_page=100';
+		// Get by last updated descending.
+		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?sort=updated';
 
 		$options = array(
 			'timeout' => 30
@@ -367,41 +368,36 @@ class CLI_Command extends WP_CLI_Command {
 
 		$release_data = $cache_data = array();
 
-		// Cache results.
+		// See if there's cached data. This is a transient, valid only for `max-age` seconds.
 		$cache = WP_CLI::get_cache();
-		$cache_key = 'github_releases';
+		$cache_key = 'github_releases_' . WP_CLI_VERSION;
 
-		if ( $cache->has( $cache_key ) ) {
-			$cache_data = unserialize( $cache->read( $cache_key ) );
-			if ( ! $cache_data || ! isset( $cache_data['time'] ) || ! isset( $cache_data['max_age'] ) || ! isset( $cache_data['release_data'] ) || ! is_array( $cache_data['release_data'] ) ) {
-				$cache_data = array();
-			} else {
-				if ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
-					$release_data = $cache_data['release_data'];
-				}
+		if ( $cache->has( $cache_key ) && ( $cache_data = unserialize( $cache->read( $cache_key ) ) ) ) {
+			// Do some basic integrity checking.
+			if ( ! isset( $cache_data['time'], $cache_data['max_age'], $cache_data['release_data'] )
+					|| ! is_int( $cache_data['time'] ) || ! is_int( $cache_data['max_age'] ) || ! is_array( $cache_data['release_data'] ) ) {
+				$cache_data = null;
+			} elseif ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
+				$release_data = $cache_data['release_data'];
 			}
 		}
 
 		if ( ! $release_data ) {
-			// Not cached.
+			// No cached transient.
 			$max_age = $time = 0;
 			do {
 				$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
 				if ( ! $response->success || 200 !== $response->status_code ) {
 					$msg = sprintf( 'Failed to get latest version (HTTP code %d) (%susing GITHUB_TOKEN).', $response->status_code, $github_token ? '' : 'NOT ' );
-					if ( 403 === $response->status_code ) {
-						if ( $cache_data ) {
-							WP_CLI::warning( $msg . ' - using stale cache data.' );
-							$max_age = 0; // Make sure not to write stale data to cache.
-							$release_data = $cache_data['release_data'];
-							break;
-						}
+					if ( 403 === $response->status_code && $cache_data ) {
+						WP_CLI::warning( $msg . ' - using stale cache data.' );
+						$max_age = 0; // Make sure not to write stale data to cache.
+						$release_data = $cache_data['release_data'];
+						break;
 					}
 					WP_CLI::error( $msg );
 				}
-
-				$release_data = array_merge( $release_data, json_decode( $response->body ) );
 
 				if ( ! $max_age && isset( $response->headers['cache-control'] ) && preg_match( '/max-age=([0-9]+)/', $response->headers['cache-control'], $matches ) ) {
 					$max_age = (int) $matches[1];
@@ -409,14 +405,24 @@ class CLI_Command extends WP_CLI_Command {
 						$time = time();
 					}
 				}
-				// Loop while have paged data ("next" link).
-			} while ( ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
+
+				// Reduce the data to what's used and check if it has our release.
+				$has_our_release = false;
+				$release_data = array_merge( $release_data, array_map(
+					function ( $v ) use ( $has_our_release ) {
+						$has_our_release = $has_our_release || WP_CLI_VERSION === ltrim( $v->tag_name, 'v' );
+						return (object) array( 'tag_name' => $v->tag_name, 'assets' => array( (object) array( 'browser_download_url' => $v->assets[0]->browser_download_url ) ) );
+					}, json_decode( $response->body ) )
+				);
+
+				// Loop while don't have our release and have paged data ("next" link).
+			} while ( ! $has_our_release && ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
 
 			if ( $max_age ) {
 				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
 			}
 		}
-		unset( $cache_data );
+		unset( $cache_data, $response );
 
 		$updates = array(
 			'major'      => false,
