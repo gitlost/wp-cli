@@ -15,8 +15,6 @@ vendor/bin/behat --format progress $BEHAT_TAGS --strict
 
 if [[ -n $TEST_COMMANDS ]]; then
 	for R in vendor/wp-cli/*-command; do
-		echo "\n" $R
-		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php)
-		vendor/bin/behat --format progress $BEHAT_TAGS --strict $R/features
+		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_TAGS --strict $R/features
 	done
 fi
