@@ -352,7 +352,7 @@ class CLI_Command extends WP_CLI_Command {
 	 */
 	private function get_updates( $assoc_args ) {
 		// Get by last updated descending.
-		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?sort=updated';
+		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?sort=updated&per_page=100';
 
 		$options = array(
 			'timeout' => 30
@@ -366,11 +366,11 @@ class CLI_Command extends WP_CLI_Command {
 			$headers['Authorization'] = 'token ' . $github_token;
 		}
 
-		$release_data = $cache_data = array();
+		$release_data = $cache_data = null;
 
 		// See if there's cached data. This is a transient, valid only for `max-age` seconds.
 		$cache = WP_CLI::get_cache();
-		$cache_key = 'github_releases_' . WP_CLI_VERSION;
+		$cache_key = 'github_releases';
 
 		if ( $cache->has( $cache_key ) && ( $cache_data = unserialize( $cache->read( $cache_key ) ) ) ) {
 			// Do some basic integrity checking.
@@ -406,17 +406,15 @@ class CLI_Command extends WP_CLI_Command {
 					}
 				}
 
-				// Reduce the data to what's used and check if it has our release.
-				$has_our_release = false;
+				// Reduce the data to what's used.
 				$release_data = array_merge( $release_data, array_map(
-					function ( $v ) use ( $has_our_release ) {
-						$has_our_release = $has_our_release || WP_CLI_VERSION === ltrim( $v->tag_name, 'v' );
+					function ( $v ) {
 						return (object) array( 'tag_name' => $v->tag_name, 'assets' => array( (object) array( 'browser_download_url' => $v->assets[0]->browser_download_url ) ) );
 					}, json_decode( $response->body ) )
 				);
 
-				// Loop while don't have our release and have paged data ("next" link).
-			} while ( ! $has_our_release && ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
+				// Loop while have paged data ("next" link).
+			} while ( ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
 
 			if ( $max_age ) {
 				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
