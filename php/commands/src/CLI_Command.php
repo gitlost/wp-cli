@@ -366,7 +366,8 @@ class CLI_Command extends WP_CLI_Command {
 			$headers['Authorization'] = 'token ' . $github_token;
 		}
 
-		$release_data = $cache_data = null;
+		$release_data = array();
+		$cache_data = null;
 
 		// See if there's cached data. This is a transient, valid only for `max-age` seconds.
 		$cache = WP_CLI::get_cache();
