@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "6545d10240c6a9df6ff35a9038be873b",
+    "content-hash": "a3f02785c7e540cc717e816106c7d848",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -2060,16 +2060,16 @@
         },
         {
             "name": "wp-cli/media-command",
-            "version": "v1.0.3",
+            "version": "dev-wp_get_additional_image_sizes",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/media-command.git",
-                "reference": "dfa3b80a8d7fbc9fb90753d5bf59ba7efd541530"
+                "reference": "8b0696399ce3d555ee1482ea21e29812e07b3432"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/dfa3b80a8d7fbc9fb90753d5bf59ba7efd541530",
-                "reference": "dfa3b80a8d7fbc9fb90753d5bf59ba7efd541530",
+                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/8b0696399ce3d555ee1482ea21e29812e07b3432",
+                "reference": "8b0696399ce3d555ee1482ea21e29812e07b3432",
                 "shasum": ""
             },
             "require": {
@@ -2110,7 +2110,7 @@
             ],
             "description": "Import and regenerate attachments.",
             "homepage": "https://github.com/wp-cli/media-command",
-            "time": "2017-06-16T08:49:06+00:00"
+            "time": "2017-07-11 23:21:45"
         },
         {
             "name": "wp-cli/mustangostang-spyc",
@@ -3346,6 +3346,7 @@
     "stability-flags": {
         "wp-cli/core-command": 20,
         "wp-cli/db-command": 20,
+        "wp-cli/media-command": 20,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,

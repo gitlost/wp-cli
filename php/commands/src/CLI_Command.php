@@ -255,19 +255,11 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( "%s is not writable by current user.", dirname( $old_phar ) ) );
 		}
 
-		$nightly = Utils\get_flag_value( $assoc_args, 'nightly' );
-		$stable = Utils\get_flag_value( $assoc_args, 'stable' );
-
-		// If no version options given, default to stable.
-		if ( ! $nightly && ! $stable && ! Utils\get_flag_value( $assoc_args, 'patch' ) && ! Utils\get_flag_value( $assoc_args, 'minor' ) && ! Utils\get_flag_value( $assoc_args, 'major' ) ) {
-			$stable = true;
-		}
-
-		if ( $nightly ) {
+		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
 			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest nightly?', WP_CLI_VERSION ), $assoc_args );
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar.md5';
-		} elseif ( $stable ) {
+		} elseif ( Utils\get_flag_value( $assoc_args, 'stable' ) ) {
 			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest stable release?', WP_CLI_VERSION ), $assoc_args );
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar.md5';
@@ -337,9 +329,9 @@ class CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( sprintf( "Cannot move %s to %s", $temp, $old_phar ) );
 		}
 
-		if ( $nightly ) {
+		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
 			$updated_version = 'the latest nightly release';
-		} elseif ( $stable ) {
+		} elseif ( Utils\get_flag_value( $assoc_args, 'stable' ) ) {
 			$updated_version = 'the latest stable release';
 		} else {
 			$updated_version = $newest['version'];
