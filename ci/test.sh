@@ -10,10 +10,12 @@ vendor/bin/phpunit
 
 BEHAT_TAGS=$(php ci/behat-tags.php)
 
-# Run the functional tests
-vendor/bin/behat --format progress $BEHAT_TAGS --strict
+if [[ $TEST_COMMANDS -ne 1 ]]; then
+	# Run the functional tests
+	vendor/bin/behat --format progress $BEHAT_TAGS --strict
+fi
 
-if [[ -n $TEST_COMMANDS ]]; then
+if [[ $TEST_COMMANDS -eq 1 || $TEST_COMMANDS -eq 2 ]]; then
 	for R in vendor/wp-cli/*-command; do
 		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_TAGS --strict $R/features
 	done

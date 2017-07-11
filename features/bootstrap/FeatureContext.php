@@ -8,9 +8,6 @@ use Behat\Behat\Context\ClosuredContextInterface,
 use \WP_CLI\Process;
 use \WP_CLI\Utils;
 
-use Symfony\Component\Filesystem\Filesystem,
-	Symfony\Component\Filesystem\Exception\IOExceptionInterface;
-
 // Inside a community package
 if ( file_exists( __DIR__ . '/utils.php' ) ) {
 	require_once __DIR__ . '/utils.php';
@@ -47,7 +44,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir, $suite_cache_dir, $install_cache_dir, $composer_local_repository, $fs;
+	private static $cache_dir, $suite_cache_dir, $install_cache_dir, $composer_local_repository;
 
 	private static $suite_start_time;
 
@@ -98,14 +95,19 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	// We cache the results of `wp core download` to improve test performance
 	// Ideally, we'd cache at the HTTP layer for more reliable tests
 	private static function cache_wp_files() {
-		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-download-cache';
+		if ( $wp_version = getenv( 'WP_VERSION' ) ) {
+			$wp_version_suffix = '-' . $wp_version;
+		} else {
+			$wp_version_suffix = '';
+		}
+		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-download-cache' . $wp_version_suffix;
 
 		if ( is_readable( self::$cache_dir . '/wp-config-sample.php' ) )
 			return;
 
 		$cmd = Utils\esc_cmd( 'wp core download --force --path=%s', self::$cache_dir );
-		if ( getenv( 'WP_VERSION' ) ) {
-			$cmd .= Utils\esc_cmd( ' --version=%s', getenv( 'WP_VERSION' ) );
+		if ( $wp_version ) {
+			$cmd .= Utils\esc_cmd( ' --version=%s', $wp_version );
 		}
 		Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 	}
@@ -130,11 +132,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public static function afterSuite( SuiteEvent $event ) {
 		if ( self::$suite_cache_dir ) {
-			self::$fs->remove( self::$suite_cache_dir );
+			self::remove_dir( self::$suite_cache_dir );
 		}
 
 		if ( self::$composer_local_repository ) {
-			self::$fs->remove( self::$composer_local_repository );
+			self::remove_dir( self::$composer_local_repository );
 		}
 
 		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) ) {
@@ -159,19 +161,19 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	public function afterScenario( $event ) {
 		if ( isset( $this->variables['RUN_DIR'] ) ) {
 			// remove altered WP install, unless there's an error
-			if ( $event->getResult() < 4 && 0 === strpos( $this->variables['RUN_DIR'], sys_get_temp_dir() ) ) {
-				self::$fs->remove( $this->variables['RUN_DIR'] );
+			if ( $event->getResult() < 4 ) {
+				self::remove_dir( $this->variables['RUN_DIR'] );
 			}
 		}
 
 		// Remove WP-CLI package directory
 		if ( isset( $this->variables['PACKAGE_PATH'] ) ) {
-			self::$fs->remove( $this->variables['PACKAGE_PATH'] );
+			self::remove_dir( $this->variables['PACKAGE_PATH'] );
 		}
 
 		// Remove suite cache.
 		if ( self::$suite_cache_dir ) {
-			self::$fs->remove( self::$suite_cache_dir );
+			self::remove_dir( self::$suite_cache_dir );
 			self::$suite_cache_dir = null;
 		}
 
@@ -214,7 +216,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public static function create_cache_dir() {
 		if ( self::$suite_cache_dir ) {
-			self::$fs->remove( self::$suite_cache_dir );
+			self::remove_dir( self::$suite_cache_dir );
 		}
 		self::$suite_cache_dir = sys_get_temp_dir() . '/' . uniqid( "wp-cli-test-suite-cache-", TRUE );
 		mkdir( self::$suite_cache_dir );
@@ -243,9 +245,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$this->drop_db();
 		$this->set_cache_dir();
 		$this->variables['CORE_CONFIG_SETTINGS'] = Utils\assoc_args_to_str( self::$db_settings );
-		if ( ! self::$fs ) {
-			self::$fs = new FileSystem;
-		}
 	}
 
 	public function getStepDefinitionResources() {
@@ -348,7 +347,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		                                . uniqid( 'wp-cli-download-', true )
 		                                . '.phar';
 
-		Process::create( \WP_CLI\Utils\esc_cmd(
+		Process::create( Utils\esc_cmd(
 			'curl -sSfL %1$s > %2$s && chmod +x %2$s',
 			$download_url,
 			$this->variables['PHAR_PATH']
@@ -358,7 +357,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	private function set_cache_dir() {
 		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
 		if ( ! file_exists( $path ) ) {
-			mkdir( $path, 0777, true );
+			mkdir( $path );
 		}
 		$this->variables['CACHE_DIR'] = $path;
 	}
@@ -430,8 +429,15 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	/**
 	 * Remove a directory (recursive).
 	 */
-	public function remove_dir( $dir ) {
-		self::$fs->remove( $dir );
+	public static function remove_dir( $dir ) {
+		Process::create( Utils\esc_cmd( 'rm -rf %s', $dir ) )->run_check();
+	}
+
+	/**
+	 * Copy a directory (recursive). Destination directory must exist.
+	 */
+	public static function copy_dir( $src_dir, $dest_dir ) {
+		Process::create( Utils\esc_cmd( "cp -r %s/* %s", $src_dir, $dest_dir ) )->run_check();
 	}
 
 	public function add_line_to_wp_config( &$wp_config_code, $line ) {
@@ -445,10 +451,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		if ( $subdir ) {
 			$dest_dir = $this->variables['RUN_DIR'] . "/$subdir";
-			mkdir( $dest_dir );
+			mkdir( $dest_dir, 0777, true /*recursive*/ );
 		}
 
-		self::$fs->mirror( self::$cache_dir, $dest_dir );
+		self::copy_dir( self::$cache_dir, $dest_dir );
 
 		// disable emailing
 		mkdir( $dest_dir . '/wp-content/mu-plugins' );
@@ -485,7 +491,12 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	public function install_wp( $subdir = '' ) {
-		self::$install_cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache';
+		if ( $wp_version = getenv( 'WP_VERSION' ) ) {
+			$wp_version_suffix = '-' . $wp_version;
+		} else {
+			$wp_version_suffix = '';
+		}
+		self::$install_cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache' . $wp_version_suffix;
 		if ( ! file_exists( self::$install_cache_dir ) ) {
 			mkdir( self::$install_cache_dir );
 		}
@@ -512,22 +523,22 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 
 		if ( $install_cache_path && file_exists( $install_cache_path ) ) {
-			self::$fs->mirror( $install_cache_path, $run_dir );
+			self::copy_dir( $install_cache_path, $run_dir );
 			$cmd = Utils\esc_cmd(
 				'/usr/bin/env mysql --no-defaults -q -s -u%s -p%s -e%s %s',
 				self::$db_settings['dbuser'], self::$db_settings['dbpass'], "source {$install_cache_path}.sql;", self::$db_settings['dbname']
 			);
-			Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
+			Process::create( $cmd )->run_check();
 		} else {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_cache_path ) {
 				mkdir( $install_cache_path );
-				self::dir_diff_cp( $run_dir, self::$cache_dir, $install_cache_path );
+				self::dir_diff_copy( $run_dir, self::$cache_dir, $install_cache_path );
 				$cmd = Utils\esc_cmd(
 					'/usr/bin/env mysqldump --no-defaults -u%s -p%s %s > %s',
 					self::$db_settings['dbuser'], self::$db_settings['dbpass'], self::$db_settings['dbname'], $install_cache_path . '.sql'
 				);
-				Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
+				Process::create( $cmd )->run_check();
 			}
 		}
 	}
@@ -539,9 +550,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * @param string $src_dir The directory to be compared to `$upd_dir`.
 	 * @param string $cop_dir Where to copy any files/directories in `$upd_dir` but not in `$src_dir` to.
 	 */
-	private static function dir_diff_cp( $upd_dir, $src_dir, $cop_dir ) {
+	private static function dir_diff_copy( $upd_dir, $src_dir, $cop_dir ) {
 		if ( false === ( $fd = opendir( $upd_dir ) ) ) {
-			throw new RuntimeException( $upd_dir );
+			$error = error_get_last();
+			throw new \RuntimeException( sprintf( "Failed to open updated directory '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_dir, $error['message'] ) );
 		}
 		while ( false !== ( $file = readdir( $fd ) ) ) {
 			if ( '.' === $file || '..' === $file ) {
@@ -552,12 +564,19 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$cop_file = $cop_dir . '/' . $file;
 			if ( ! file_exists( $src_file ) ) {
 				if ( is_dir( $upd_file ) ) {
-					self::$fs->mirror( $upd_file, $cop_file );
+					if ( ! file_exists( $cop_file ) && ! mkdir( $cop_file, 0777, true /*recursive*/ ) ) {
+						$error = error_get_last();
+						throw new \RuntimeException( sprintf( "Failed to create copy directory '%s': %s. " . __FILE__ . ':' . __LINE__, $cop_file, $error['message'] ) );
+					}
+					self::copy_dir( $upd_file, $cop_file );
 				} else {
-					copy( $upd_file, $cop_file );
+					if ( ! copy( $upd_file, $cop_file ) ) {
+						$error = error_get_last();
+						throw new \RuntimeException( sprintf( "Failed to copy '%s' to '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_file, $cop_file, $error['message'] ) );
+					}
 				}
 			} elseif ( is_dir( $upd_file ) ) {
-				self::dir_diff_cp( $upd_file, $src_file, $cop_file );
+				self::dir_diff_copy( $upd_file, $src_file, $cop_file );
 			}
 		}
 		closedir( $fd );
@@ -590,13 +609,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	public function composer_add_wp_cli_local_repository() {
 		if ( ! self::$composer_local_repository ) {
 			self::$composer_local_repository = sys_get_temp_dir() . '/' . uniqid( "wp-cli-composer-local-", TRUE );
+			mkdir( self::$composer_local_repository );
 
 			$env = self::get_process_env_variables();
 			$src = isset( $env['TRAVIS_BUILD_DIR'] ) ? $env['TRAVIS_BUILD_DIR'] : realpath( __DIR__ . '/../../' );
 
-			self::$fs->mirror( $src, self::$composer_local_repository );
-			self::$fs->remove( self::$composer_local_repository . '/.git' );
-			self::$fs->remove( self::$composer_local_repository . '/vendor' );
+			self::copy_dir( $src, self::$composer_local_repository );
+			self::remove_dir( self::$composer_local_repository . '/.git' );
+			self::remove_dir( self::$composer_local_repository . '/vendor' );
 
 			$this->proc( 'composer config repositories.wp-cli \'{"type": "path", "url": "' . self::$composer_local_repository. '/", "options": {"symlink": false}}\'' )->run_check();
 		}
@@ -631,6 +651,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$this->background_proc( $cmd );
 	}
 
+	/**
+	 * Record the start time of a scenario.
+	 */
 	private static function log_run_times_before_scenario( $event ) {
 		$scenario = $event->getScenario();
 		$scenario_file = $scenario->getFile();
@@ -638,6 +661,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		self::$scenario_run_times[ $scenario_key ] = -microtime( true );
 	}
 
+	/**
+	 * Save the run time of a scenario into the `scenario_run_times` array. Only the top 20 are kept.
+	 */
 	private static function log_run_times_after_scenario( $event ) {
 		$scenario = $event->getScenario();
 		$scenario_file = $scenario->getFile();
@@ -650,6 +676,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
+	/**
+	 * Print out stats on the run times of processes and scenarios.
+	 */
 	private static function log_run_times_after_suite( $event ) {
 		$travis = getenv( 'TRAVIS' );
 
