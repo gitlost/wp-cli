@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "5e0c06803f107a5c7a82436ef02a52c1",
+    "content-hash": "6545d10240c6a9df6ff35a9038be873b",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1632,16 +1632,16 @@
         },
         {
             "name": "wp-cli/db-command",
-            "version": "v1.1.0",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/db-command.git",
-                "reference": "4c65adbd92e81df140beaa985f101b2905561666"
+                "reference": "c2d5478e996609e105c25187aaa28713c033d9b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/db-command/zipball/4c65adbd92e81df140beaa985f101b2905561666",
-                "reference": "4c65adbd92e81df140beaa985f101b2905561666",
+                "url": "https://api.github.com/repos/wp-cli/db-command/zipball/c2d5478e996609e105c25187aaa28713c033d9b2",
+                "reference": "c2d5478e996609e105c25187aaa28713c033d9b2",
                 "shasum": ""
             },
             "require": {
@@ -1662,6 +1662,7 @@
                     "db reset",
                     "db check",
                     "db optimize",
+                    "db prefix",
                     "db repair",
                     "db cli",
                     "db query",
@@ -1692,7 +1693,7 @@
             ],
             "description": "Perform basic database operations using credentials stored in wp-config.php.",
             "homepage": "https://github.com/wp-cli/db-command",
-            "time": "2017-05-30T18:57:35+00:00"
+            "time": "2017-07-11 19:53:14"
         },
         {
             "name": "wp-cli/entity-command",
@@ -3344,6 +3345,7 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "wp-cli/core-command": 20,
+        "wp-cli/db-command": 20,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,
