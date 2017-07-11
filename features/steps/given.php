@@ -12,7 +12,11 @@ $steps->Given( '/^an empty directory$/',
 
 $steps->Given( '/^an empty ([^\s]+) directory$/',
 	function ( $world, $dir ) {
-		$world->remove_dir( $world->replace_variables( $dir ) );
+		$dir = $world->replace_variables( $dir );
+		if ( 0 !== strpos( $dir, sys_get_temp_dir() ) ) {
+			throw new \RuntimeExeception( sprintf( "Attempted to delete directory '%s' that is not in the temporary directory '%s'. " . __FILE__ . ':' . __LINE__, $dir, sys_get_temp_dir() ) );
+		}
+		$world->remove_dir( $dir );
 	}
 );
 
@@ -28,7 +32,7 @@ $steps->Given( '/^an? ([^\s]+) file:$/',
 		$full_path = $world->variables['RUN_DIR'] . "/$path";
 		$dir = dirname( $full_path );
 		if ( ! file_exists( $dir ) ) {
-			mkdir( $dir, 0777, true );
+			mkdir( $dir, 0777, true /*recursive*/ );
 		}
 		file_put_contents( $full_path, $content );
 	}
