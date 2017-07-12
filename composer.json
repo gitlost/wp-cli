@@ -49,7 +49,7 @@
 		"wp-cli/extension-command": "^1.0",
 		"wp-cli/import-command": "^1.0",
 		"wp-cli/language-command": "^1.0",
-		"wp-cli/media-command": "dev-wp_get_additional_image_sizes",
+		"wp-cli/media-command": "dev-master",
 		"wp-cli/mustangostang-spyc": "^0.6.3",
 		"wp-cli/package-command": "^1.0",
 		"wp-cli/php-cli-tools": "~0.11.2",
