@@ -587,7 +587,7 @@ class WP_CLI {
 	 * @return null
 	 */
 	public static function line( $message = '' ) {
-		echo $message . "\n";
+		echo $message . PHP_EOL;
 	}
 
 	/**
@@ -862,7 +862,7 @@ class WP_CLI {
 			$value = var_export( $value );
 		}
 
-		echo $value . "\n";
+		echo $value . PHP_EOL;
 	}
 
 	/**

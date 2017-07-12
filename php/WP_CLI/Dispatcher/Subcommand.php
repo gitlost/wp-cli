@@ -36,7 +36,7 @@ class Subcommand extends CompositeCommand {
 	 * @return string
 	 */
 	private static function extract_synopsis( $longdesc ) {
-		preg_match_all( '/(.+?)[\r\n]+:/', $longdesc, $matches );
+		preg_match_all( '/(.+?)\R+:/', $longdesc, $matches );
 		return implode( ' ', $matches[1] );
 	}
 
@@ -343,7 +343,7 @@ class Subcommand extends CompositeCommand {
 		if ( !empty( $errors['fatal'] ) ) {
 			$out = 'Parameter errors:';
 			foreach ( $errors['fatal'] as $key => $error ) {
-				$out .= "\n {$error}";
+				$out .= PHP_EOL . $error;
 				if ( $desc = $docparser->get_param_desc( $key ) ) {
 					$out .= " ({$desc})";
 				}

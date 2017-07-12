@@ -430,7 +430,7 @@ class Runner {
 	public function get_wp_config_code() {
 		$wp_config_path = Utils\locate_wp_config();
 
-		$wp_config_code = explode( "\n", file_get_contents( $wp_config_path ) );
+		$wp_config_code = explode( PHP_EOL, file_get_contents( $wp_config_path ) );
 
 		$found_wp_settings = false;
 
@@ -449,7 +449,7 @@ class Runner {
 			WP_CLI::error( 'Strange wp-config.php file: wp-settings.php is not loaded directly.' );
 		}
 
-		$source = implode( "\n", $lines_to_run );
+		$source = implode( PHP_EOL, $lines_to_run );
 		$source = Utils\replace_path_consts( $source, $wp_config_path );
 		return preg_replace( '|^\s*\<\?php\s*|', '', $source );
 	}
@@ -649,8 +649,8 @@ class Runner {
 	private function check_wp_version() {
 		if ( !$this->wp_exists() ) {
 			WP_CLI::error(
-				"This does not seem to be a WordPress install.\n" .
-				"Pass --path=`path/to/wordpress` or run `wp core download`." );
+				'This does not seem to be a WordPress install.' . PHP_EOL .
+				'Pass --path=`path/to/wordpress` or run `wp core download`.' );
 		}
 
 		global $wp_version;
@@ -661,8 +661,8 @@ class Runner {
 		// @codingStandardsIgnoreStart
 		if ( version_compare( $wp_version, $minimum_version, '<' ) ) {
 			WP_CLI::error(
-				"WP-CLI needs WordPress $minimum_version or later to work properly. " .
-				"The version currently installed is $wp_version.\n" .
+				"WP-CLI needs WordPress $minimum_version or later to work properly. " . PHP_EOL .
+				"The version currently installed is $wp_version." . PHP_EOL .
 				"Try running `wp core download --force`."
 			);
 		}
@@ -729,20 +729,20 @@ class Runner {
 
 		WP_CLI::error(
 			"YIKES! It looks like you're running this as root. You probably meant to " .
-			"run this as the user that your WordPress install exists under.\n" .
-			"\n" .
+			"run this as the user that your WordPress install exists under." . PHP_EOL .
+			PHP_EOL .
 			"If you REALLY mean to run this as root, we won't stop you, but just " .
 			"bear in mind that any code on this site will then have full control of " .
-			"your server, making it quite DANGEROUS.\n" .
-			"\n" .
+			"your server, making it quite DANGEROUS." . PHP_EOL .
+			PHP_EOL .
 			"If you'd like to continue as root, please run this again, adding this " .
-			"flag:  --allow-root\n" .
-			"\n" .
+			"flag:  --allow-root" . PHP_EOL .
+			PHP_EOL .
 			"If you'd like to run it as the user that this site is under, you can " .
-			"run the following to become the respective user:\n" .
-			"\n" .
-			"    sudo -u USER -i -- wp <command>\n" .
-			"\n"
+			"run the following to become the respective user:" . PHP_EOL .
+			PHP_EOL .
+			"    sudo -u USER -i -- wp <command>" . PHP_EOL .
+			PHP_EOL
 		);
 	}
 
@@ -883,7 +883,7 @@ class Runner {
 
 		if ( !Utils\locate_wp_config() ) {
 			WP_CLI::error(
-				"'wp-config.php' not found.\n" .
+				"'wp-config.php' not found." . PHP_EOL .
 				"Either create one manually or use `wp config create`." );
 		}
 
@@ -960,7 +960,7 @@ class Runner {
 		$wp_config_path = Utils\locate_wp_config();
 		if ( ! $wp_config_path ) {
 			WP_CLI::error(
-				"'wp-config.php' not found.\n" .
+				"'wp-config.php' not found." . PHP_EOL .
 				"Either create one manually or use `wp config create`." );
 		}
 

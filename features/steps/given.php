@@ -28,7 +28,7 @@ $steps->Given( '/^an empty cache/',
 
 $steps->Given( '/^an? ([^\s]+) file:$/',
 	function ( $world, $path, PyStringNode $content ) {
-		$content = (string) $content . "\n";
+		$content = (string) $content . PHP_EOL;
 		$full_path = $world->variables['RUN_DIR'] . "/$path";
 		Process::create( \WP_CLI\utils\esc_cmd( 'mkdir -p %s', dirname( $full_path ) ) )->run_check();
 		file_put_contents( $full_path, $content );
@@ -139,7 +139,7 @@ $steps->Given( '/^save (STDOUT|STDERR) ([\'].+[^\'])?\s?as \{(\w+)\}$/',
 		} else {
 			$output = $world->result->$stream;
 		}
-		$world->variables[ $key ] = trim( $output, "\n" );
+		$world->variables[ $key ] = trim( $output, PHP_EOL );
 	}
 );
 
@@ -168,7 +168,7 @@ $steps->Given( '/^save the (.+) file ([\'].+[^\'])?as \{(\w+)\}$/',
 		} else {
 			$output = $full_file;
 		}
-		$world->variables[ $key ] = trim( $output, "\n" );
+		$world->variables[ $key ] = trim( $output, PHP_EOL );
 	}
 );
 

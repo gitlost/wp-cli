@@ -15,7 +15,7 @@ function invoke_proc( $proc, $mode ) {
 }
 
 function capture_email_sends( $stdout ) {
-	$stdout = preg_replace( '#WP-CLI test suite: Sent email to.+\n?#', '', $stdout, -1, $email_sends );
+	$stdout = preg_replace( '#WP-CLI test suite: Sent email to.+\R?#', '', $stdout, -1, $email_sends );
 	return array( $stdout, $email_sends );
 }
 

@@ -20,7 +20,7 @@ class Regular extends Base {
 	 * @param string $message Message to write.
 	 */
 	public function info( $message ) {
-		$this->write( STDOUT, $message . "\n" );
+		$this->write( STDOUT, $message . PHP_EOL );
 	}
 
 	/**
@@ -65,15 +65,15 @@ class Regular extends Base {
 
 		// write an empty line before the message
 		$empty_line = \cli\Colors::colorize( '%w%1 ' . str_repeat( ' ', $longest ) . ' %n' );
-		$this->write( STDERR, "\n\t$empty_line\n" );
+		$this->write( STDERR, PHP_EOL . "\t$empty_line" . PHP_EOL );
 
 		foreach ( $message_lines as $line ) {
 			$padding = str_repeat( ' ', $longest - strlen( $line ) );
 			$line = \cli\Colors::colorize( "%w%1 $line $padding%n" );
-			$this->write( STDERR, "\t$line\n" );
+			$this->write( STDERR, "\t$line" . PHP_EOL );
 		}
 
 		// write an empty line after the message
-		$this->write( STDERR, "\t$empty_line\n\n" );
+		$this->write( STDERR, "\t$empty_line" . PHP_EOL . PHP_EOL );
 	}
 }

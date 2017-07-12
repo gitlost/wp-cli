@@ -61,16 +61,16 @@ class Help_Command extends WP_CLI_Command {
 		// Remove subcommands if in columns - will wordwrap separately.
 		$subcommands = '';
 		$column_subpattern = '[ \t]+[^\t]+\t+';
-		if ( preg_match( '/(^## SUBCOMMANDS[^\n]*\n+' . $column_subpattern . '.+?)(?:^##|\z)/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
+		if ( preg_match( '/(^## SUBCOMMANDS\N*\R+' . $column_subpattern . '.+?)(?:^##|\z)/ms', $out, $matches, PREG_OFFSET_CAPTURE ) ) {
 			$subcommands = $matches[1][0];
-			$subcommands_header = "## SUBCOMMANDS\n";
+			$subcommands_header = '## SUBCOMMANDS' . PHP_EOL;
 			$out = substr_replace( $out, $subcommands_header, $matches[1][1], strlen( $subcommands ) );
 		}
 
 		$out .= $command->get_longdesc();
 
 		// definition lists
-		$out = preg_replace_callback( '/([^\n]+)\n: (.+?)(\n\n|$)/s', array( __CLASS__, 'rewrap_param_desc' ), $out );
+		$out = preg_replace_callback( '/(\N+)\R: (.+?)(\R\R|$)/s', array( __CLASS__, 'rewrap_param_desc' ), $out );
 
 		// Ensure all non-section headers are indented.
 		$out = preg_replace( '#^([^\s^\#])#m', "\t$1", $out );
@@ -83,19 +83,19 @@ class Help_Command extends WP_CLI_Command {
 		$wordwrap_width = \cli\Shell::columns();
 
 		// Wordwrap with indent.
-		$out = preg_replace_callback( '/^( *)([^\n]+)\n/m', function ( $matches ) use ( $wordwrap_width ) {
-			return $matches[1] . str_replace( "\n", "\n{$matches[1]}", wordwrap( $matches[2], $wordwrap_width - strlen( $matches[1] ) ) ) . "\n";
+		$out = preg_replace_callback( '/^( *)(\N+)\R/m', function ( $matches ) use ( $wordwrap_width ) {
+			return $matches[1] . str_replace( PHP_EOL, PHP_EOL . $matches[1], wordwrap( $matches[2], $wordwrap_width - strlen( $matches[1] ) ) ) . PHP_EOL;
 		}, $out );
 
 		if ( $subcommands ) {
 			// Wordwrap with column indent.
-			$subcommands = preg_replace_callback( '/^(' . $column_subpattern . ')([^\n]+)\n/m', function ( $matches ) use ( $wordwrap_width, $tab ) {
+			$subcommands = preg_replace_callback( '/^(' . $column_subpattern . ')(\N+)\R/m', function ( $matches ) use ( $wordwrap_width, $tab ) {
 				// Need to de-tab for wordwrapping to work properly.
 				$matches[1] = str_replace( "\t", $tab, $matches[1] );
 				$matches[2] = str_replace( "\t", $tab, $matches[2] );
 				$padding_len = strlen( $matches[1] );
 				$padding = str_repeat( ' ', $padding_len );
-				return $matches[1] . str_replace( "\n", "\n$padding", wordwrap( $matches[2], $wordwrap_width - $padding_len ) ) . "\n";
+				return $matches[1] . str_replace( PHP_EOL, PHP_EOL . $padding, wordwrap( $matches[2], $wordwrap_width - $padding_len ) ) . PHP_EOL;
 			}, $subcommands );
 
 			// Put subcommands back.
@@ -111,15 +111,15 @@ class Help_Command extends WP_CLI_Command {
 	private static function rewrap_param_desc( $matches ) {
 		$param = $matches[1];
 		$desc = self::indent( "\t\t", $matches[2] );
-		return "\t$param\n$desc\n\n";
+		return "\t" . $param . PHP_EOL . $desc . PHP_EOL . PHP_EOL;
 	}
 
 	private static function indent( $whitespace, $text ) {
-		$lines = explode( "\n", $text );
+		$lines = explode( PHP_EOL, $text );
 		foreach ( $lines as &$line ) {
 			$line = $whitespace . $line;
 		}
-		return implode( $lines, "\n" );
+		return implode( $lines, PHP_EOL );
 	}
 
 	private static function pass_through_pager( $out ) {

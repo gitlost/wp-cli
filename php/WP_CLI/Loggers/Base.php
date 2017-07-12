@@ -71,7 +71,7 @@ abstract class Base {
 		} else {
 			$label = "$label:";
 		}
-		$this->write( $handle, "$label $message\n" );
+		$this->write( $handle, "$label $message" . PHP_EOL );
 	}
 
 }

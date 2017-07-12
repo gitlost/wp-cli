@@ -46,7 +46,7 @@ class LoggingTests extends PHPUnit_Framework_TestCase {
 
 		$message = 'foo%20bar';
 
-		$this->expectOutputString( "Success: $message\n" );
+		$this->expectOutputString( 'Success: ' . $message . PHP_EOL );
 		$logger->success( $message );
 	}
 }

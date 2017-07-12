@@ -28,7 +28,7 @@ class CommandFactoryTests extends PHPUnit_Framework_TestCase {
 			array( "/**/", false ),
 			array( "/***/ */", false ),
 			array( "/***/", "/***/" ),
-			array( "\n /**\n  \n  \t\n  */ \t\n \n ", "/**\n  \n  \t\n  */" ),
+			array( PHP_EOL . " /**" . PHP_EOL . "  " . PHP_EOL . "  \t" . PHP_EOL . "  */ \t" . PHP_EOL . " " . PHP_EOL . " ", "/**" . PHP_EOL . "  " . PHP_EOL . "  \t" . PHP_EOL . "  */" ),
 			array( "/**/ /***/ /***/", "/***/" ),
 			array( "asdfasdf/** /** */", "/** /** */" ),
 			array( "*//** /** */", "/** /** */" ),
@@ -38,12 +38,12 @@ class CommandFactoryTests extends PHPUnit_Framework_TestCase {
 
 			array( "/** */class qwer", "/** */" ),
 			array( "/**1*/class qwer{}/**2*/class asdf", "/**2*/" ),
-			array( "/** */class qwer {}\nclass asdf", false ),
+			array( "/** */class qwer {}" . PHP_EOL . "class asdf", false ),
 
 			array( "/** */function qwer", "/** */" ),
 			array( "/** */function qwer( \$function ) {}", "/** */" ),
 			array( "/**1*/function qwer() {}/**2*/function asdf()", "/**2*/" ),
-			array( "/** */function qwer() {}\nfunction asdf()", false ),
+			array( "/** */function qwer() {}" . PHP_EOL . "function asdf()", false ),
 			array( "/** */function qwer() {}function asdf()", false ),
 			array( "/** */function qwer() {};function asdf( \$function )", false ),
 		);

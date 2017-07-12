@@ -51,9 +51,9 @@ class ProcessRun {
 	 * @return string
 	 */
 	public function __toString() {
-		$out  = "$ $this->command\n";
-		$out .= "$this->stdout\n$this->stderr";
-		$out .= "cwd: $this->cwd\n";
+		$out  = "$ $this->command" . PHP_EOL;
+		$out .= "$this->stdout" . PHP_EOL . "$this->stderr";
+		$out .= "cwd: $this->cwd" . PHP_EOL;
 		$out .= "exit status: $this->return_code";
 
 		return $out;

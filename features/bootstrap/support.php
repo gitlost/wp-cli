@@ -30,7 +30,7 @@ function checkString( $output, $expected, $action, $message = false ) {
 	switch ( $action ) {
 
 	case 'be':
-		$r = $expected === rtrim( $output, "\n" );
+		$r = $expected === rtrim( $output, PHP_EOL );
 		break;
 
 	case 'contain':

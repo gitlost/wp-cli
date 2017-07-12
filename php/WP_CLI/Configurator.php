@@ -200,7 +200,7 @@ class Configurator {
 	private function assoc_arg_to_runtime_config( $key, $value, &$runtime_config ) {
 		$details = $this->spec[ $key ];
 		if ( isset( $details['deprecated'] ) ) {
-			fwrite( STDERR, "WP-CLI: The --{$key} global parameter is deprecated. {$details['deprecated']}\n" );
+			fwrite( STDERR, "WP-CLI: The --{$key} global parameter is deprecated. {$details['deprecated']}" . PHP_EOL );
 		}
 
 		if ( $details['multiple'] ) {
