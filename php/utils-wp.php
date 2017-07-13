@@ -7,7 +7,7 @@ namespace WP_CLI\Utils;
 function wp_not_installed() {
 	if ( !is_blog_installed() && !defined( 'WP_INSTALLING' ) ) {
 		\WP_CLI::error(
-			'The site you have requested is not installed.' . PHP_EOL .
+			"The site you have requested is not installed.\n" .
 			'Run `wp core install`.' );
 	}
 }

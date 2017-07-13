@@ -52,7 +52,7 @@ class ProcessRun {
 	 */
 	public function __toString() {
 		$out  = "$ $this->command" . PHP_EOL;
-		$out .= "$this->stdout" . PHP_EOL . "$this->stderr";
+		$out .= Utils\denormalize_newlines( $this->stdout ) . PHP_EOL . Utils\denormalize_newlines( $this->stderr );
 		$out .= "cwd: $this->cwd" . PHP_EOL;
 		$out .= "exit status: $this->return_code";
 

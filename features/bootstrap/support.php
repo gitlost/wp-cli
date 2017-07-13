@@ -27,14 +27,10 @@ function assertNotNumeric( $actual ) {
 }
 
 function checkString( $output, $expected, $action, $message = false ) {
-	// Make sure line endings are the same
-	$output = preg_replace( '/\R/', PHP_EOL, $output );
-	$expected = preg_replace( '/\R/', PHP_EOL, $expected );
-
 	switch ( $action ) {
 
 	case 'be':
-		$r = $expected === rtrim( $output, PHP_EOL );
+		$r = $expected === rtrim( $output, "\n" );
 		break;
 
 	case 'contain':
@@ -147,7 +143,7 @@ function checkThatJsonStringContainsJsonString( $actualJson, $expectedJson ) {
  * @return bool     Whether $actualCSV contains $expectedCSV
  */
 function checkThatCsvStringContainsValues( $actualCSV, $expectedCSV ) {
-	$actualCSV = array_map( 'str_getcsv', explode( PHP_EOL, $actualCSV ) );
+	$actualCSV = array_map( 'str_getcsv', explode( "\n", $actualCSV ) );
 
 	if ( empty( $actualCSV ) )
 		return false;

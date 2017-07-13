@@ -54,7 +54,7 @@ abstract class Base {
 	 * @param string $str Message to write.
 	 */
 	protected function write( $handle, $str ) {
-		fwrite( $handle, $str );
+		fwrite( $handle, \WP_CLI\Utils\denormalize_newlines( $str ) );
 	}
 
 	/**
@@ -71,7 +71,7 @@ abstract class Base {
 		} else {
 			$label = "$label:";
 		}
-		$this->write( $handle, "$label $message" . PHP_EOL );
+		$this->write( $handle, "$label $message\n" );
 	}
 
 }

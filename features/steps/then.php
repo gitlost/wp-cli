@@ -27,7 +27,7 @@ $steps->Then( '/^(STDOUT|STDERR) should be a number$/',
 
 		$stream = strtolower( $stream );
 
-		assertNumeric( trim( $world->result->$stream, PHP_EOL ) );
+		assertNumeric( trim( $world->result->$stream, "\n" ) );
 	}
 );
 
@@ -36,14 +36,14 @@ $steps->Then( '/^(STDOUT|STDERR) should not be a number$/',
 
 		$stream = strtolower( $stream );
 
-		assertNotNumeric( trim( $world->result->$stream, PHP_EOL ) );
+		assertNotNumeric( trim( $world->result->$stream, "\n" ) );
 	}
 );
 
 $steps->Then( '/^STDOUT should be a table containing rows:$/',
 	function ( $world, TableNode $expected ) {
 		$output      = $world->result->stdout;
-		$actual_rows = explode( PHP_EOL, rtrim( $output, PHP_EOL ) );
+		$actual_rows = explode( "\n", rtrim( $output, "\n" ) );
 
 		$expected_rows = array();
 		foreach ( $expected->getRows() as $row ) {
@@ -57,7 +57,7 @@ $steps->Then( '/^STDOUT should be a table containing rows:$/',
 $steps->Then( '/^STDOUT should end with a table containing rows:$/',
 	function ( $world, TableNode $expected ) {
 		$output      = $world->result->stdout;
-		$actual_rows = explode( PHP_EOL, rtrim( $output, PHP_EOL ) );
+		$actual_rows = explode( "\n", rtrim( $output, "\n" ) );
 
 		$expected_rows = array();
 		foreach ( $expected->getRows() as $row ) {
@@ -139,7 +139,7 @@ $steps->Then( '/^(STDOUT|STDERR) should not be empty$/',
 
 		$stream = strtolower( $stream );
 
-		if ( '' === rtrim( $world->result->$stream, PHP_EOL ) ) {
+		if ( '' === rtrim( $world->result->$stream, "\n" ) ) {
 			throw new Exception( $world->result );
 		}
 	}
@@ -149,7 +149,7 @@ $steps->Then( '/^(STDOUT|STDERR) should be a version string (<|<=|>|>=|==|=|!=|<
 	function ( $world, $stream, $operator, $goal_ver ) {
 		$goal_ver = $world->replace_variables( $goal_ver );
 		$stream = strtolower( $stream );
-		if ( false === version_compare( trim( $world->result->$stream, PHP_EOL ), $goal_ver, $operator ) ) {
+		if ( false === version_compare( trim( $world->result->$stream, "\n" ), $goal_ver, $operator ) ) {
 			throw new Exception( $world->result );
 		}
 	}
@@ -193,7 +193,7 @@ $steps->Then( '/^the (.+) (file|directory) should (exist|not exist|be:|contain:|
 				foreach( $files as &$file ) {
 					$file = str_replace( $path . '/', '', $file );
 				}
-				$contents = implode( PHP_EOL, $files );
+				$contents = implode( "\n", $files );
 			}
 			checkString( $contents, $expected, $action );
 		}

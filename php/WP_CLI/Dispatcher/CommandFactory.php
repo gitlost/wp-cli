@@ -150,13 +150,13 @@ class CommandFactory {
 		if ( isset( self::$file_contents[ $filename ] ) ) {
 			$contents = self::$file_contents[ $filename ];
 		} elseif ( is_readable( $filename ) && ( $contents = file_get_contents( $filename ) ) ) {
-			self::$file_contents[ $filename ] = $contents = explode( PHP_EOL, $contents );
+			self::$file_contents[ $filename ] = $contents = explode( "\n", $contents );
 		} else {
 			\WP_CLI::debug( "Could not read contents for filename '{$filename}'.", 'commandfactory' );
 			return null;
 		}
 
-		return self::extract_last_doc_comment( implode( PHP_EOL, array_slice( $contents, 0, $reflection->getStartLine() ) ) );
+		return self::extract_last_doc_comment( implode( "\n", array_slice( $contents, 0, $reflection->getStartLine() ) ) );
 	}
 
 	/**

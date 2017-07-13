@@ -195,4 +195,39 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		putenv( false === $homedrive ? 'HOMEDRIVE' : "HOME=$homedrive" );
 		putenv( false === $homepath ? 'HOMEPATH' : "HOME=$homepath" );
 	}
+
+	/**
+	 * @dataProvider dataProviderNormalizeNewlines
+	 */
+	public function testNormalizeNewlines( $in, $normalized, $out_win ) {
+		// Save and set test env var.
+		$is_windows = getenv( 'WP_CLI_TEST_IS_WINDOWS' );
+
+		putenv( 'WP_CLI_TEST_IS_WINDOWS=0' );
+
+		$actual = Utils\normalize_newlines( $in );
+		$this->assertSame( $normalized, $actual );
+		$actual = Utils\denormalize_newlines( $normalized );
+		$this->assertSame( $normalized, $actual );
+
+		putenv( 'WP_CLI_TEST_IS_WINDOWS=1' );
+
+		$actual = Utils\normalize_newlines( $in );
+		$this->assertSame( $normalized, $actual );
+		$actual = Utils\denormalize_newlines( $normalized );
+		$this->assertSame( $out_win, $actual );
+		// Test leaves already denormalized alone.
+		$actual = Utils\denormalize_newlines( $out_win );
+		$this->assertSame( $out_win, $actual );
+
+		// Restore.
+		putenv( false === $is_windows ? 'WP_CLI_TEST_IS_WINDOWS' : "WP_CLI_TEST_IS_WINDOWS=$is_windows" );
+	}
+
+	function dataProviderNormalizeNewlines() {
+		return array(
+			array( "blah\nblah\n\nblah\nblah\n\n", "blah\nblah\n\nblah\nblah\n\n", "blah\r\nblah\r\n\r\nblah\r\nblah\r\n\r\n" ),
+			array( "\r\nblah\nblah\r\n\r\nblah\nblah\r\n\n", "\nblah\nblah\n\nblah\nblah\n\n", "\r\nblah\r\nblah\r\n\r\nblah\r\nblah\r\n\r\n" ),
+		);
+	}
 }

@@ -11,7 +11,7 @@ class MockRegularLogger extends WP_CLI\Loggers\Regular {
 	}
 
 	protected function write( $handle, $str ) {
-		echo $str;
+		echo WP_CLI\Utils\denormalize_newlines( $str );
 	}
 }
 

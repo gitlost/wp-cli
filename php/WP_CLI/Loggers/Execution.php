@@ -23,7 +23,7 @@ class Execution extends Base {
 	 * @param string $message Message to write.
 	 */
 	public function info( $message ) {
-		$this->write( 'STDOUT', $message . PHP_EOL );
+		$this->write( 'STDOUT', $message . "\n" );
 	}
 
 	/**
@@ -59,10 +59,10 @@ class Execution extends Base {
 	 * @param  array $message Message to write.
 	 */
 	public function error_multi_line( $message_lines ) {
-		$message = implode( PHP_EOL, $message_lines );
+		$message = implode( "\n", $message_lines );
 
-		$this->write( 'STDERR', \WP_CLI::colorize( "%RError:%n" . PHP_EOL . $message . PHP_EOL ) );
-		$this->write( 'STDERR', \WP_CLI::colorize( "%R---------%n" . PHP_EOL . PHP_EOL ) );
+		$this->write( 'STDERR', \WP_CLI::colorize( "%RError:%n\n$message\n" ) );
+		$this->write( 'STDERR', \WP_CLI::colorize( "%R---------%n\n\n" ) );
 	}
 
 	/**
