@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "7d2dbdc1cef53a482482ad064d87e8da",
+    "content-hash": "8b138611abaf981dfff4c524b5c9a67c",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -2439,7 +2439,7 @@
         },
         {
             "name": "wp-cli/search-replace-command",
-            "version": "v1.0.2",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/search-replace-command.git",
@@ -2489,7 +2489,7 @@
             ],
             "description": "Search/replace strings in the database.",
             "homepage": "https://github.com/wp-cli/search-replace-command",
-            "time": "2017-06-28T19:27:14+00:00"
+            "time": "2017-06-28 19:27:14"
         },
         {
             "name": "wp-cli/server-command",
@@ -3348,6 +3348,7 @@
         "wp-cli/core-command": 20,
         "wp-cli/db-command": 20,
         "wp-cli/media-command": 20,
+        "wp-cli/search-replace-command": 20,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,

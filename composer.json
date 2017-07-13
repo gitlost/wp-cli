@@ -56,7 +56,7 @@
 		"wp-cli/rewrite-command": "^1.0",
 		"wp-cli/role-command": "^1.0",
 		"wp-cli/scaffold-command": "^1.0",
-		"wp-cli/search-replace-command": "^1.0",
+		"wp-cli/search-replace-command": "dev-master",
 		"wp-cli/server-command": "^1.0",
 		"wp-cli/shell-command": "^1.0",
 		"wp-cli/super-admin-command": "^1.0",
