@@ -1521,12 +1521,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/core-command.git",
-                "reference": "c347190fa9d24ccff619ac77ac0e95276eadac13"
+                "reference": "1f824fd91c5e882522dd9a1ac2d73ddd1851adef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/c347190fa9d24ccff619ac77ac0e95276eadac13",
-                "reference": "c347190fa9d24ccff619ac77ac0e95276eadac13",
+                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/1f824fd91c5e882522dd9a1ac2d73ddd1851adef",
+                "reference": "1f824fd91c5e882522dd9a1ac2d73ddd1851adef",
                 "shasum": ""
             },
             "require-dev": {
@@ -1572,7 +1572,7 @@
             ],
             "description": "Download, install, update and manage a WordPress install.",
             "homepage": "https://github.com/wp-cli/core-command",
-            "time": "2017-07-11 16:57:14"
+            "time": "2017-07-13 00:04:16"
         },
         {
             "name": "wp-cli/cron-command",
@@ -2064,12 +2064,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/media-command.git",
-                "reference": "6990ba59a9c1922a6f54c30e7d4d8adcec073c3b"
+                "reference": "a0690a39335226c021aa860a51440f014c14d588"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/6990ba59a9c1922a6f54c30e7d4d8adcec073c3b",
-                "reference": "6990ba59a9c1922a6f54c30e7d4d8adcec073c3b",
+                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/a0690a39335226c021aa860a51440f014c14d588",
+                "reference": "a0690a39335226c021aa860a51440f014c14d588",
                 "shasum": ""
             },
             "require": {
@@ -2110,7 +2110,7 @@
             ],
             "description": "Import and regenerate attachments.",
             "homepage": "https://github.com/wp-cli/media-command",
-            "time": "2017-07-10 12:54:21"
+            "time": "2017-07-12 16:50:54"
         },
         {
             "name": "wp-cli/mustangostang-spyc",
