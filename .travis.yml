@@ -6,7 +6,7 @@ language: php
 env:
   global:
     - WP_CLI_BIN_DIR=/tmp/wp-cli-phar
-    - TEST_COMMANDS=1
+    - TEST_COMMANDS=2
 
 matrix:
   include:
