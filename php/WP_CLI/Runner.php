@@ -267,14 +267,14 @@ class Runner {
 						$child,
 						$parent_name,
 						$parent_name,
-						! empty( $suggestion ) ? PHP_EOL . "Did you mean '{$suggestion}'?" : ''
+						! empty( $suggestion ) ? "\nDid you mean '{$suggestion}'?" : ''
 					);
 				} else {
 					$suggestion = $this->get_subcommand_suggestion( $full_name, $command );
 					return sprintf(
 						"'%s' is not a registered wp command. See 'wp help'.%s",
 						$full_name,
-						! empty( $suggestion ) ? PHP_EOL . "Did you mean '{$suggestion}'?" : ''
+						! empty( $suggestion ) ? "\nDid you mean '{$suggestion}'?" : ''
 					);
 				}
 			}
@@ -430,7 +430,7 @@ class Runner {
 	public function get_wp_config_code() {
 		$wp_config_path = Utils\locate_wp_config();
 
-		$wp_config_code = explode( "\n", file_get_contents( $wp_config_path ) );
+		$wp_config_code = explode( "\n", Utils\normalize_newlines( file_get_contents( $wp_config_path ) ) );
 
 		$found_wp_settings = false;
 
@@ -804,7 +804,7 @@ class Runner {
 				$error_msg = "Alias '{$this->alias}' not found.";
 				$suggestion = Utils\get_suggestion( $this->alias, array_keys( $this->aliases ), $threshold = 2 );
 				if ( $suggestion ) {
-					$error_msg .= PHP_EOL . "Did you mean '{$suggestion}'?";
+					$error_msg .= "\nDid you mean '{$suggestion}'?";
 				}
 				WP_CLI::error( $error_msg );
 			}

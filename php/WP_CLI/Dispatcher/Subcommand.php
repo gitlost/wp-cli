@@ -36,7 +36,7 @@ class Subcommand extends CompositeCommand {
 	 * @return string
 	 */
 	private static function extract_synopsis( $longdesc ) {
-		preg_match_all( '/(.+?)[\r\n]+:/', $longdesc, $matches );
+		preg_match_all( '/(.+?)\n+:/', $longdesc, $matches );
 		return implode( ' ', $matches[1] );
 	}
 
@@ -276,8 +276,8 @@ class Subcommand extends CompositeCommand {
 		$i = 0;
 		$errors = array( 'fatal' => array(), 'warning' => array() );
 		$mock_doc = array( $this->get_shortdesc(), '' );
-		$mock_doc = array_merge( $mock_doc, explode( PHP_EOL, $this->get_longdesc() ) );
-		$mock_doc = '/**' . PHP_EOL . '* ' . implode( PHP_EOL . '* ', $mock_doc ) . PHP_EOL . '*/';
+		$mock_doc = array_merge( $mock_doc, explode( "\n", $this->get_longdesc() ) );
+		$mock_doc = "/**\n* " . implode( "\n* ", $mock_doc ) . "\n*/";
 		$docparser = new \WP_CLI\DocParser( $mock_doc );
 		foreach( $synopsis_spec as $spec ) {
 			if ( 'positional' === $spec['type'] ) {
@@ -335,7 +335,7 @@ class Subcommand extends CompositeCommand {
 				$errors['fatal'][] = sprintf(
 					'unknown --%s parameter%s',
 					$key,
-					! empty( $suggestion ) ? PHP_EOL . "Did you mean '--{$suggestion}'?" : ''
+					! empty( $suggestion ) ? "\nDid you mean '--{$suggestion}'?" : ''
 				);
 			}
 		}

@@ -24,7 +24,7 @@ $configurator = new Configurator( WP_CLI_ROOT . '/utils/make-phar-spec.php' );
 list( $args, $assoc_args, $runtime_config ) = $configurator->parse_args( array_slice( $GLOBALS['argv'], 1 ) );
 
 if ( ! isset( $args[0] ) || empty( $args[0] ) ) {
-	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version]\n";
+	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version]" . PHP_EOL;
 	exit(1);
 }
 
@@ -49,7 +49,7 @@ function add_file( $phar, $path ) {
 	$key = str_replace( WP_CLI_BASE_PATH, '', $path );
 
 	if ( !BE_QUIET )
-		echo "$key - $path\n";
+		echo "$key - $path" . PHP_EOL;
 
 	$phar[ $key ] = file_get_contents( $path );
 }
@@ -58,7 +58,7 @@ function set_file_contents( $phar, $path, $content ) {
 	$key = str_replace( WP_CLI_BASE_PATH, '', $path );
 
 	if ( !BE_QUIET )
-		echo "$key - $path\n";
+		echo "$key - $path" . PHP_EOL;
 
 	$phar[ $key ] = $content;
 }
@@ -179,4 +179,4 @@ EOB
 
 $phar->stopBuffering();
 
-echo "Generated " . DEST_PATH . "\n";
+echo "Generated " . DEST_PATH . PHP_EOL;

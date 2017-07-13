@@ -31,7 +31,7 @@ $steps->Given( '/^an? ([^\s]+) file:$/',
 		$content = (string) $content . "\n";
 		$full_path = $world->variables['RUN_DIR'] . "/$path";
 		Process::create( \WP_CLI\utils\esc_cmd( 'mkdir -p %s', dirname( $full_path ) ) )->run_check();
-		file_put_contents( $full_path, $content );
+		file_put_contents( $full_path, WP_CLI\Utils\denormalize_newlines( $content ) );
 	}
 );
 
@@ -88,7 +88,7 @@ $steps->Given( '/^a WP multisite (subdirectory|subdomain)?\s?install$/',
 
 $steps->Given( '/^these installed and active plugins:$/',
 	function( $world, $stream ) {
-		$plugins = implode( ' ', array_map( 'trim', explode( PHP_EOL, (string)$stream ) ) );
+		$plugins = implode( ' ', array_map( 'trim', explode( "\n", (string)$stream ) ) );
 		$world->proc( "wp plugin install $plugins --activate" )->run_check();
 	}
 );

@@ -193,7 +193,7 @@ $steps->Then( '/^the (.+) (file|directory) should (exist|not exist|be:|contain:|
 				foreach( $files as &$file ) {
 					$file = str_replace( $path . '/', '', $file );
 				}
-				$contents = implode( PHP_EOL, $files );
+				$contents = implode( "\n", $files );
 			}
 			checkString( $contents, $expected, $action );
 		}

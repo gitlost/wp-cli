@@ -19,6 +19,7 @@ class DocParser {
 	 * @param string $docComment
 	 */
 	public function __construct( $docComment ) {
+		$docComment = Utils\normalize_newlines( $docComment );
 		$this->docComment = self::remove_decorations( $docComment );
 	}
 
@@ -29,7 +30,7 @@ class DocParser {
 	 * @return string
 	 */
 	private static function remove_decorations( $comment ) {
-		$comment = preg_replace( '|^/\*\*[\r\n]+|', '', $comment );
+		$comment = preg_replace( '|^/\*\*\n+|', '', $comment );
 		$comment = preg_replace( '|\n[\t ]*\*/$|', '', $comment );
 		$comment = preg_replace( '|^[\t ]*\* ?|m', '', $comment );
 
@@ -155,7 +156,7 @@ class DocParser {
 	 * @return array|null Interpreted YAML document, or null.
 	 */
 	private function get_arg_or_param_args( $regex ) {
-		$bits = explode( PHP_EOL, $this->docComment );
+		$bits = explode( "\n", $this->docComment );
 		$within_arg = $within_doc = false;
 		$document = array();
 		foreach( $bits as $bit ) {
@@ -182,7 +183,7 @@ class DocParser {
 		}
 
 		if ( $document ) {
-			return Spyc::YAMLLoadString( implode( PHP_EOL, $document ) );
+			return Spyc::YAMLLoadString( implode( "\n", $document ) );
 		}
 		return null;
 	}

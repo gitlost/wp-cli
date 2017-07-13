@@ -159,7 +159,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		$output = `ps -o ppid,pid,command | grep $master_pid`;
 
-		foreach ( explode( PHP_EOL, $output ) as $line ) {
+		foreach ( explode( "\n", $output ) as $line ) {
 			if ( preg_match( '/^\s*(\d+)\s+(\d+)/', $line, $matches ) ) {
 				$parent = $matches[1];
 				$child = $matches[2];
@@ -393,7 +393,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	public function add_line_to_wp_config( &$wp_config_code, $line ) {
 		$token = "/* That's all, stop editing!";
 
-		$wp_config_code = str_replace( $token, "$line\n\n$token", $wp_config_code );
+		$wp_config_code = str_replace( $token, $line. PHP_EOL . PHP_EOL . $token, $wp_config_code );
 	}
 
 	public function download_wp( $subdir = '' ) {

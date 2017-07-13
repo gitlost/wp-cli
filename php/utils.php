@@ -56,7 +56,7 @@ function load_dependencies() {
 	}
 
 	if ( !$has_autoload ) {
-		fputs( STDERR, "Internal error: Can't find Composer autoloader.\nTry running: composer install\n" );
+		fputs( STDERR, 'Internal error: Can\'t find Composer autoloader.' . PHP_EOL . 'Try running: composer install' . PHP_EOL );
 		exit(3);
 	}
 }
@@ -1022,4 +1022,29 @@ function force_env_on_nix_systems( $command ) {
 		}
 	}
 	return $command;
+}
+
+/**
+ * Normalize Windows newlines to Unix ones.
+ *
+ * @param string $str
+ *
+ * @return string
+ */
+function normalize_newlines( $str ) {
+	return str_replace( "\r\n", "\n", $str );
+}
+
+/**
+ * Denormalize Unix newlines to Windows ones if on Windows.
+ *
+ * @param string $str
+ *
+ * @return string
+ */
+function denormalize_newlines( $str ) {
+	if ( is_windows() ) {
+		return preg_replace( '/(?<!\r)\n/', "\r\n", $str );
+	}
+	return $str;
 }

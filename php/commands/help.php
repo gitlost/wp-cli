@@ -105,6 +105,7 @@ class Help_Command extends WP_CLI_Command {
 		// section headers
 		$out = preg_replace( '/^## ([A-Z ]+)/m', WP_CLI::colorize( '%9\1%n' ), $out );
 
+		$out = Utils\denormalize_newlines( $out );
 		self::pass_through_pager( $out );
 	}
 
