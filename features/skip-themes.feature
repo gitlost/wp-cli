@@ -3,13 +3,13 @@ Feature: Skipping themes
   Scenario: Skipping themes via global flag
     Given a WP install
     And download:
-      | path                    | url                                                     |
-      | {CACHE_DIR}/classic.zip | https://downloads.wordpress.org/theme/classic.1.6.zip   |
-      | {CACHE_DIR}/default.zip | https://downloads.wordpress.org/theme/default.1.7.2.zip |
-    And I run `wp theme install {CACHE_DIR}/classic.zip`
-    And I run `wp theme install {CACHE_DIR}/default.zip --activate`
+      | path                            | url                                                       |
+      | {CACHE_DIR}/classic.1.6.zip     | https://downloads.wordpress.org/theme/classic.1.6.zip     |
+      | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
+    And I run `wp theme install {CACHE_DIR}/classic.1.6.zip`
+    And I run `wp theme install {CACHE_DIR}/espied.1.2.2.zip --activate`
 
-    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
@@ -17,7 +17,7 @@ Feature: Skipping themes
     And STDERR should be empty
 
     # The specified theme should be skipped
-    When I run `wp --skip-themes=default eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes=espied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
@@ -25,7 +25,7 @@ Feature: Skipping themes
     And STDERR should be empty
     
     # All themes should be skipped
-    When I run `wp --skip-themes eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
@@ -33,7 +33,7 @@ Feature: Skipping themes
     And STDERR should be empty
     
     # Skip another theme
-    When I run `wp --skip-themes=classic eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes=classic eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
@@ -41,7 +41,7 @@ Feature: Skipping themes
     And STDERR should be empty
     
     # The specified theme should still show up as an active theme
-    When I run `wp --skip-themes theme status default`
+    When I run `wp --skip-themes theme status espied`
     Then STDOUT should contain:
       """
       Active
@@ -49,7 +49,7 @@ Feature: Skipping themes
     And STDERR should be empty
 
     # Skip several themes
-    When I run `wp --skip-themes=classic,default eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes=classic,espied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
@@ -59,83 +59,83 @@ Feature: Skipping themes
   Scenario: Skip parent and child themes
     Given a WP install
     And download:
-      | path                          | url                                                     |
-      | {CACHE_DIR}/default.zip       | https://downloads.wordpress.org/theme/default.1.7.2.zip |
-      | {CACHE_DIR}/default-child.zip | https://gitlostbonger.com/behat-data/default-child.zip  |
-    And I run `wp theme install {CACHE_DIR}/default.zip {CACHE_DIR}/default-child.zip`
+      | path                            | url                                                       |
+      | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
+      | {CACHE_DIR}/sidespied.1.0.3.zip | https://downloads.wordpress.org/theme/sidespied.1.0.3.zip |
+    And I run `wp theme install {CACHE_DIR}/espied.1.2.2.zip {CACHE_DIR}/sidespied.1.0.3.zip`
 
-    When I run `wp theme activate default`
-    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp theme activate espied`
+    When I run `wp eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=default eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes=espied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp theme activate default-child`
-    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp theme activate sidespied`
+    When I run `wp eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp eval 'var_export( function_exists( "default_child_theme_setup" ) );'`
+    When I run `wp eval 'var_export( function_exists( "sidespied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=default-child eval 'var_export( function_exists( "kubrick_head" ) );'`
+    When I run `wp --skip-themes=sidespied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=default-child eval 'var_export( function_exists( "default_child_theme_setup" ) );'`
+    When I run `wp --skip-themes=sidespied eval 'var_export( function_exists( "sidespied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=default-child eval 'echo get_template_directory();'`
+    When I run `wp --skip-themes=sidespied eval 'echo get_template_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/default
+      wp-content/themes/espied
       """
     And STDERR should be empty
 
-    When I run `wp --skip-themes=default-child eval 'echo get_stylesheet_directory();'`
+    When I run `wp --skip-themes=sidespied eval 'echo get_stylesheet_directory();'`
     Then STDOUT should contain:
       """
-      wp-content/themes/default-child
+      wp-content/themes/sidespied
       """
     And STDERR should be empty
 
   Scenario: Skipping multiple themes via config file
     Given a WP install
     And download:
-      | path                    | url                                                     |
-      | {CACHE_DIR}/classic.zip | https://downloads.wordpress.org/theme/classic.1.6.zip   |
-      | {CACHE_DIR}/default.zip | https://downloads.wordpress.org/theme/default.1.7.2.zip |
+      | path                            | url                                                       |
+      | {CACHE_DIR}/classic.1.6.zip     | https://downloads.wordpress.org/theme/classic.1.6.zip     |
+      | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
     And a wp-cli.yml file:
       """
       skip-themes:
         - classic
-        - default
+        - espied
       """
-    And I run `wp theme install {CACHE_DIR}/classic.zip --activate`
-    And I run `wp theme install {CACHE_DIR}/default.zip`
+    And I run `wp theme install {CACHE_DIR}/classic.1.6.zip --activate`
+    And I run `wp theme install {CACHE_DIR}/espied.1.2.2.zip`
     
     # The classic theme should show up as an active theme
     When I run `wp theme status`
@@ -145,18 +145,18 @@ Feature: Skipping themes
       """
     And STDERR should be empty
 
-    # The default theme should show up as an installed theme
+    # The espied theme should show up as an installed theme
     When I run `wp theme status`
     Then STDOUT should contain:
       """
-      I default
+      I espied
       """
     And STDERR should be empty
     
-    And I run `wp theme activate default`
+    And I run `wp theme activate espied`
 
-    # The default theme should be skipped
-    When I run `wp eval 'var_export( function_exists( "kubrick_head" ) );'`
+    # The espied theme should be skipped
+    When I run `wp eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false

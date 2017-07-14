@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "8b138611abaf981dfff4c524b5c9a67c",
+    "content-hash": "a43d70a53e1484dd96f1c7e50dd91e37",
     "packages": [
         {
             "name": "composer/ca-bundle",
@@ -1517,16 +1517,16 @@
         },
         {
             "name": "wp-cli/core-command",
-            "version": "dev-issue_20",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/core-command.git",
-                "reference": "1f824fd91c5e882522dd9a1ac2d73ddd1851adef"
+                "reference": "55b6a48e454f47a92920d1a228ad8868f00cdf00"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/1f824fd91c5e882522dd9a1ac2d73ddd1851adef",
-                "reference": "1f824fd91c5e882522dd9a1ac2d73ddd1851adef",
+                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/55b6a48e454f47a92920d1a228ad8868f00cdf00",
+                "reference": "55b6a48e454f47a92920d1a228ad8868f00cdf00",
                 "shasum": ""
             },
             "require-dev": {
@@ -1572,7 +1572,7 @@
             ],
             "description": "Download, install, update and manage a WordPress install.",
             "homepage": "https://github.com/wp-cli/core-command",
-            "time": "2017-07-13 00:04:16"
+            "time": "2017-07-13 10:35:57"
         },
         {
             "name": "wp-cli/cron-command",
@@ -1636,12 +1636,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/db-command.git",
-                "reference": "c2d5478e996609e105c25187aaa28713c033d9b2"
+                "reference": "ef02b67d2fd78fe6426afd6ef842f26cc35e95a0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/db-command/zipball/c2d5478e996609e105c25187aaa28713c033d9b2",
-                "reference": "c2d5478e996609e105c25187aaa28713c033d9b2",
+                "url": "https://api.github.com/repos/wp-cli/db-command/zipball/ef02b67d2fd78fe6426afd6ef842f26cc35e95a0",
+                "reference": "ef02b67d2fd78fe6426afd6ef842f26cc35e95a0",
                 "shasum": ""
             },
             "require": {
@@ -1693,7 +1693,7 @@
             ],
             "description": "Perform basic database operations using credentials stored in wp-config.php.",
             "homepage": "https://github.com/wp-cli/db-command",
-            "time": "2017-07-11 19:53:14"
+            "time": "2017-07-13 23:33:39"
         },
         {
             "name": "wp-cli/entity-command",
@@ -1873,16 +1873,16 @@
         },
         {
             "name": "wp-cli/extension-command",
-            "version": "v1.1.1",
+            "version": "dev-themecache",
             "source": {
                 "type": "git",
-                "url": "https://github.com/wp-cli/extension-command.git",
-                "reference": "8489bc23aad242796cba15f78ce75192b1774ea5"
+                "url": "https://github.com/gitlost/extension-command.git",
+                "reference": "8358c815983718e9b198aee0d1e12fe837882ba8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/extension-command/zipball/8489bc23aad242796cba15f78ce75192b1774ea5",
-                "reference": "8489bc23aad242796cba15f78ce75192b1774ea5",
+                "url": "https://api.github.com/repos/gitlost/extension-command/zipball/8358c815983718e9b198aee0d1e12fe837882ba8",
+                "reference": "8358c815983718e9b198aee0d1e12fe837882ba8",
                 "shasum": ""
             },
             "require-dev": {
@@ -1935,7 +1935,6 @@
                     "extension-command.php"
                 ]
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -1948,7 +1947,11 @@
             ],
             "description": "Manage WordPress plugins and themes.",
             "homepage": "https://github.com/wp-cli/extension-command",
-            "time": "2017-06-08T09:01:02+00:00"
+            "support": {
+                "issues": "https://github.com/wp-cli/extension-command/issues",
+                "source": "https://github.com/gitlost/extension-command/tree/theme_cache"
+            },
+            "time": "2017-07-14 22:11:13"
         },
         {
             "name": "wp-cli/import-command",
@@ -2443,12 +2446,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/search-replace-command.git",
-                "reference": "bb99b41e3b908f4256c8b7918118a96bb80c1bd6"
+                "reference": "7449550b38fbe0ce531f24b8f9c7cecb6780356c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/search-replace-command/zipball/bb99b41e3b908f4256c8b7918118a96bb80c1bd6",
-                "reference": "bb99b41e3b908f4256c8b7918118a96bb80c1bd6",
+                "url": "https://api.github.com/repos/wp-cli/search-replace-command/zipball/7449550b38fbe0ce531f24b8f9c7cecb6780356c",
+                "reference": "7449550b38fbe0ce531f24b8f9c7cecb6780356c",
                 "shasum": ""
             },
             "require": {
@@ -2489,7 +2492,7 @@
             ],
             "description": "Search/replace strings in the database.",
             "homepage": "https://github.com/wp-cli/search-replace-command",
-            "time": "2017-06-28 19:27:14"
+            "time": "2017-07-13 12:05:22"
         },
         {
             "name": "wp-cli/server-command",
@@ -3347,6 +3350,7 @@
     "stability-flags": {
         "wp-cli/core-command": 20,
         "wp-cli/db-command": 20,
+        "wp-cli/extension-command": 20,
         "wp-cli/media-command": 20,
         "wp-cli/search-replace-command": 20,
         "roave/security-advisories": 20

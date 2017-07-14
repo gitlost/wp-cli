@@ -723,17 +723,18 @@ function get_home_dir() {
 function get_temp_dir() {
 	static $temp = '';
 
+	if ( $temp ) {
+		return $temp;
+	}
+
 	$trailingslashit = function( $path ) {
-		return rtrim( $path ) . '/';
+		return rtrim( $path, '/\\' ) . '/';
 	};
 
-	if ( $temp )
-		return $trailingslashit( $temp );
-
 	if ( function_exists( 'sys_get_temp_dir' ) ) {
-		$temp = sys_get_temp_dir();
+		$temp = $trailingslashit( sys_get_temp_dir() );
 	} else if ( ini_get( 'upload_tmp_dir' ) ) {
-		$temp = ini_get( 'upload_tmp_dir' );
+		$temp = $trailingslashit( ini_get( 'upload_tmp_dir' ) );
 	} else {
 		$temp = '/tmp/';
 	}
@@ -742,7 +743,7 @@ function get_temp_dir() {
 		\WP_CLI::warning( "Temp directory isn't writable: {$temp}" );
 	}
 
-	return $trailingslashit( $temp );
+	return $temp;
 }
 
 /**

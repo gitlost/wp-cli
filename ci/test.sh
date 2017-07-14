@@ -17,12 +17,14 @@ fi
 
 if [[ $((TEST_COMMANDS & 2)) > 0 ]]; then
 	for R in vendor/wp-cli/[a-h]*-command; do
-		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_TAGS --strict $R/features
+		if [[ -f "$R/behat.yml" ]]; then BEHAT_YML="--config $R/behat.yml"; fi
+		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_YML $BEHAT_TAGS --strict $R/features
 	done
 fi
 
 if [[ $((TEST_COMMANDS & 4)) > 0 ]]; then
 	for R in vendor/wp-cli/[i-z]*-command; do
-		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_TAGS --strict $R/features
+		if [[ -f "$R/behat.yml" ]]; then BEHAT_YML="--config $R/behat.yml"; fi
+		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_YML $BEHAT_TAGS --strict $R/features
 	done
 fi

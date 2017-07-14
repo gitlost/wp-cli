@@ -19,6 +19,12 @@
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true,
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/gitlost/extension-command.git"
+		}
+	],
 	"require": {
 		"php": ">=5.3.29",
 		"composer/composer": "^1.2.0",
@@ -46,7 +52,7 @@
 		"wp-cli/entity-command": "^1.0",
 		"wp-cli/eval-command": "^1.0",
 		"wp-cli/export-command": "^1.0",
-		"wp-cli/extension-command": "^1.0",
+		"wp-cli/extension-command": "dev-themecache",
 		"wp-cli/import-command": "^1.0",
 		"wp-cli/language-command": "^1.0",
 		"wp-cli/media-command": "dev-master",
