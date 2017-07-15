@@ -779,10 +779,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			return sprintf( '%2d. %6.3f %s', $i + 1, round( $v, 3 ), substr( $k, strpos( $k, ' ' ) + 1 ) );
 		}, array_keys( $tops ), $tops, array_keys( array_keys( $tops ) ) ) ) . "\n";
 
-		$log .= "\n" . str_repeat( ')', 80 ) . "\n";
+		$log .= "\n" . str_repeat( ')', 80 );
 
 		if ( $travis ) {
-			echo "\n" . $log . "\n";
+			echo "\n" . $log;
 		} else {
 			error_log( $log );
 		}
