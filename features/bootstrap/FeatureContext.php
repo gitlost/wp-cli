@@ -46,23 +46,42 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
-	private static $cache_dir;
+	/**
+	 * Array of variables available as {VARIABLE_NAME}. Some are always set: CORE_CONFIG_SETTINGS, SRC_DIR, CACHE_DIR, WP_VERSION-version-latest. Some are step-dependent:
+	 * RUN_DIR, SUITE_CACHE_DIR, COMPOSER_LOCAL_REPOSITORY, PHAR_PATH. Scenarios can define their own variables using "Given save" steps. Variables are reset for each scenario.
+	 */
+	public $variables = array();
 
-	private static $suite_cache_dir;
-
-	private static $install_cache_dir;
-
-	private static $composer_local_repository;
-
+	/**
+	 * The current working directory for scenarios that have a "Given a WP install" or "Given an empty directory" step. Variable RUN_DIR. Lives until the end of the scenario.
+	 */
 	private static $run_dir;
 
-	private static $temp_dir_infix;
+	/**
+	 * Where WordPress core is downloaded to for caching, and which is copied to RUN_DIR during a "Given a WP install" step. Lives until manually deleted.
+	 */
+	private static $cache_dir;
 
-	private static $suite_start_time;
+	/**
+	 * The directory that holds the install cache. Lives until manually deleted.
+	 */
+	private static $install_cache_dir;
 
-	private static $scenario_run_times = array();
-	private static $scenario_count = 0;
+	/**
+	 * The directory that the WP-CLI cache (WP_CLI_CACHE_DIR, normally "$HOME/.wp-cli/cache") is set to on a "Given an empty cache" step.
+	 * Variable SUITE_CACHE_DIR. Lives until the end of the scenario (or until another "Given an empty cache" step within the scenario).
+	 */
+	private static $suite_cache_dir;
 
+	/**
+	 * Where the current WP-CLI source repository is copied to for Composer-based tests with a "Given a dependency on current wp-cli" step.
+	 * Variable COMPOSER_LOCAL_REPOSITORY. Lives until the end of the suite.
+	 */
+	private static $composer_local_repository;
+
+	/**
+	 * The test database settings. All but `dbname` can be set via enviroment variables. The database is dropped at the start of each scenario and created on a "Given a WP install" step.
+	 */
 	private static $db_settings = array(
 		'dbname' => 'wp_cli_test',
 		'dbuser' => 'wp_cli_test',
@@ -70,9 +89,30 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		'dbhost' => '127.0.0.1',
 	);
 
+	/**
+	 * Array of background process ids started by the current scenario. Used to terminate them at the end of the scenario.
+	 */
 	private $running_procs = array();
 
-	public $variables = array();
+	/**
+	 * The current feature file and scenario line number as '<file>.<line>'. Used in RUN_DIR and SUITE_CACHE_DIR directory names. Set at the start of each scenario.
+	 */
+	private static $temp_dir_infix;
+
+	/**
+	 * When the suite started (`microtime( true )`), set on `@BeforeScenario'.
+	 */
+	private static $suite_start_time;
+
+	/**
+	 * Scenario run times (top 20 only).
+	 */
+	private static $scenario_run_times = array();
+
+	/**
+	 * Scenario count, incremented on `@AfterScenario`.
+	 */
+	private static $scenario_count = 0;
 
 	/**
 	 * Get the environment variables required for launched `wp` processes
@@ -104,8 +144,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return $env;
 	}
 
-	// We cache the results of `wp core download` to improve test performance
-	// Ideally, we'd cache at the HTTP layer for more reliable tests
+	/**
+	 * We cache the results of `wp core download` to improve test performance.
+	 * Ideally, we'd cache at the HTTP layer for more reliable tests.
+	 */
 	private static function cache_wp_files() {
 		$wp_version_suffix = ( $wp_version = getenv( 'WP_VERSION' ) ) ? "-$wp_version" : '';
 		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-download-cache' . $wp_version_suffix;
@@ -143,14 +185,16 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			//$wp_cli_cache_dir = sys_get_temp_dir() . '/wp-cli-home/.wp-cli/cache';
 			//self::dir_diff_copy( self::$suite_cache_dir, $wp_cli_cache_dir, $wp_cli_cache_dir );
 			self::remove_dir( self::$suite_cache_dir );
+			self::$suite_cache_dir = null;
 		}
 
 		if ( self::$composer_local_repository ) {
 			self::remove_dir( self::$composer_local_repository );
+			self::$composer_local_repository = null;
 		}
 
 		if ( ! $event->isCompleted() ) {
-			// Then probably control C hit so cleanup any leftover scenario stuff.
+			// Then ctrl+C hit so cleanup any leftover scenario stuff.
 			self::afterScenario_cleanup( $event );
 		} else {
 			// Test performance statistics - useful for detecting slow tests.
@@ -168,8 +212,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			self::log_run_times_before_scenario( $event );
 		}
 
-		// For use by RUN_DIR and SUITE_CACHE_DIR.
-		self::$temp_dir_infix = self::get_scenario_key( $event, true /*exclude_grandparent*/, '.' /*line_prefix*/ );
+		// Used in the names of the RUN_DIR and SUITE_CACHE_DIR directories.
+		self::$temp_dir_infix = null;
+		if ( $file = self::get_event_file( $event, $line ) ) {
+			self::$temp_dir_infix = basename( $file ) . '.' . $line;
+		}
 
 		$this->variables['SRC_DIR'] = realpath( __DIR__ . '/../..' );
 	}
@@ -191,29 +238,32 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * If called from afterSuite() then suite was aborted and `$_this` won't be set.
 	 */
 	private static function afterScenario_cleanup( $event, $_this = null ) {
+		if ( $_this ) {
+			// Remove any background processes first.
+			foreach ( $_this->running_procs as $proc ) {
+				$status = proc_get_status( $proc );
+				self::terminate_proc( $status['pid'] );
+			}
+		}
+
 		if ( self::$run_dir ) {
-			// Remove altered WP install unless suite did complete ($_this set) and there's an error.
+			// Remove altered WP install unless suite did complete (`$_this` set) and there's an error.
 			if ( ! $_this || $event->getResult() < 4 ) {
 				self::remove_dir( self::$run_dir );
 			}
 			self::$run_dir = null;
 		}
 
-		// Remove suite cache.
+		// Remove SUITE_CACHE_DIR if any.
 		if ( self::$suite_cache_dir ) {
 			self::remove_dir( self::$suite_cache_dir );
 			self::$suite_cache_dir = null;
 		}
 
 		if ( $_this ) {
-			// Remove WP-CLI package directory
+			// Remove WP-CLI package directory if any. Set to `wp package path` by package-command and scaffold-package-command features, and by cli-info.feature.
 			if ( isset( $_this->variables['PACKAGE_PATH'] ) ) {
 				self::remove_dir( $_this->variables['PACKAGE_PATH'] );
-			}
-
-			foreach ( $_this->running_procs as $proc ) {
-				$status = proc_get_status( $proc );
-				self::terminate_proc( $status['pid'] );
 			}
 		}
 	}
@@ -245,6 +295,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
+	/**
+	 * Create a temporary WP_CLI_CACHE_DIR. Exposed as SUITE_CACHE_DIR in "Given an empty cache" step.
+	 */
 	public static function create_cache_dir() {
 		if ( self::$suite_cache_dir ) {
 			self::remove_dir( self::$suite_cache_dir );
@@ -256,7 +309,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	/**
 	 * Initializes context.
-	 * Every scenario gets it's own context object.
+	 * Every scenario gets its own context object.
 	 *
 	 * @param array $parameters context parameters (set them up through behat.yml)
 	 */
@@ -286,6 +339,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return array();
 	}
 
+	/**
+	 * Replace {VARIABLE_NAME}. Note that variable names can only contain uppercase letters and underscores (no numbers).
+	 */
 	public function replace_variables( $str ) {
 		$ret = preg_replace_callback( '/\{([A-Z_]+)\}/', array( $this, '_replace_var' ), $str );
 		if ( false !== strpos( $str, '{WP_VERSION-' ) ) {
@@ -294,6 +350,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return $ret;
 	}
 
+	/**
+	 * Replace variables callback.
+	 */
 	private function _replace_var( $matches ) {
 		$cmd = $matches[0];
 
@@ -304,7 +363,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return $cmd;
 	}
 
-	// Substitute "{WP_VERSION-version-latest}" variables.
+	/**
+	 * Substitute "{WP_VERSION-version-latest}" variables.
+	 */
 	private function _replace_wp_versions( $str ) {
 		static $wp_versions = null;
 		if ( null === $wp_versions ) {
@@ -333,11 +394,26 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return strtr( $str, $wp_versions );
 	}
 
+	/**
+	 * Get the file and line number for the current behat event.
+	 */
+	private static function get_event_file( $event, &$line ) {
+		if ( method_exists( $event, 'getScenario' ) ) {
+			$scenario_feature = $event->getScenario();
+		} elseif ( method_exists( $event, 'getFeature' ) ) {
+			$scenario_feature = $event->getFeature();
+		} else {
+			return null;
+		}
+		$line = $scenario_feature->getLine();
+		return $scenario_feature->getFile();
+	}
+
+	/**
+	 * Create the RUN_DIR directory, unless already set for this scenario.
+	 */
 	public function create_run_dir() {
 		if ( ! isset( $this->variables['RUN_DIR'] ) ) {
-			if ( self::$run_dir ) {
-				$this->remove_dir( self::$run_dir );
-			}
 			self::$run_dir = $this->variables['RUN_DIR'] = sys_get_temp_dir() . '/' . uniqid( 'wp-cli-test-run-' . self::$temp_dir_infix . '-', TRUE );
 			mkdir( $this->variables['RUN_DIR'] );
 		}
@@ -389,8 +465,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	/**
-	 * CACHE_DIR is a place to store downloads of test files locally, to avoid repeated downloading and so speed up testing.
-	 * It persists until manually deleted.
+	 * CACHE_DIR is a cache for downloaded test data such as images. Lives until manually deleted.
 	 */
 	private function set_cache_dir() {
 		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
@@ -449,14 +524,17 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['RUN_DIR'], self::get_process_env_variables() );
 
-		if ( false === $proc ) {
-			throw new RuntimeException( stream_get_contents( $pipes[2] ) );
-		} else {
-			$this->running_procs[] = $proc;
-		}
-
 		if ( $sleep ) {
 			sleep( $sleep );
+		}
+
+		$status = proc_get_status( $proc );
+
+		if ( ! $status['running'] ) {
+			$stderr = is_resource( $pipes[2] ) ? ( ': ' . stream_get_contents( $pipes[2] ) ) : '';
+			throw new RuntimeException( sprintf( "Failed to start background process '%s'%s.", $cmd, $stderr ) );
+		} else {
+			$this->running_procs[] = $proc;
 		}
 	}
 
@@ -638,7 +716,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public function composer_add_wp_cli_local_repository() {
 		if ( ! self::$composer_local_repository ) {
-			self::$composer_local_repository = $this->variables['COMPOSER_LOCAL_REPOSITORY'] = sys_get_temp_dir() . '/' . uniqid( 'wp-cli-composer-local-' . self::$temp_dir_infix . '-', TRUE );
+			self::$composer_local_repository = sys_get_temp_dir() . '/' . uniqid( "wp-cli-composer-local-", TRUE );
 			mkdir( self::$composer_local_repository );
 
 			$env = self::get_process_env_variables();
@@ -650,6 +728,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 			$this->proc( 'composer config repositories.wp-cli \'{"type": "path", "url": "' . self::$composer_local_repository. '/", "options": {"symlink": false}}\'' )->run_check();
 		}
+		$this->variables['COMPOSER_LOCAL_REPOSITORY'] = self::$composer_local_repository;
 	}
 
 	public function composer_require_current_wp_cli() {
@@ -706,15 +785,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	/**
 	 * Get the scenario key used for `$scenario_run_times` array.
-	 * With default args it's "<grandparent-dir> <feature-file>:<line-number>", eg "core-command core-update.feature:221".
+	 * Format "<grandparent-dir> <feature-file>:<line-number>", eg "core-command core-update.feature:221".
 	 */
-	private static function get_scenario_key( $event, $exclude_grandparent = false, $line_prefix = ':' ) {
+	private static function get_scenario_key( $event ) {
 		$scenario_key = '';
-		if ( method_exists( $event, 'getScenario' ) ) {
-			$scenario = $event->getScenario();
-			$scenario_file = $scenario->getFile();
-			$scenario_grandparent = $exclude_grandparent ? '' : ( basename( dirname( dirname( $scenario_file ) ) ) . ' ' );
-			$scenario_key = $scenario_grandparent . basename( $scenario_file ) . $line_prefix . $scenario->getLine();
+		if ( $file = self::get_event_file( $event, $line ) ) {
+			$scenario_grandparent = basename( dirname( dirname( $file ) ) );
+			$scenario_key = $scenario_grandparent . ' ' . basename( $file ) . ':' . $line;
 		}
 		return $scenario_key;
 	}
