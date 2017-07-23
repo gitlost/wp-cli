@@ -41,16 +41,8 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
 
 /**
  * Features context.
- *
- * A new FeatureContext instance is created by behat for each scenario.
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
-
-	/**
-	 * Array of variables available as {VARIABLE_NAME}. Some are always set: CORE_CONFIG_SETTINGS, SRC_DIR, CACHE_DIR, WP_VERSION-version-latest. Some are step-dependent:
-	 * RUN_DIR, SUITE_CACHE_DIR, COMPOSER_LOCAL_REPOSITORY, PHAR_PATH. Scenarios can define their own variables using "Given save" steps. Variables are reset for each scenario.
-	 */
-	public $variables = array();
 
 	/**
 	 * The current working directory for scenarios that have a "Given a WP install" or "Given an empty directory" step. Variable RUN_DIR. Lives until the end of the scenario.
@@ -80,7 +72,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	private static $composer_local_repository;
 
 	/**
-	 * The test database settings. All but `dbname` can be set via enviroment variables. The database is dropped at the start of each scenario and created on a "Given a WP install" step.
+	 * The test database settings. All but `dbname` can be set via environment variables. The database is dropped at the start of each scenario and created on a "Given a WP install" step.
 	 */
 	private static $db_settings = array(
 		'dbname' => 'wp_cli_test',
@@ -95,12 +87,18 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	private $running_procs = array();
 
 	/**
+	 * Array of variables available as {VARIABLE_NAME}. Some are always set: CORE_CONFIG_SETTINGS, SRC_DIR, CACHE_DIR, WP_VERSION-version-latest. Some are step-dependent:
+	 * RUN_DIR, SUITE_CACHE_DIR, COMPOSER_LOCAL_REPOSITORY, PHAR_PATH. Scenarios can define their own variables using "Given save" steps. Variables are reset for each scenario.
+	 */
+	public $variables = array();
+
+	/**
 	 * The current feature file and scenario line number as '<file>.<line>'. Used in RUN_DIR and SUITE_CACHE_DIR directory names. Set at the start of each scenario.
 	 */
 	private static $temp_dir_infix;
 
 	/**
-	 * When the suite started (`microtime( true )`), set on `@BeforeScenario'.
+	 * When the suite started, set on `@BeforeScenario'.
 	 */
 	private static $suite_start_time;
 
@@ -181,13 +179,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * @AfterSuite
 	 */
 	public static function afterSuite( SuiteEvent $event ) {
-		if ( self::$suite_cache_dir ) {
-			//$wp_cli_cache_dir = sys_get_temp_dir() . '/wp-cli-home/.wp-cli/cache';
-			//self::dir_diff_copy( self::$suite_cache_dir, $wp_cli_cache_dir, $wp_cli_cache_dir );
-			self::remove_dir( self::$suite_cache_dir );
-			self::$suite_cache_dir = null;
-		}
-
 		if ( self::$composer_local_repository ) {
 			self::remove_dir( self::$composer_local_repository );
 			self::$composer_local_repository = null;
@@ -212,13 +203,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			self::log_run_times_before_scenario( $event );
 		}
 
+		$this->variables['SRC_DIR'] = realpath( __DIR__ . '/../..' );
+
 		// Used in the names of the RUN_DIR and SUITE_CACHE_DIR directories.
 		self::$temp_dir_infix = null;
 		if ( $file = self::get_event_file( $event, $line ) ) {
 			self::$temp_dir_infix = basename( $file ) . '.' . $line;
 		}
-
-		$this->variables['SRC_DIR'] = realpath( __DIR__ . '/../..' );
 	}
 
 	/**
@@ -413,7 +404,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * Create the RUN_DIR directory, unless already set for this scenario.
 	 */
 	public function create_run_dir() {
-		if ( ! isset( $this->variables['RUN_DIR'] ) ) {
+		if ( !isset( $this->variables['RUN_DIR'] ) ) {
 			self::$run_dir = $this->variables['RUN_DIR'] = sys_get_temp_dir() . '/' . uniqid( 'wp-cli-test-run-' . self::$temp_dir_infix . '-', TRUE );
 			mkdir( $this->variables['RUN_DIR'] );
 		}
@@ -515,7 +506,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	/**
 	 * Start a background process. Will automatically be closed when the tests finish.
 	 */
-	public function background_proc( $cmd, $sleep = 1 ) {
+	public function background_proc( $cmd ) {
 		$descriptors = array(
 			0 => STDIN,
 			1 => array( 'pipe', 'w' ),
@@ -524,13 +515,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['RUN_DIR'], self::get_process_env_variables() );
 
-		if ( $sleep ) {
-			sleep( $sleep );
-		}
+		sleep( 1 );
 
 		$status = proc_get_status( $proc );
 
-		if ( ! $status['running'] ) {
+		if ( !$status['running'] ) {
 			$stderr = is_resource( $pipes[2] ) ? ( ': ' . stream_get_contents( $pipes[2] ) ) : '';
 			throw new RuntimeException( sprintf( "Failed to start background process '%s'%s.", $cmd, $stderr ) );
 		} else {
@@ -722,11 +711,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$env = self::get_process_env_variables();
 			$src = isset( $env['TRAVIS_BUILD_DIR'] ) ? $env['TRAVIS_BUILD_DIR'] : realpath( __DIR__ . '/../../' );
 
-			self::copy_dir( $src, self::$composer_local_repository );
-			self::remove_dir( self::$composer_local_repository . '/.git' );
-			self::remove_dir( self::$composer_local_repository . '/vendor' );
+			$dest = self::$composer_local_repository . '/';
 
-			$this->proc( 'composer config repositories.wp-cli \'{"type": "path", "url": "' . self::$composer_local_repository. '/", "options": {"symlink": false}}\'' )->run_check();
+			self::copy_dir( $src, $dest );
+			self::remove_dir( $dest . '.git' );
+			self::remove_dir( $dest . 'vendor' );
+
+			$this->proc( "composer config repositories.wp-cli '{\"type\": \"path\", \"url\": \"$dest\", \"options\": {\"symlink\": false}}'" )->run_check();
 		}
 		$this->variables['COMPOSER_LOCAL_REPOSITORY'] = self::$composer_local_repository;
 	}
