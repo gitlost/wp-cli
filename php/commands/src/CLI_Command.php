@@ -288,7 +288,7 @@ class CLI_Command extends WP_CLI_Command {
 		$headers = array();
 		$options = array(
 			'timeout' => 600,  // 10 minutes ought to be enough for everybody.
-			'filename' => $temp
+			'filename' => $temp,
 		);
 
 		Utils\http_request( 'GET', $download_url, null, $headers, $options );
@@ -347,11 +347,11 @@ class CLI_Command extends WP_CLI_Command {
 		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?sort=updated&per_page=100';
 
 		$options = array(
-			'timeout' => 30
+			'timeout' => 30,
 		);
 
 		$headers = array(
-			'Accept' => 'application/json'
+			'Accept' => 'application/json',
 		);
 
 		if ( $github_token = getenv( 'GITHUB_TOKEN' ) ) {
@@ -419,7 +419,7 @@ class CLI_Command extends WP_CLI_Command {
 			'major'      => false,
 			'minor'      => false,
 			'patch'      => false,
-			);
+		);
 		foreach ( $release_data as $release ) {
 
 			// Get rid of leading "v" if there is one set.
@@ -440,7 +440,7 @@ class CLI_Command extends WP_CLI_Command {
 			$updates[ $update_type ] = array(
 				'version' => $release_version,
 				'update_type' => $update_type,
-				'package_url' => $release->assets[0]->browser_download_url
+				'package_url' => $release->assets[0]->browser_download_url,
 			);
 		}
 
@@ -541,7 +541,7 @@ class CLI_Command extends WP_CLI_Command {
 	 *
 	 *     # Dump the list of installed commands.
 	 *     $ wp cli cmd-dump
-	 *     {"name":"wp","description":"Manage WordPress through the command-line.","longdesc":"\n\n## GLOBAL PARAMETERS\n\n  --path=<path>\n      Path to the WordPress files.\n\n  --ssh=<ssh>\n      Perform operation against a remote server over SSH.\n\n  --url=<url>\n      Pretend request came from given URL. In multisite, this argument is how the target site is specified. \n\n  --user=<id|login|email>\n
+	 *     {"name":"wp","description":"Manage WordPress through the command-line.","longdesc":"\n\n## GLOBAL PARAMETERS\n\n  --path=<path>\n      Path to the WordPress files.\n\n  --ssh=<ssh>\n      Perform operation against a remote server over SSH (or a container using scheme of "docker" or "docker-compose").\n\n  --url=<url>\n      Pretend request came from given URL. In multisite, this argument is how the target site is specified. \n\n  --user=<id|login|email>\n
 	 *
 	 * @subcommand cmd-dump
 	 */
