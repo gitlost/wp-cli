@@ -42,6 +42,7 @@ class FileCacheTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse( file_exists( $cache_dir . '/ttl' ) );
 	}
 
+	/**
 	 * Test get_root() deals with backslashed directory.
 	 */
 	public function testGetRoot() {
