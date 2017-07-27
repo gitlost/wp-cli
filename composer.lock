@@ -1521,12 +1521,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/core-command.git",
-                "reference": "55b6a48e454f47a92920d1a228ad8868f00cdf00"
+                "reference": "cb58fd71a9952d8c542703258cca16ca60bd8284"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/55b6a48e454f47a92920d1a228ad8868f00cdf00",
-                "reference": "55b6a48e454f47a92920d1a228ad8868f00cdf00",
+                "url": "https://api.github.com/repos/wp-cli/core-command/zipball/cb58fd71a9952d8c542703258cca16ca60bd8284",
+                "reference": "cb58fd71a9952d8c542703258cca16ca60bd8284",
                 "shasum": ""
             },
             "require-dev": {
@@ -1572,7 +1572,7 @@
             ],
             "description": "Download, install, update and manage a WordPress install.",
             "homepage": "https://github.com/wp-cli/core-command",
-            "time": "2017-07-13 10:35:57"
+            "time": "2017-07-18 14:55:39"
         },
         {
             "name": "wp-cli/cron-command",
@@ -1877,22 +1877,22 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/gitlost/extension-command.git",
-                "reference": "8358c815983718e9b198aee0d1e12fe837882ba8"
+                "reference": "73b2fe63690ab4884599be5893ca002a8d085cc8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gitlost/extension-command/zipball/8358c815983718e9b198aee0d1e12fe837882ba8",
-                "reference": "8358c815983718e9b198aee0d1e12fe837882ba8",
+                "url": "https://api.github.com/repos/gitlost/extension-command/zipball/73b2fe63690ab4884599be5893ca002a8d085cc8",
+                "reference": "73b2fe63690ab4884599be5893ca002a8d085cc8",
                 "shasum": ""
             },
             "require-dev": {
                 "behat/behat": "~2.5",
-                "wp-cli/wp-cli": "*"
+                "wp-cli/wp-cli": "dev-github-api"
             },
             "type": "wp-cli-package",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.x-dev"
+                    "dev-themecache": "1.x-dev"
                 },
                 "bundled": true,
                 "commands": [
@@ -1949,9 +1949,9 @@
             "homepage": "https://github.com/wp-cli/extension-command",
             "support": {
                 "issues": "https://github.com/wp-cli/extension-command/issues",
-                "source": "https://github.com/gitlost/extension-command/tree/theme_cache"
+                "source": "https://github.com/gitlost/extension-command/tree/themecache"
             },
-            "time": "2017-07-14 22:11:13"
+            "time": "2017-07-15 04:22:03"
         },
         {
             "name": "wp-cli/import-command",
@@ -2067,12 +2067,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/media-command.git",
-                "reference": "a0690a39335226c021aa860a51440f014c14d588"
+                "reference": "6b6edd5e87c576fcaf6cfdd88dee425de2e38162"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/a0690a39335226c021aa860a51440f014c14d588",
-                "reference": "a0690a39335226c021aa860a51440f014c14d588",
+                "url": "https://api.github.com/repos/wp-cli/media-command/zipball/6b6edd5e87c576fcaf6cfdd88dee425de2e38162",
+                "reference": "6b6edd5e87c576fcaf6cfdd88dee425de2e38162",
                 "shasum": ""
             },
             "require": {
@@ -2111,9 +2111,9 @@
                     "homepage": "https://runcommand.io"
                 }
             ],
-            "description": "Import and regenerate attachments.",
+            "description": "Import new attachments or regenerate existing ones.",
             "homepage": "https://github.com/wp-cli/media-command",
-            "time": "2017-07-12 16:50:54"
+            "time": "2017-07-26 22:07:54"
         },
         {
             "name": "wp-cli/mustangostang-spyc",
