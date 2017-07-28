@@ -7,7 +7,7 @@ env:
   global:
     - WP_CLI_BIN_DIR=/tmp/wp-cli-phar
     - TEST_COMMANDS=0
-	- TEST_COMMANDS_GLOB=*-command
+    - TEST_COMMANDS_GLOB=*-command
 
 matrix:
   include:
