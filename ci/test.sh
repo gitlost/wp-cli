@@ -16,15 +16,11 @@ if [[ $TEST_COMMANDS -eq 0 || $((TEST_COMMANDS & 1)) > 0 ]]; then
 fi
 
 if [[ $((TEST_COMMANDS & 2)) > 0 ]]; then
-	for R in vendor/wp-cli/[a-h]*-command; do
+	# Run the functional tests of commands.
+	TEST_COMMANDS_GLOB=${TEST_COMMANDS_GLOB-*-command}
+	for R in vendor/wp-cli/$TEST_COMMANDS_GLOB; do
 		if [[ -f "$R/behat.yml" ]]; then BEHAT_YML="--config $R/behat.yml"; fi
-		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_YML $BEHAT_TAGS --strict $R/features
-	done
-fi
-
-if [[ $((TEST_COMMANDS & 4)) > 0 ]]; then
-	for R in vendor/wp-cli/[i-z]*-command; do
-		if [[ -f "$R/behat.yml" ]]; then BEHAT_YML="--config $R/behat.yml"; fi
-		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php); vendor/bin/behat --format progress $BEHAT_YML $BEHAT_TAGS --strict $R/features
+		BEHAT_TAGS=$(cd $R && php ../../../ci/behat-tags.php)
+		vendor/bin/behat --format progress $BEHAT_YML $BEHAT_TAGS --strict $R/features
 	done
 fi
