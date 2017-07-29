@@ -410,7 +410,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 					$shell_path = 'wp';
 				}
 			}
-			echo "bin_dir=$bin_dir";
 		}
 
 		$str = preg_replace_callback( '/{INVOKE_WP_CLI_WITH_PHP_ARGS-([^}]*)}/', function ( $matches ) use ( $phar_path, $shell_path ) {
