@@ -894,5 +894,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		} else {
 			error_log( $log );
 		}
+	}
 
 }
