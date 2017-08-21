@@ -21,13 +21,24 @@ class Process {
 	 */
 	private $env;
 
+	/**
+	 * @var array Descriptor spec for `proc_open()`.
+	 */
 	private static $descriptors = array(
 		0 => STDIN,
 		1 => array( 'pipe', 'w' ),
 		2 => array( 'pipe', 'w' ),
 	);
 
-	static $run_times = array();
+	/**
+	 * @var bool Whether to log run time info or not.
+	 */
+	public static $log_run_times = false;
+
+	/**
+	 * @var array Array of process run time info, keyed by process command, each a 2-element array containing run time and run count.
+	 */
+	public static $run_times = array();
 
 	/**
 	 * @param string $command Command to execute.
@@ -68,7 +79,7 @@ class Process {
 
 		$run_time = microtime( true ) - $start_time;
 
-		if ( getenv( 'WP_CLI_TEST_LOG_RUN_TIMES' ) ) {
+		if ( self::$log_run_times ) {
 			if ( ! isset( self::$run_times[ $this->command ] ) ) {
 				self::$run_times[ $this->command ] = array( 0, 0 );
 			}
