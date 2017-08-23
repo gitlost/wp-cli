@@ -519,8 +519,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * @param bool $add_database Optional. Whether to add dbname to the $sql_cmd. Default false.
 	 */
 	private static function run_sql( $sql_cmd, $assoc_args = array(), $add_database = false ) {
-		$start_time = microtime( true );
-
 		$default_assoc_args = array(
 			'host' => self::$db_settings['dbhost'],
 			'user' => self::$db_settings['dbuser'],
@@ -529,8 +527,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( $add_database ) {
 			$sql_cmd .= ' ' . escapeshellarg( self::$db_settings['dbname'] );
 		}
+		$start_time = microtime( true );
 		Utils\run_mysql_command( $sql_cmd, array_merge( $assoc_args, $default_assoc_args ) );
-
 		if ( self::$log_run_times ) {
 			self::log_proc_method_run_time( $sql_cmd . ' ' . implode( ' ', $assoc_args ), $start_time );
 		}
