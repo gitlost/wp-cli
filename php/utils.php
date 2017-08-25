@@ -580,7 +580,7 @@ function http_request( $method, $url, $data = null, $headers = array(), $options
 		$request = \Requests::request( $url, $headers, $data, $method, $options );
 		return $request;
 	} catch( \Requests_Exception $ex ) {
-		if ( 'curlerror' !== $ex->getType() || ! in_array( curl_errno( $ex->getData() ), array( CURLE_SSL_CONNECT_ERROR, CURLE_SSL_CERTPROBLEM, CURLE_SSL_CACERT_BADFILE ), true ) ) {
+		if ( 'curlerror' !== $ex->getType() || ! in_array( curl_errno( $ex->getData() ), array( CURLE_SSL_CONNECT_ERROR, CURLE_SSL_CERTPROBLEM, 77 /*CURLE_SSL_CACERT_BADFILE*/ ), true ) ) {
 			\WP_CLI::error( sprintf( "Failed to get url '%s': %s.", $url, $ex->getMessage() ) );
 		}
 		// Handle SSL certificate issues gracefully
