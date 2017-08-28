@@ -82,6 +82,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	);
 
 	/**
+	 * Flag whether `wp_cli_test` database dropped already or not. (For performance reasons.)
+	 */
+	private static $have_dropped_db = false;
+
+	/**
 	 * Array of background process ids started by the current scenario. Used to terminate them at the end of the scenario.
 	 */
 	private $running_procs = array();
@@ -536,12 +541,16 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public function create_db() {
 		$dbname = self::$db_settings['dbname'];
-		self::run_sql( 'mysql --no-defaults', array( 'execute' => "CREATE DATABASE IF NOT EXISTS $dbname" ) );
+		self::run_sql( 'mysql --no-defaults --no-auto-rehash', array( 'execute' => "CREATE DATABASE IF NOT EXISTS $dbname" ) );
+		self::$have_dropped_db = false;
 	}
 
 	public function drop_db() {
-		$dbname = self::$db_settings['dbname'];
-		self::run_sql( 'mysql --no-defaults', array( 'execute' => "DROP DATABASE IF EXISTS $dbname" ) );
+		if ( ! self::$have_dropped_db ) {
+			$dbname = self::$db_settings['dbname'];
+			self::run_sql( 'mysql --no-defaults --no-auto-rehash', array( 'execute' => "DROP DATABASE IF EXISTS $dbname" ) );
+			self::$have_dropped_db = true;
+		}
 	}
 
 	public function proc( $command, $assoc_args = array(), $path = '' ) {
@@ -684,7 +693,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		if ( $install_cache_path && file_exists( $install_cache_path ) ) {
 			self::copy_dir( $install_cache_path, $run_dir );
-			self::run_sql( 'mysql --no-defaults', array( 'execute' => "source {$install_cache_path}.sql" ), true /*add_database*/ );
+			self::run_sql( 'mysql --no-defaults --no-auto-rehash', array( 'execute' => "SOURCE {$install_cache_path}.sql" ), true /*add_database*/ );
 		} else {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_cache_path ) {
