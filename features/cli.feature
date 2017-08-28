@@ -64,11 +64,12 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
-    When I run `{PHAR_PATH} cli update`
-    Then STDOUT should be:
-      """
-      Success: WP-CLI is at the latest version.
-      """
+    #GITHUB_TOKEN: This can hit github rate limiting on Travis as the latest 1.3.0 phar doesn't use GITHUB_TOKEN.
+    #When I run `{PHAR_PATH} cli update`
+    #Then STDOUT should be:
+      #"""
+      #Success: WP-CLI is at the latest version.
+      #"""
 
   @travis-github-token
   Scenario: Patch update from 0.14.0 to 0.14.1
@@ -163,7 +164,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
-    # This can hit github rate limiting on Travis as the latest 1.2.1 phar doesn't use GITHUB_TOKEN.
+    #GITHUB_TOKEN: This can hit github rate limiting on Travis as the latest 1.3.0 phar doesn't use GITHUB_TOKEN.
     #When I run `{PHAR_PATH} cli check-update`
     #Then STDOUT should be:
       #"""
