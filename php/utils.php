@@ -336,7 +336,8 @@ function pick_fields( $item, $fields ) {
  * @access public
  * @category Input
  *
- * @param  string  $content  Some form of text to edit (e.g. post content)
+ * @param  string  $input    Some form of text to edit (e.g. post content)
+ * @param  string  $filename Optional. File name to use as base for temporary file. Default 'WP-CLI'.
  * @return string|bool       Edited text, if file is saved from editor; false, if no change to file.
  */
 function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
@@ -348,7 +349,7 @@ function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
 	do {
 		$tmpfile = basename( $filename );
 		$tmpfile = preg_replace( '|\.[^.]*$|', '', $tmpfile );
-		$tmpfile .= '-' . substr( md5( rand() ), 0, 6 );
+		$tmpfile .= '-' . substr( md5( (string) rand() ), 0, 6 );
 		$tmpfile = $tmpdir . $tmpfile . '.tmp';
 		$fp = @fopen( $tmpfile, 'x' );
 		if ( ! $fp && is_writable( $tmpdir ) && file_exists( $tmpfile ) ) {
@@ -952,6 +953,7 @@ function get_suggestion( $target, array $options, $threshold = 2 ) {
 	if ( empty( $options ) ) {
 		return '';
 	}
+	$levenshtein = array();
 	foreach ( $options as $option ) {
 		$distance = levenshtein( $option, $target );
 		$levenshtein[ $option ] = $distance;
@@ -1075,7 +1077,7 @@ function check_proc_available( $context = null, $return = false ) {
 /**
  * Wrapper around strtotime() that always interprets the string with a default timezone of UTC.
  *
- * @param string $time A date/time string.
+ * @param string $str A date/time string.
  * @param int    $now  Optional. The timestamp which is used as a base for the calculation of relative dates.
  *
  * @return int|bool Returns a timestamp on success, false otherwise.

@@ -202,7 +202,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			// Then ctrl+C hit so cleanup any leftover scenario stuff.
 			self::afterScenario_cleanup( $event );
 		} else {
-			// Test performance statistics - useful for detecting slow tests.
 			if ( self::$log_run_times ) {
 				self::log_run_times_after_suite( $event );
 			}
@@ -535,7 +534,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$start_time = microtime( true );
 		Utils\run_mysql_command( $sql_cmd, array_merge( $assoc_args, $default_assoc_args ) );
 		if ( self::$log_run_times ) {
-			self::log_proc_method_run_time( $sql_cmd . ' ' . implode( ' ', $assoc_args ), $start_time );
+			self::log_proc_method_run_time( $sql_cmd . ' ' . Utils\assoc_args_to_str( $assoc_args ), $start_time );
 		}
 	}
 
@@ -783,42 +782,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	/**
-	 * Copy files in updated directory that are not in source directory to copy directory. ("Incremental backup".)
-	 * Note: does not deal with changed files (ie does not compare file contents for changes), for speed reasons.
-	 *
-	 * @param string $upd_dir The directory to search looking for files/directories not in `$src_dir`.
-	 * @param string $src_dir The directory to be compared to `$upd_dir`.
-	 * @param string $cop_dir Where to copy any files/directories in `$upd_dir` but not in `$src_dir` to.
-	 */
-	private static function dir_diff_copy( $upd_dir, $src_dir, $cop_dir ) {
-		if ( false === ( $files = scandir( $upd_dir ) ) ) {
-			$error = error_get_last();
-			throw new \RuntimeException( sprintf( "Failed to open updated directory '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_dir, $error['message'] ) );
-		}
-		foreach ( array_diff( $files, array( '.', '..' ) ) as $file ) {
-			$upd_file = $upd_dir . '/' . $file;
-			$src_file = $src_dir . '/' . $file;
-			$cop_file = $cop_dir . '/' . $file;
-			if ( ! file_exists( $src_file ) ) {
-				if ( is_dir( $upd_file ) ) {
-					if ( ! file_exists( $cop_file ) && ! mkdir( $cop_file, 0777, true /*recursive*/ ) ) {
-						$error = error_get_last();
-						throw new \RuntimeException( sprintf( "Failed to create copy directory '%s': %s. " . __FILE__ . ':' . __LINE__, $cop_file, $error['message'] ) );
-					}
-					self::copy_dir( $upd_file, $cop_file );
-				} else {
-					if ( ! copy( $upd_file, $cop_file ) ) {
-						$error = error_get_last();
-						throw new \RuntimeException( sprintf( "Failed to copy '%s' to '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_file, $cop_file, $error['message'] ) );
-					}
-				}
-			} elseif ( is_dir( $upd_file ) ) {
-				self::dir_diff_copy( $upd_file, $src_file, $cop_file );
-			}
-		}
-	}
-
-	/**
 	 * Initialize run time logging.
 	 */
 	private static function log_run_times_before_suite( $event ) {
@@ -866,6 +829,42 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			if ( count( self::$scenario_run_times ) > self::$num_top_scenarios ) {
 				arsort( self::$scenario_run_times );
 				array_pop( self::$scenario_run_times );
+			}
+		}
+	}
+
+	/**
+	 * Copy files in updated directory that are not in source directory to copy directory. ("Incremental backup".)
+	 * Note: does not deal with changed files (ie does not compare file contents for changes), for speed reasons.
+	 *
+	 * @param string $upd_dir The directory to search looking for files/directories not in `$src_dir`.
+	 * @param string $src_dir The directory to be compared to `$upd_dir`.
+	 * @param string $cop_dir Where to copy any files/directories in `$upd_dir` but not in `$src_dir` to.
+	 */
+	private static function dir_diff_copy( $upd_dir, $src_dir, $cop_dir ) {
+		if ( false === ( $files = scandir( $upd_dir ) ) ) {
+			$error = error_get_last();
+			throw new \RuntimeException( sprintf( "Failed to open updated directory '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_dir, $error['message'] ) );
+		}
+		foreach ( array_diff( $files, array( '.', '..' ) ) as $file ) {
+			$upd_file = $upd_dir . '/' . $file;
+			$src_file = $src_dir . '/' . $file;
+			$cop_file = $cop_dir . '/' . $file;
+			if ( ! file_exists( $src_file ) ) {
+				if ( is_dir( $upd_file ) ) {
+					if ( ! file_exists( $cop_file ) && ! mkdir( $cop_file, 0777, true /*recursive*/ ) ) {
+						$error = error_get_last();
+						throw new \RuntimeException( sprintf( "Failed to create copy directory '%s': %s. " . __FILE__ . ':' . __LINE__, $cop_file, $error['message'] ) );
+					}
+					self::copy_dir( $upd_file, $cop_file );
+				} else {
+					if ( ! copy( $upd_file, $cop_file ) ) {
+						$error = error_get_last();
+						throw new \RuntimeException( sprintf( "Failed to copy '%s' to '%s': %s. " . __FILE__ . ':' . __LINE__, $upd_file, $cop_file, $error['message'] ) );
+					}
+				}
+			} elseif ( is_dir( $upd_file ) ) {
+				self::dir_diff_copy( $upd_file, $src_file, $cop_file );
 			}
 		}
 	}
