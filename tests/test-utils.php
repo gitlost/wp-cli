@@ -198,6 +198,18 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals( null, Utils\parse_ssh_url( $testcase, PHP_URL_PORT ) );
 		$this->assertEquals( '~/path/to/dir', Utils\parse_ssh_url( $testcase, PHP_URL_PATH ) );
 
+		// vagrant scheme
+		$testcase = 'vagrant:default';
+		$this->assertEquals( array(
+			'scheme' => 'vagrant',
+			'host' => 'default',
+		), Utils\parse_ssh_url( $testcase ) );
+		$this->assertEquals( 'vagrant', Utils\parse_ssh_url( $testcase, PHP_URL_SCHEME ) );
+		$this->assertEquals( null, Utils\parse_ssh_url( $testcase, PHP_URL_USER ) );
+		$this->assertEquals( 'default', Utils\parse_ssh_url( $testcase, PHP_URL_HOST ) );
+		$this->assertEquals( null, Utils\parse_ssh_url( $testcase, PHP_URL_PORT ) );
+		$this->assertEquals( null, Utils\parse_ssh_url( $testcase, PHP_URL_PATH ) );
+
 		// unsupported scheme, should not match
 		$testcase = 'foo:bar';
 		$this->assertEquals( array(), Utils\parse_ssh_url( $testcase ) );
@@ -454,6 +466,43 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		exec( $cmd, $output );
 		$this->assertTrue( 1 === count( $output ) );
 		$this->assertTrue( false !== strpos( trim( $output[0] ), $err_msg ) );
+	}
+
+	/**
+	 * @dataProvider dataPastTenseVerb
+	 */
+	public function testPastTenseVerb( $verb, $expected ) {
+		$this->assertSame( $expected, Utils\past_tense_verb( $verb ) );
+	}
+
+	public function dataPastTenseVerb() {
+		return array(
+			// Known to be used by commands.
+			array( 'activate', 'activated' ),
+			array( 'deactivate', 'deactivated' ),
+			array( 'delete', 'deleted' ),
+			array( 'import', 'imported' ),
+			array( 'install', 'installed' ),
+			array( 'network activate', 'network activated' ),
+			array( 'network deactivate', 'network deactivated' ),
+			array( 'regenerate', 'regenerated' ),
+			array( 'reset', 'reset' ),
+			array( 'spam', 'spammed' ),
+			array( 'toggle', 'toggled' ),
+			array( 'uninstall', 'uninstalled' ),
+			array( 'update', 'updated' ),
+			// Some others.
+			array( 'call', 'called' ),
+			array( 'check', 'checked' ),
+			array( 'crop', 'cropped' ),
+			array( 'fix', 'fixed' ), // One vowel + final "x" excluded.
+			array( 'hurrah', 'hurrahed' ), // One vowel + final "h" excluded.
+			array( 'show', 'showed' ), // One vowel + final "w" excluded.
+			array( 'ski', 'skied' ),
+			array( 'slay', 'slayed' ), // One vowel + final "y" excluded (nearly all irregular anyway).
+			array( 'submit', 'submited' ), // BUG: multi-voweled verbs that double not catered for - should be "submitted".
+			array( 'try', 'tried' ),
+		);
 	}
 
 }

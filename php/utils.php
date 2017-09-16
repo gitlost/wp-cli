@@ -779,7 +779,7 @@ function get_temp_dir() {
  * @return mixed
  */
 function parse_ssh_url( $url, $component = -1 ) {
-	preg_match( '#^((docker|docker\-compose|ssh):)?(([^@:]+)@)?([^:/~]+)(:([\d]*))?((/|~)(.+))?$#', $url, $matches );
+	preg_match( '#^((docker|docker\-compose|ssh|vagrant):)?(([^@:]+)@)?([^:/~]+)(:([\d]*))?((/|~)(.+))?$#', $url, $matches );
 	$bits = array();
 	foreach( array(
 		2 => 'scheme',
@@ -822,11 +822,7 @@ function parse_ssh_url( $url, $component = -1 ) {
  */
 function report_batch_operation_results( $noun, $verb, $total, $successes, $failures ) {
 	$plural_noun = $noun . 's';
-	if ( in_array( $verb, array( 'reset' ), true ) ) {
-		$past_tense_verb = $verb;
-	} else {
-		$past_tense_verb = 'e' === substr( $verb, -1 ) ? $verb . 'd' : $verb . 'ed';
-	}
+	$past_tense_verb = past_tense_verb( $verb );
 	$past_tense_verb_upper = ucfirst( $past_tense_verb );
 	if ( $failures ) {
 		if ( $successes ) {
@@ -1097,3 +1093,28 @@ function strtotime_gmt( $str, $now = null ) {
 	}
 	return $ret;
 }
+
+/**
+ * Returns past tense of verb, with limited accuracy. Only regular verbs catered for, apart from "reset".
+ *
+ * @param string $verb Verb to return past tense of.
+ *
+ * @return string
+ */
+function past_tense_verb( $verb ) {
+	static $irregular = array( 'reset' => 'reset' );
+	if ( isset( $irregular[ $verb ] ) ) {
+		return $irregular[ $verb ];
+	}
+	$last = substr( $verb, -1 );
+	if ( 'e' === $last ) {
+		$verb = substr( $verb, 0, -1 );
+	} elseif ( 'y' === $last && ! preg_match( '/[aeiou]y$/', $verb ) ) {
+		$verb = substr( $verb, 0, -1 ) . 'i';
+	} elseif ( preg_match( '/^[^aeiou]*[aeiou][^aeiouhwxy]$/', $verb ) ) {
+		// Rule of thumb that most (all?) one-voweled regular verbs ending in vowel + consonant (excluding "h", "w", "x", "y") double their final consonant - misses many cases (eg "submit").
+		$verb .= $last;
+	}
+	return $verb . 'ed';
+}
+
