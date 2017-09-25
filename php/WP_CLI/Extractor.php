@@ -90,7 +90,7 @@ class Extractor {
 				self::rmdir( dirname( $tempdir ) );
 				return;
 			} catch ( \Exception $e ) {
-				// PHP bug in `zlib_filter`, triggered on distributions with the "lp564920-fix-big-files" Debian patch.
+				// Don't warn on PHP bug in `zlib_filter`, triggered on distributions with the "lp564920-fix-big-files" Debian patch.
 				if ( sprintf( 'unable to decompress gzipped phar archive "%s" to temporary file', $tarball ) !== $e->getMessage() ) {
 					WP_CLI::warning( "PharData failed, falling back to 'tar gz' (" . $e->getMessage() . ')' );
 				}

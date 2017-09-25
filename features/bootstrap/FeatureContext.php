@@ -160,6 +160,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( $wp_version ) {
 			$cmd .= Utils\esc_cmd( ' --version=%s', $wp_version );
 		}
+		// Redirect any warnings (eg md5 hash checks not available).
+		$cmd .= ' 2>&1';
 		Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 	}
 
