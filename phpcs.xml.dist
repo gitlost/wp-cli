@@ -18,10 +18,15 @@
 	<exclude-pattern>*/tests/*</exclude-pattern>
 	<exclude-pattern>*/utils/*</exclude-pattern>
 	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/.phan/*</exclude-pattern>
 
 	<rule ref="WordPress-Core">
 		<exclude name="Generic.PHP.NoSilencedErrors.Discouraged" />
+        <!--exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" /--> <!--Unreported by phpcs but applied by phpcbf. Enable if running phpcbf. -->
+        <!--exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" /--> <!--Unreported by phpcs but applied by phpcb. Enable if running phpcbf.  -->
+		<exclude name="PEAR.Functions.FunctionCallSignature.Indent" />
 		<exclude name="Squiz.PHP.DisallowMultipleAssignments.Found" />
+		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing.AssociativeKeyFound" />
 		<exclude name="WordPress.DB.RestrictedFunctions.mysql_mysql_host_to_cli_args" />
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
 		<exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
@@ -31,5 +36,6 @@
 		<exclude name="WordPress.NamingConventions.ValidVariableName.MemberNotSnakeCase" />
 		<exclude name="WordPress.NamingConventions.ValidVariableName.NotSnakeCase" />
 		<exclude name="WordPress.PHP.YodaConditions.NotYoda" />
+		<exclude name="WordPress.WP.CapitalPDangit" />
 	</rule>
 </ruleset>

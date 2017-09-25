@@ -309,6 +309,9 @@ class Runner {
 	 * @param array $options     Configuration options for the function.
 	 */
 	public function run_command( $args, $assoc_args = array(), $options = array() ) {
+		// Enable PHP error reporting to stderr if testing.
+		$this->behat_enable_error_reporting();
+
 		if ( ! empty( $options['back_compat_conversions'] ) ) {
 			list( $args, $assoc_args ) = self::back_compat_conversions( $args, $assoc_args );
 		}
@@ -1579,6 +1582,19 @@ class Runner {
 			$list[] = $command_string;
 
 			$this->enumerate_commands( $subcommand, $list, $command_string );
+		}
+	}
+
+	/**
+	 * Enables (almost) full PHP error reporting to stderr if testing.
+	 */
+	private function behat_enable_error_reporting() {
+		if ( getenv( 'BEHAT_RUN' ) ) {
+			if ( E_ALL !== error_reporting() ) {
+				// Don't enable E_DEPRECATED as old versions of WP use PHP 4 style constructors and the mysql extension.
+				error_reporting( E_ALL & ~E_DEPRECATED );
+			}
+			ini_set( 'display_errors', 'stderr' );
 		}
 	}
 }

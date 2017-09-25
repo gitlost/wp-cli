@@ -783,8 +783,13 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'test-command-2', function () {} );
       """
 
-    When I run `wp --require=abort-add-command.php`
-    Then STDOUT should contain:
+    When I try `wp --require=abort-add-command.php`
+	Then the return code should be 0
+	And STDERR should contain:
+      """
+      Warning: Aborting the addition of the command 'test-command-2'
+      """
+    And STDOUT should contain:
       """
       test-command-1
       """

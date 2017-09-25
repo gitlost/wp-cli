@@ -13,7 +13,7 @@ Feature: Bootstrap WP-CLI
           }
       }
       """
-    And I run `composer install --no-interaction`
+    And I run `composer install --no-interaction 2>&1`
 
     When I run `vendor/bin/wp cli version`
     Then STDOUT should contain:
@@ -82,7 +82,7 @@ Feature: Bootstrap WP-CLI
         }
      }
       """
-    And I run `composer install --no-interaction`
+    And I run `composer install --no-interaction 2>&1`
 
     When I run `vendor/bin/wp cli version`
     Then STDOUT should contain:
@@ -130,7 +130,7 @@ Feature: Bootstrap WP-CLI
         }
       }
       """
-    And I run `composer install --working-dir={RUN_DIR}/cli-override-command --no-interaction`
+    And I run `composer install --working-dir={RUN_DIR}/cli-override-command --no-interaction 2>&1`
 
     When I run `wp cli version`
       Then STDOUT should contain:
@@ -185,7 +185,7 @@ Feature: Bootstrap WP-CLI
         }
       }
       """
-    And I run `composer install --working-dir={RUN_DIR}/cli-override-command --no-interaction`
+    And I run `composer install --working-dir={RUN_DIR}/cli-override-command --no-interaction 2>&1`
 
     When I run `{PHAR_PATH} cli version`
       Then STDOUT should contain:

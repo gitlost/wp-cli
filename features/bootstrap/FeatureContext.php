@@ -475,7 +475,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 
 		$this->proc( Utils\esc_cmd(
-			'php -dphar.readonly=0 %1$s %2$s --version=%3$s --quiet --build=%4$s && chmod +x %2$s',
+			'php -dphar.readonly=0 %1$s %2$s --version=%3$s --quiet --build=%4$s',
 			$make_phar_path,
 			$this->variables['PHAR_PATH'],
 			$version,
@@ -681,7 +681,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'title' => 'WP CLI Site',
 			'admin_user' => 'admin',
 			'admin_email' => 'admin@example.com',
-			'admin_password' => 'password1'
+			'admin_password' => 'password1',
+			'skip-email' => true,
 		);
 
 		$install_cache_path = '';
@@ -722,7 +723,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'title' => 'WP CLI Site with both WordPress and wp-cli as Composer dependencies',
 			'admin_user' => 'admin',
 			'admin_email' => 'admin@example.com',
-			'admin_password' => 'password1'
+			'admin_password' => 'password1',
+			'skip-email' => true,
 		);
 
 		$this->proc( 'wp core install', $install_args )->run_check();
@@ -781,6 +783,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	private function composer_command($cmd) {
 		if ( !isset( $this->variables['COMPOSER_PATH'] ) ) {
 			$this->variables['COMPOSER_PATH'] = exec('which composer');
+		}
+		// Redirect composer messages from stderr to stdout.
+		if ( false === strpos( $cmd, '>' ) ) {
+			$cmd .= ' 2>&1';
 		}
 		$this->proc( $this->variables['COMPOSER_PATH'] . ' ' . $cmd )->run_check();
 	}

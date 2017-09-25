@@ -77,8 +77,9 @@ Feature: Skipping plugins
 
   Scenario: Skip network active plugins
     Given a WP multisite install
-    And I run `wp plugin deactivate akismet hello`
-    And I run `wp plugin activate --network akismet hello`
+    And I try `wp plugin deactivate akismet hello`
+	Then the return code should be 0
+    Given I run `wp plugin activate --network akismet hello`
 
     When I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`
     Then STDOUT should be:

@@ -401,7 +401,10 @@ class CLI_Command extends WP_CLI_Command {
 				// Reduce the data to what's used.
 				$release_data = array_merge( $release_data, array_map(
 					function ( $v ) {
-						return (object) array( 'tag_name' => $v->tag_name, 'assets' => array( (object) array( 'browser_download_url' => $v->assets[0]->browser_download_url ) ) );
+						return (object) array(
+							'tag_name' => $v->tag_name,
+							'assets' => array( (object) array( 'browser_download_url' => $v->assets[0]->browser_download_url ) ),
+						);
 					}, json_decode( $response->body ) )
 				);
 
