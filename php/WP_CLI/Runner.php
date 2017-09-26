@@ -1589,6 +1589,7 @@ class Runner {
 	 * Enables (almost) full PHP error reporting to stderr if testing.
 	 */
 	private function behat_enable_error_reporting() {
+		return;
 		if ( getenv( 'BEHAT_RUN' ) ) {
 			if ( E_ALL !== error_reporting() ) {
 				// Don't enable E_DEPRECATED as old versions of WP use PHP 4 style constructors and the mysql extension.
