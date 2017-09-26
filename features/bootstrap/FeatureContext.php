@@ -477,7 +477,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 
 		$this->proc( Utils\esc_cmd(
-			'php -dphar.readonly=0 %1$s %2$s --version=%3$s --quiet --build=%4$s',
+			'php -dphar.readonly=0 %1$s %2$s --version=%3$s --quiet --build=%4$s && chmod +x %2$s',
 			$make_phar_path,
 			$this->variables['PHAR_PATH'],
 			$version,
