@@ -54,8 +54,8 @@ function add_file( $phar, $path ) {
 		echo "$key - $path\n";
 
 	$file_contents = file_get_contents( $path );
-	if ( preg_match( '/\.php$/', $path ) ) {
-		$is_wp_cli_command = preg_match( '/\/(?:php\/commands|vendor\/wp-cli\/[^\/]*?-command\/src)\//', $path );
+	if ( 0 === substr_compare( $path, '.php', -4 ) ) {
+		$is_wp_cli_command = preg_match( '/\/(?:php\/commands|vendor\/wp-cli\/[^\/]+?-command\/src)\//', $path );
 		$file_contents = strip_comments( $file_contents, $is_wp_cli_command /*keep_doc_comments*/ );
 	}
 
@@ -70,14 +70,14 @@ function add_file( $phar, $path ) {
 					'\/phpunit\/',
 					'\/nb\/oxymel\/',
 					'-command\/src\/',
-					'\/wp-cli\/[^\n]+-command\/',
-					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
+					'\/wp-cli\/[^\n]+?-command\/',
+					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+?\/',
 				);
 			} else {
 				$strips = array(
 					'\/(?:behat|gherkin)\/src\/',
 					'\/phpunit\/',
-					'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+\/',
+					'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+?\/',
 					'\/composer\/spdx-licenses\/',
 					'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
 				);
