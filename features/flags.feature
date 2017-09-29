@@ -46,8 +46,9 @@ Feature: Global flags
   Scenario: Debug run
     Given a WP install
 
-    When I run `wp eval 'echo CONST_WITHOUT_QUOTES;'`
-    Then STDOUT should be:
+    When I try `wp eval 'echo CONST_WITHOUT_QUOTES;'`
+    Then the return code should be 0
+    And STDOUT should be:
       """
       CONST_WITHOUT_QUOTES
       """
