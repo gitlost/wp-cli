@@ -1030,6 +1030,10 @@ class WP_CLI {
 			return PHP_BINARY;
 		}
 
+		if ( defined( 'PHP_BINDIR' ) ) {
+			return PHP_BINDIR . '/php';
+		}
+
 		return 'php';
 	}
 
