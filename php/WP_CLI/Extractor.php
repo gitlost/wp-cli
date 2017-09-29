@@ -85,11 +85,11 @@ class Extractor {
 						throw new \Exception( "Error creating temporary tar '$temp_tar'." );
 					}
 
-					self::copy_overwrite_files( 'phar://' . $temp_tar, $dest );
+					self::copy_overwrite_files( 'phar://' . $temp_tar, $dest, 1 /*strip_components*/ );
 
 					unlink( $temp_tar );
 				} else {
-					self::copy_overwrite_files( 'phar://' . $tarball, $dest );
+					self::copy_overwrite_files( 'phar://' . $tarball, $dest, 1 /*strip_components*/ );
 				}
 				return;
 			} catch ( \Exception $e ) {
@@ -101,7 +101,7 @@ class Extractor {
 		WP_CLI::launch( Utils\esc_cmd( $cmd, $dest ) );
 	}
 
-	public static function copy_overwrite_files( $source, $dest ) {
+	public static function copy_overwrite_files( $source, $dest, $strip_components = 0 ) {
 		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $source, RecursiveDirectoryIterator::SKIP_DOTS ),
 			RecursiveIteratorIterator::SELF_FIRST
@@ -114,6 +114,10 @@ class Extractor {
 		}
 
 		foreach ( $iterator as $item ) {
+
+			if ( $strip_components > 0 ) {
+				return self::copy_overwrite_files( $item, $dest, --$strip_components );
+			}
 
 			$dest_path = $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
 

@@ -54,7 +54,7 @@ function add_file( $phar, $path ) {
 		echo "$key - $path\n";
 
 	$file_contents = file_get_contents( $path );
-	if ( preg_match( '/.php$/', $path ) ) {
+	if ( preg_match( '/\.php$/', $path ) ) {
 		$is_wp_cli_command = preg_match( '/\/(?:php\/commands|vendor\/wp-cli\/[^\/]*?-command\/src)\//', $path );
 		$file_contents = strip_comments( $file_contents, $is_wp_cli_command /*keep_doc_comments*/ );
 	}
