@@ -289,4 +289,4 @@ Feature: Global flags
       """
       Running SSH command: docker exec --user 'user' 'wordpress' sh -c
       """
-    And the return code should be 127
+    And the return code should not be 0
