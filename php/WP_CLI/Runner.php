@@ -309,9 +309,6 @@ class Runner {
 	 * @param array $options     Configuration options for the function.
 	 */
 	public function run_command( $args, $assoc_args = array(), $options = array() ) {
-		// Enable PHP error reporting to stderr if testing.
-		$this->maybe_enable_error_reporting();
-
 		if ( ! empty( $options['back_compat_conversions'] ) ) {
 			list( $args, $assoc_args ) = self::back_compat_conversions( $args, $assoc_args );
 		}
@@ -881,6 +878,11 @@ class Runner {
 
 	public function start() {
 
+		// Enable PHP error reporting to stderr if testing. Will need to be re-enabled after WP loads.
+		if ( getenv( 'BEHAT_RUN' ) ) {
+			$this->enable_error_reporting();
+		}
+
 		WP_CLI::debug( $this->_global_config_path_debug, 'bootstrap' );
 		WP_CLI::debug( $this->_project_config_path_debug, 'bootstrap' );
 		WP_CLI::debug( 'argv: ' . implode( ' ', $GLOBALS['argv'] ), 'bootstrap' );
@@ -1120,6 +1122,11 @@ class Runner {
 			},
 			99
 		);
+
+		// Re-enable PHP error reporting to stderr if testing.
+		if ( getenv( 'BEHAT_RUN' ) ) {
+			$this->enable_error_reporting();
+		}
 
 		WP_CLI::debug( 'Loaded WordPress', 'bootstrap' );
 		WP_CLI::do_hook( 'after_wp_load' );
@@ -1586,15 +1593,13 @@ class Runner {
 	}
 
 	/**
-	 * Enables (almost) full PHP error reporting to stderr if testing.
+	 * Enables (almost) full PHP error reporting to stderr.
 	 */
-	private function maybe_enable_error_reporting() {
-		if ( getenv( 'BEHAT_RUN' ) ) {
-			if ( E_ALL !== error_reporting() ) {
-				// Don't enable E_DEPRECATED as old versions of WP use PHP 4 style constructors and the mysql extension.
-				error_reporting( E_ALL & ~E_DEPRECATED );
-			}
-			ini_set( 'display_errors', 'stderr' );
+	private function enable_error_reporting() {
+		if ( E_ALL !== error_reporting() ) {
+			// Don't enable E_DEPRECATED as old versions of WP use PHP 4 style constructors and the mysql extension.
+			error_reporting( E_ALL & ~E_DEPRECATED );
 		}
+		ini_set( 'display_errors', 'stderr' );
 	}
 }

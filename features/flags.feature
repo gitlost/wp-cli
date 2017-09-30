@@ -46,14 +46,7 @@ Feature: Global flags
   Scenario: Debug run
     Given a WP install
 
-    When I try `wp eval 'echo CONST_WITHOUT_QUOTES;'`
-    Then the return code should be 0
-    And STDOUT should be:
-      """
-      CONST_WITHOUT_QUOTES
-      """
-
-    When I try `wp eval 'ini_set( "error_log", null ); echo CONST_WITHOUT_QUOTES;' --debug`
+    When I try `wp eval 'ini_set( "error_log", null ); echo CONST_WITHOUT_QUOTES;'`
     Then the return code should be 0
     And STDOUT should be:
       """

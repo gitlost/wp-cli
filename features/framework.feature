@@ -83,6 +83,7 @@ Feature: Load WP-CLI
       """
       Error: This does not seem to be a WordPress install.
       """
+    And the return code should be 1
 
   Scenario: Globalize global variables in wp-config.php
     Given an empty directory
@@ -164,6 +165,7 @@ Feature: Load WP-CLI
       """
       Warning: Some code is trying to do a URL redirect.
       """
+    And the return code should be 0
 
   Scenario: It should be possible to work on a site in maintenance mode
     Given a WP install
@@ -184,7 +186,7 @@ Feature: Load WP-CLI
     And a invalid-host.php file:
       """
       <?php
-      error_reporting( error_reporting() & ~E_NOTICE );
+      ini_set( 'error_log', null );
       define( 'DB_HOST', 'localghost' );
       """
 
@@ -193,12 +195,14 @@ Feature: Load WP-CLI
       """
       Error: Error establishing a database connection.
       """
+    And the return code should be 1
 
     When I try `wp --require=invalid-host.php option get home`
     Then STDERR should contain:
       """
       Error: Error establishing a database connection.
       """
+    And the return code should be 1
 
   Scenario: Allow WP_CLI hooks to pass arguments to callbacks
     Given an empty directory
@@ -259,12 +263,14 @@ Feature: Load WP-CLI
       """
       Error: Site 'example.org/' not found. Verify DOMAIN_CURRENT_SITE matches an existing site or use `--url=<url>` to override.
       """
+    And the return code should be 1
 
     When I try `wp option get home --url=example.io`
     Then STDERR should be:
       """
       Error: Site 'example.io' not found. Verify `--url=<url>` matches an existing site.
       """
+    And the return code should be 1
 
     Given "define( 'DOMAIN_CURRENT_SITE', 'example.org' );" replaced with " " in the wp-config.php file
 
@@ -279,9 +285,11 @@ Feature: Load WP-CLI
       """
       Error: Site not found. Define DOMAIN_CURRENT_SITE in 'wp-config.php' or use `--url=<url>` to override.
       """
+    And the return code should be 1
 
     When I try `wp option get home --url=example.io`
     Then STDERR should be:
       """
       Error: Site 'example.io' not found. Verify `--url=<url>` matches an existing site.
       """
+    And the return code should be 1

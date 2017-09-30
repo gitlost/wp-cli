@@ -232,18 +232,17 @@ Feature: Have a config file
       """
 
     When I run `WP_CLI_CONFIG_PATH=test-dir/config.yml wp help`
-	  Then STDERR should be empty
+    Then STDERR should be empty
 
   Scenario: Load WordPress with `--debug`
     Given a WP install
 
     When I try `wp option get home --debug`
-    Then the return code should be 0
-    And STDERR should contain:
+    Then STDERR should contain:
       """
       No readable global config found
       """
-    Then STDERR should contain:
+    And STDERR should contain:
       """
       No project config found
       """
@@ -263,10 +262,10 @@ Feature: Have a config file
       """
       Running command: option get
       """
+    And the return code should be 0
 
     When I try `wp option get home --debug=bootstrap`
-    Then the return code should be 0
-    And STDERR should contain:
+    Then STDERR should contain:
       """
       No readable global config found
       """
@@ -290,10 +289,11 @@ Feature: Have a config file
       """
       Running command: option get
       """
+    And the return code should be 0
 
     When I run `wp option get home --debug=foo`
-    Then the return code should be 0
-    And STDERR should be empty
+    Then STDERR should be empty
+    And the return code should be 0
 
   Scenario: Missing required files should not fatal WP-CLI
     Given an empty directory

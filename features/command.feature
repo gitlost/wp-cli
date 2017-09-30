@@ -784,12 +784,7 @@ Feature: WP-CLI Commands
       """
 
     When I try `wp --require=abort-add-command.php`
-	Then the return code should be 0
-	And STDERR should contain:
-      """
-      Warning: Aborting the addition of the command 'test-command-2'
-      """
-    And STDOUT should contain:
+    Then STDOUT should contain:
       """
       test-command-1
       """
@@ -797,6 +792,11 @@ Feature: WP-CLI Commands
       """
       test-command-2
       """
+    And STDERR should contain:
+      """
+      Warning: Aborting the addition of the command 'test-command-2'
+      """
+    And the return code should be 0
 
   Scenario: Adding a command can depend on a previous command having been added before
     Given an empty directory
