@@ -32,6 +32,7 @@ Feature: Global flags
       """
       Error: Site 'invalid.example.com' not found. Verify `--url=<url>` matches an existing site.
       """
+    And the return code should be 1
 
   Scenario: Quiet run
     Given a WP install
@@ -105,6 +106,7 @@ Feature: Global flags
       """
       log: called 'error' method
       """
+    And the return code should be 1
 
   Scenario: Using --require
     Given an empty directory
@@ -200,12 +202,14 @@ Feature: Global flags
       """
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
+    And the return code should be 1
 
     When I try `wp --color non-existent-command`
     Then STDERR should contain:
       """
       [31;1mError:
       """
+    And the return code should be 1
 
   Scenario: Use `WP_CLI_STRICT_ARGS_MODE` to distinguish between global and local args
     Given an empty directory
@@ -261,6 +265,7 @@ Feature: Global flags
       """
       Error: RESTful WP-CLI needs to be installed. Try 'wp package install wp-cli/restful'.
       """
+    And the return code should be 1
 
   Scenario: Strict args mode should be passed on to ssh
     When I try `WP_CLI_STRICT_ARGS_MODE=1 wp --debug --ssh=/ --version`
@@ -268,6 +273,7 @@ Feature: Global flags
       """
       Running SSH command: ssh -q '' -T 'WP_CLI_STRICT_ARGS_MODE=1 wp
       """
+    And the return code should be 255
 
   Scenario: SSH flag should support changing directories
     When I try `wp --debug --ssh=wordpress:/my/path --version`
@@ -275,6 +281,7 @@ Feature: Global flags
       """
       Running SSH command: ssh -q 'wordpress' -T 'cd '\''/my/path'\''; wp
       """
+    And the return code should be 255
 
   Scenario: SSH flag should support Docker
     When I try `wp --debug --ssh=docker:user@wordpress --version`
@@ -282,3 +289,4 @@ Feature: Global flags
       """
       Running SSH command: docker exec --user 'user' 'wordpress' sh -c
       """
+    And the return code should be 127

@@ -104,6 +104,7 @@ Feature: WP-CLI Commands
       """
       Error: 'invalid' is not a registered subcommand of 'command'. See 'wp help command' for available subcommands.
       """
+    And the return code should be 1
 
   Scenario: Use a closure as a command
     Given an empty directory
@@ -141,6 +142,7 @@ Feature: WP-CLI Commands
       """
       unknown --burrito parameter
       """
+    And the return code should be 1
 
     When I run `wp --require=custom-cmd.php foo bar`
     Then STDOUT should contain:
@@ -184,6 +186,7 @@ Feature: WP-CLI Commands
       """
       unknown --burrito parameter
       """
+    And the return code should be 1
 
     When I run `wp --require=custom-cmd.php foo bar`
     Then STDOUT should contain:
@@ -234,6 +237,7 @@ Feature: WP-CLI Commands
       """
       unknown --burrito parameter
       """
+    And the return code should be 1
 
     When I run `wp --require=custom-cmd.php foo bar`
     Then STDOUT should contain:
@@ -279,6 +283,7 @@ Feature: WP-CLI Commands
       """
       unknown --burrito parameter
       """
+    And the return code should be 1
 
     When I run `wp --require=custom-cmd.php foo bar`
     Then STDOUT should contain:
@@ -344,6 +349,7 @@ Feature: WP-CLI Commands
       """
       Error: Callable ["Foo_Class","bar"] does not exist, and cannot be registered as `wp bar`.
       """
+    And the return code should be 1
 
   Scenario: Register a synopsis for a given command
     Given an empty directory
@@ -394,6 +400,7 @@ Feature: WP-CLI Commands
       """
       usage: wp foo <message> --apple=<apple> [--meal=<meal>]
       """
+    And the return code should be 1
 
     When I run `wp help foo`
     Then STDOUT should contain:
@@ -440,12 +447,14 @@ Feature: WP-CLI Commands
       """
       Error: Invalid value specified for positional arg.
       """
+    And the return code should be 1
 
     When I try `wp foo hello --apple=fuji --meal=snack`
     Then STDERR should contain:
       """
       Invalid value specified for 'meal' (A type of meal.)
       """
+    And the return code should be 1
 
     When I run `wp foo hello --apple=fuji`
     Then STDOUT should be:
@@ -557,6 +566,7 @@ Feature: WP-CLI Commands
       Error: Parameter errors:
        Invalid value specified for 'burrito' (This is the burrito argument.)
       """
+    And the return code should be 1
 
     When I try `wp --require=test-cmd.php foo apple --burrito=''`
     Then STDERR should contain:
@@ -564,18 +574,21 @@ Feature: WP-CLI Commands
       Error: Parameter errors:
        Invalid value specified for 'burrito' (This is the burrito argument.)
       """
+    And the return code should be 1
 
     When I try `wp --require=test-cmd.php foo apple taco_del_mar`
     Then STDERR should contain:
       """
       Error: Invalid value specified for positional arg.
       """
+    And the return code should be 1
 
     When I try `wp --require=test-cmd.php foo apple 'cha cha cha' taco_del_mar`
     Then STDERR should contain:
       """
       Error: Invalid value specified for positional arg.
       """
+    And the return code should be 1
 
     When I run `wp --require=test-cmd.php foo apple 'cha cha cha'`
     Then STDOUT should be YAML containing:
@@ -632,6 +645,7 @@ Feature: WP-CLI Commands
       """
       Error: Invalid value specified for positional arg.
       """
+    And the return code should be 1
 
   Scenario: Removing a subcommand should remove it from the index
     Given an empty directory
@@ -742,18 +756,21 @@ Feature: WP-CLI Commands
       """
       Did you mean 'cli'?
       """
+    And the return code should be 1
 
     When I try `wp cli nfo`
     Then STDERR should contain:
       """
       Did you mean 'info'?
       """
+    And the return code should be 1
 
     When I try `wp cli beyondlevenshteinthreshold`
     Then STDERR should not contain:
       """
       Did you mean
       """
+    And the return code should be 1
 
   Scenario: WP-CLI suggests matching parameters when user entry contains typos
     Given an empty directory
@@ -763,12 +780,14 @@ Feature: WP-CLI Commands
       """
       Did you mean '--quiet'?
       """
+    And the return code should be 1
 
     When I try `wp cli info --forma=json`
     Then STDERR should contain:
       """
       Did you mean '--format'?
       """
+    And the return code should be 1
 
   Scenario: Adding a command can be aborted through the hooks system
     Given an empty directory

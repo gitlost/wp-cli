@@ -30,6 +30,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       Error: Alias '@test' not found.
       """
+    And the return code should be 1
 
   Scenario: Provide suggestion when invalid alias is provided
     Given an empty directory
@@ -45,6 +46,7 @@ Feature: Create shortcuts to specific WordPress installs
       Error: Alias '@test' not found.
       Did you mean '@test2'?
       """
+    And the return code should be 1
 
   Scenario: Treat global params as local when included in alias
     Given a WP install in 'foo'
@@ -69,6 +71,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       unknown --path parameter
       """
+    And the return code should be 1
 
     When I run `wp @foo eval 'echo get_current_user_id();' --user=admin`
     Then STDOUT should be:
@@ -98,6 +101,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       unknown --user parameter
       """
+    And the return code should be 1
 
   Scenario: Support global params specific to the WordPress install, not WP-CLI generally
     Given a WP install in 'foo'
@@ -172,6 +176,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       Error: This does not seem to be a WordPress install.
       """
+    And the return code should be 1
 
   Scenario: Use a group of aliases to run a command against multiple installs
     Given a WP install in 'foo'
@@ -209,6 +214,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       Error: Group '@invalid' contains one or more invalid aliases: @baz
       """
+    And the return code should be 1
 
     When I run `wp @both option get home`
     Then STDOUT should be:
@@ -292,6 +298,7 @@ Feature: Create shortcuts to specific WordPress installs
       """
       Error: Cannot use '@all' when no aliases are registered.
       """
+    And the return code should be 1
 
   Scenario: Alias for a subsite of a multisite install
     Given a WP multisite subdomain install
@@ -323,6 +330,7 @@ Feature: Create shortcuts to specific WordPress installs
       Error: Parameter errors:
        unknown --url parameter
       """
+    And the return code should be 1
 
   Scenario: Global parameters should be passed to grouped aliases
     Given a WP install in 'foo'

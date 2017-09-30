@@ -113,6 +113,7 @@ Feature: Have a config file
       """
       Error: The 'eval-file' command has been disabled from the config file.
       """
+    And the return code should be 1
 
     When I run `WP_CLI_CONFIG_PATH=config.yml wp core`
     Then STDOUT should not contain:
@@ -131,12 +132,14 @@ Feature: Have a config file
       """
       command has been disabled
       """
+    And the return code should be 1
 
     When I try `WP_CLI_CONFIG_PATH=config.yml wp help core multisite-convert`
     Then STDERR should contain:
       """
       Error: The 'core multisite-convert' command has been disabled from the config file.
       """
+    And the return code should be 1
 
   Scenario: 'core config' parameters
     Given an empty directory
@@ -180,6 +183,7 @@ Feature: Have a config file
       """
       Error: Sorry, that email address is already used!
       """
+    And the return code should be 1
 
     When I run `wp user create examplejane jane@example.com`
     Then STDOUT should not be empty
@@ -308,6 +312,7 @@ Feature: Have a config file
       """
       Error: Required file 'missing-file.php' doesn't exist (from project's wp-cli.yml).
       """
+    And the return code should be 1
 
     When I run `wp cli info`
     Then STDOUT should not be empty
@@ -328,6 +333,7 @@ Feature: Have a config file
       """
       Error: Required file 'baz.php' doesn't exist (from global config.yml).
       """
+    And the return code should be 1
 
   Scenario: Missing required file as runtime argument
     Given an empty directory
@@ -337,6 +343,7 @@ Feature: Have a config file
       """
       Error: Required file 'foo.php' doesn't exist (from runtime argument).
       """
+    And the return code should be 1
 
   Scenario: Config inheritance from project to global
     Given an empty directory
@@ -508,6 +515,7 @@ require_once(ABSPATH . 'wp-settings.php');
       """
       Error: Site 'example.dev/' not found. Verify DOMAIN_CURRENT_SITE matches an existing site or use `--url=<url>` to override.
       """
+    And the return code should be 1
 
     When I run `wp option get home --url=example.com`
     Then STDOUT should be:
