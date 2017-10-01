@@ -39,7 +39,7 @@ class Extractor {
 	 */
 	private static function extract_zip( $zipfile, $dest ) {
 		if ( ! class_exists( 'ZipArchive' ) || getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' ) ) {
-			WP_CLI::warning( 'ZipArchive not installed, trying PharData.' );
+			WP_CLI::warning( class_exists( 'PharData' ) ? 'ZipArchive not installed, trying PharData.' : 'ZipArchive not installed, trying shell \'unzip\' command.' );
 			self::extract_tarball( $zipfile, $dest, true /*is_zip*/ );
 			return;
 		}
@@ -55,7 +55,9 @@ class Extractor {
 			throw new \Exception( "ZipArchive failed to extract '$zipfile' to temporary directory '$tempdir'." );
 		}
 
-		$zip->close();
+		if ( ! $zip->close() ) {
+			throw new \Exception( "ZipArchive failed to close '$zipfile'." );
+		}
 
 		self::copy_overwrite_files( $tempdir, $dest, 1 /*strip_components*/ );
 

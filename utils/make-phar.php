@@ -105,8 +105,8 @@ function strip_comments( $contents, $keep_doc_comments ) {
 			return str_repeat( "\n", substr_count( $t[1], "\n" ) ); // Strip everything but newlines.
 		}
 		if ( T_WHITESPACE === $t[0] ) {
-			$str = preg_replace( '/[^\t\n]/', '', $t[1] );
-			return '' !== $str ? $str : ' ';
+			$str = preg_replace( '/[^\t\n]/', '', $t[1] ); // Keep tabs and newlines.
+			return '' !== $str ? $str : ' '; // Keep at least one space.
 		}
 		return $t[1];
 	}, token_get_all( $contents ) );

@@ -1,23 +1,263 @@
 <?php
 
 use WP_CLI\Extractor;
+use WP_CLI\Utils;
 
 class Extractor_Test extends PHPUnit_Framework_TestCase {
 
 	static $copy_overwrite_files_prefix = 'wp-cli-test-utils-copy-overwrite-files-';
 
+	static $expected_top = array(
+		'wordpress/index1.php',
+		'wordpress/license2.php',
+		'wordpress/wp-admin/about3.php',
+		'wordpress/wp-admin/includes/file4.php',
+		'wordpress/wp-admin/widgets5.php',
+		'wordpress/wp-config6.php',
+		'wordpress/wp-includes/file7.php',
+		'wordpress/xmlrpc8.php',
+	);
+
+	static $expected_wp = array(
+		'index1.php',
+		'license2.php',
+		'wp-admin/about3.php',
+		'wp-admin/includes/file4.php',
+		'wp-admin/widgets5.php',
+		'wp-config6.php',
+		'wp-includes/file7.php',
+		'xmlrpc8.php',
+	);
+
+	static $logger = null;
+
 	public function setUp() {
 		parent::setUp();
 
+		if ( null === self::$logger ) {
+			self::$logger = new \WP_CLI\Loggers\Quiet;
+		}
+		WP_CLI::set_logger( self::$logger );
+
 		// Remove any failed tests detritus.
-		$temp_dirs = sys_get_temp_dir() . '/' . self::$copy_overwrite_files_prefix . '*';
+		$temp_dirs = Utils\get_temp_dir() . self::$copy_overwrite_files_prefix . '*';
 		foreach ( glob( $temp_dirs ) as $temp_dir ) {
 			Extractor::rmdir( $temp_dir );
 		}
 	}
 
+	public function testRmdir() {
+		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
+		$this->assertTrue( is_dir( $temp_dir ) );
+		Extractor::rmdir( $temp_dir );
+		$this->assertFalse( file_exists( $temp_dir ) );
+	}
+
 	public function testCopyOverwriteFiles() {
-		$temp_dir = sys_get_temp_dir() . '/' . uniqid( self::$copy_overwrite_files_prefix, true );
+		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
+
+		$dest_dir = $temp_dir . '/dest';
+
+		// Top level src dir, no strip_components.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$this->assertSame( self::$expected_top, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Wordpress dir, no strip_components.
+
+		Extractor::copy_overwrite_files( $wp_dir, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Top level src dir, strip_components 1.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 1 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Wordpress dir, strip_components 1.
+
+		Extractor::copy_overwrite_files( $wp_dir, $dest_dir, 1 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'about3.php',
+			'file7.php',
+			'includes/file4.php',
+			'widgets5.php',
+		);
+		$this->assertSame( $expected, $files );
+
+		// Top level src dir, strip_components 2 (same as Wordpress dir, strip_components 1).
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 2 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'about3.php',
+			'file7.php',
+			'includes/file4.php',
+			'widgets5.php',
+		);
+		$this->assertSame( $expected, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Top level src dir, strip_components 3.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 3 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'file4.php',
+		);
+		$this->assertSame( $expected, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Clean up.
+		Extractor::rmdir( $temp_dir );
+	}
+
+	public function testExtractTarball() {
+		if ( ! exec( 'tar --version' ) ) {
+			$this->markTestSkipped( 'tar not installed.' );
+		}
+
+		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		$extractor_zip_phar = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
+
+		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
+
+		$tarball = $temp_dir . '/test.tar.gz';
+		$dest_dir = $temp_dir . '/dest';
+
+		// Create test tarball.
+
+		$output = array(); $return_var = -1;
+		exec( Utils\esc_cmd( 'tar czvf %1$s --directory=%2$s/src wordpress', $tarball, $temp_dir ), $output, $return_var );
+		$this->assertSame( 0, $return_var );
+		$this->assertFalse( empty( $output ) );
+
+		// Remove directory listings.
+		$output = array_filter( $output, function ( $v ) {
+			return '/' !== substr( $v, -1 );
+		} );
+		sort( $output );
+		$this->assertSame( self::$expected_top, $output );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		Extractor::extract( $tarball, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL=1' );
+		Extractor::extract( $tarball, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		// Clean up.
+		Extractor::rmdir( $temp_dir );
+
+		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
+		putenv( false === $extractor_zip_phar ? 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' : "WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=$extractor_zip_phar" );
+	}
+
+	public function testExtractZip() {
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			$this->markTestSkipped( 'ZipArchive not installed.' );
+		}
+
+		$output = array(); $return_var = -1;
+		exec( 'which zip 2>&1 1>/dev/null', $output, $return_var );
+		$have_zip = 0 === $return_var;
+
+		$output = array(); $return_var = -1;
+		exec( 'which unzip 2>&1 1>/dev/null', $output, $return_var );
+		$have_unzip = 0 === $return_var;
+
+		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		$extractor_zip_phar = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
+
+		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
+
+		$zipfile = $temp_dir . '/test.zip';
+		$dest_dir = $temp_dir . '/dest';
+
+		// Create test zip.
+
+		$zip = new ZipArchive;
+		$result = $zip->open( $zipfile, ZipArchive::CREATE );
+		$this->assertTrue( $result );
+		$files = self::recursive_scandir( $src_dir );
+		foreach ( $files as $file ) {
+			$result = $zip->addFile( $src_dir . '/' . $file, $file );
+			$this->assertTrue( $result );
+		}
+		$result = $zip->close();
+		$this->assertTrue( $result );
+
+		if ( $have_unzip ) {
+			$output = array(); $return_var = -1;
+			exec( Utils\esc_cmd( 'unzip -l %1$s', $zipfile ), $output, $return_var );
+			$this->assertSame( 0, $return_var );
+			$output = array_filter( array_map( function ( $v ) {
+				return preg_match( '/([^ \t]+\.php$)/', $v, $matches ) ? $matches[1] : '';
+			}, $output ), 'strlen' );
+			sort( $output );
+			$this->assertSame( self::$expected_top, $output );
+		}
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		Extractor::extract( $zipfile, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=1' );
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		Extractor::extract( $zipfile, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		Extractor::rmdir( $dest_dir );
+
+		if ( $have_zip ) {
+			putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=1' );
+			putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL=1' );
+			Extractor::extract( $zipfile, $dest_dir );
+
+			$files = self::recursive_scandir( $dest_dir );
+			$this->assertSame( self::$expected_wp, $files );
+			Extractor::rmdir( $dest_dir );
+		}
+
+		// Clean up.
+		Extractor::rmdir( $temp_dir );
+
+		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
+		putenv( false === $extractor_zip_phar ? 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' : "WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=$extractor_zip_phar" );
+	}
+
+	private function create_test_directory_structure() {
+		$temp_dir = Utils\get_temp_dir() . uniqid( self::$copy_overwrite_files_prefix, true );
 		mkdir( $temp_dir );
 
 		$src_dir = $temp_dir . '/src';
@@ -49,96 +289,7 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		touch( $wp_includes_dir . '/file7.php' );
 		touch( $wp_dir . '/xmlrpc8.php' );
 
-		$dest_dir = $temp_dir . '/dest';
-
-		// Top level src dir, no strip_components.
-
-		Extractor::copy_overwrite_files( $src_dir, $dest_dir );
-
-		$files = self::recursive_scandir( $dest_dir );
-
-		$expected = array(
-			'wordpress/index1.php',
-			'wordpress/license2.php',
-			'wordpress/wp-admin/about3.php',
-			'wordpress/wp-admin/includes/file4.php',
-			'wordpress/wp-admin/widgets5.php',
-			'wordpress/wp-config6.php',
-			'wordpress/wp-includes/file7.php',
-			'wordpress/xmlrpc8.php',
-		);
-		$this->assertSame( $expected, $files );
-		Extractor::rmdir( $dest_dir );
-
-		// Wordpress dir, no strip_components.
-
-		Extractor::copy_overwrite_files( $wp_dir, $dest_dir );
-
-		$files = self::recursive_scandir( $dest_dir );
-
-		$expected = array(
-			'index1.php',
-			'license2.php',
-			'wp-admin/about3.php',
-			'wp-admin/includes/file4.php',
-			'wp-admin/widgets5.php',
-			'wp-config6.php',
-			'wp-includes/file7.php',
-			'xmlrpc8.php',
-		);
-		$this->assertSame( $expected, $files );
-		Extractor::rmdir( $dest_dir );
-
-		// Top level src dir, strip_components 1.
-
-		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 1 /*strip_components*/ );
-
-		$files = self::recursive_scandir( $dest_dir );
-
-		$expected = array(
-			'index1.php',
-			'license2.php',
-			'wp-admin/about3.php',
-			'wp-admin/includes/file4.php',
-			'wp-admin/widgets5.php',
-			'wp-config6.php',
-			'wp-includes/file7.php',
-			'xmlrpc8.php',
-		);
-		$this->assertSame( $expected, $files );
-		Extractor::rmdir( $dest_dir );
-
-		// Wordpress dir, strip_components 1.
-
-		Extractor::copy_overwrite_files( $wp_dir, $dest_dir, 1 /*strip_components*/ );
-
-		$files = self::recursive_scandir( $dest_dir );
-
-		$expected = array(
-			'about3.php',
-			'file7.php',
-			'includes/file4.php',
-			'widgets5.php',
-		);
-		$this->assertSame( $expected, $files );
-
-		// Top level src dir, strip_components 2.
-
-		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 2 /*strip_components*/ );
-
-		$files = self::recursive_scandir( $dest_dir );
-
-		$expected = array(
-			'about3.php',
-			'file7.php',
-			'includes/file4.php',
-			'widgets5.php',
-		);
-		$this->assertSame( $expected, $files );
-		Extractor::rmdir( $dest_dir );
-
-		// Clean up.
-		Extractor::rmdir( $temp_dir );
+		return array( $temp_dir, $src_dir, $wp_dir );
 	}
 
 	private function recursive_scandir( $dir, $prefix_dir = '' ) {
