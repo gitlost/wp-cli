@@ -244,7 +244,7 @@ class Runner {
 	}
 
 	private function cmd_starts_with( $prefix ) {
-		return $prefix == array_slice( $this->arguments, 0, count( $prefix ) );
+		return array_slice( $this->arguments, 0, count( $prefix ) ) === $prefix;
 	}
 
 	/**
@@ -592,7 +592,7 @@ class Runner {
 
 		// {plugin|theme} update-all  ->  {plugin|theme} update --all
 		if ( count( $args ) > 1 && in_array( $args[0], array( 'plugin', 'theme' ) )
-			&& $args[1] == 'update-all'
+			&& 'update-all' === $args[1]
 		) {
 			$args[1] = 'update';
 			$assoc_args['all'] = true;
@@ -623,7 +623,7 @@ class Runner {
 
 		// {post|user} list --ids  ->  {post|user} list --format=ids
 		if ( count( $args ) > 1 && in_array( $args[0], array( 'post', 'user' ) )
-			&& $args[1] == 'list'
+			&& 'list' === $args[1]
 			&& isset( $assoc_args['ids'] )
 		) {
 			$assoc_args['format'] = 'ids';
@@ -1000,7 +1000,7 @@ class Runner {
 
 		if (
 			count( $this->arguments ) >= 2 &&
-			$this->arguments[0] == 'core' &&
+			'core' === $this->arguments[0] &&
 			in_array( $this->arguments[1], array( 'install', 'multisite-install' ) )
 		) {
 			define( 'WP_INSTALLING', true );
@@ -1110,7 +1110,7 @@ class Runner {
 		}
 
 		// Fix memory limit. See http://core.trac.wordpress.org/ticket/14889
-		@ini_set( 'memory_limit', -1 );
+		ini_set( 'memory_limit', -1 );
 
 		// Load all the admin APIs, for convenience
 		require ABSPATH . 'wp-admin/includes/admin.php';
