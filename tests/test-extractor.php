@@ -136,7 +136,6 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		}
 
 		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
-		$extractor_zip_phar = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
 
 		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
 
@@ -175,7 +174,6 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		Extractor::rmdir( $temp_dir );
 
 		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
-		putenv( false === $extractor_zip_phar ? 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' : "WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=$extractor_zip_phar" );
 	}
 
 	public function testExtractZip() {
@@ -183,16 +181,7 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 			$this->markTestSkipped( 'ZipArchive not installed.' );
 		}
 
-		$output = array(); $return_var = -1;
-		exec( 'which zip 2>&1 1>/dev/null', $output, $return_var );
-		$have_zip = 0 === $return_var;
-
-		$output = array(); $return_var = -1;
-		exec( 'which unzip 2>&1 1>/dev/null', $output, $return_var );
-		$have_unzip = 0 === $return_var;
-
-		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
-		$extractor_zip_phar = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
+		$extractor_zip_archive = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
 
 		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
 
@@ -212,48 +201,24 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		$result = $zip->close();
 		$this->assertTrue( $result );
 
-		if ( $have_unzip ) {
-			$output = array(); $return_var = -1;
-			exec( Utils\esc_cmd( 'unzip -l %1$s', $zipfile ), $output, $return_var );
-			$this->assertSame( 0, $return_var );
-			$output = array_filter( array_map( function ( $v ) {
-				return preg_match( '/([^ \t]+\.php$)/', $v, $matches ) ? $matches[1] : '';
-			}, $output ), 'strlen' );
-			sort( $output );
-			$this->assertSame( self::$expected_top, $output );
-		}
-
-		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' );
-		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
 		Extractor::extract( $zipfile, $dest_dir );
 
 		$files = self::recursive_scandir( $dest_dir );
 		$this->assertSame( self::$expected_wp, $files );
 		Extractor::rmdir( $dest_dir );
 
-		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=1' );
-		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=1' );
 		Extractor::extract( $zipfile, $dest_dir );
 
 		$files = self::recursive_scandir( $dest_dir );
 		$this->assertSame( self::$expected_wp, $files );
 		Extractor::rmdir( $dest_dir );
-
-		if ( $have_zip ) {
-			putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=1' );
-			putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL=1' );
-			Extractor::extract( $zipfile, $dest_dir );
-
-			$files = self::recursive_scandir( $dest_dir );
-			$this->assertSame( self::$expected_wp, $files );
-			Extractor::rmdir( $dest_dir );
-		}
 
 		// Clean up.
 		Extractor::rmdir( $temp_dir );
 
-		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
-		putenv( false === $extractor_zip_phar ? 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' : "WP_CLI_TEST_EXTRACTOR_ZIP_PHAR=$extractor_zip_phar" );
+		putenv( false === $extractor_zip_archive ? 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' : "WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=$extractor_zip_archive" );
 	}
 
 	private function create_test_directory_structure() {

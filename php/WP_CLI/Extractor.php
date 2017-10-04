@@ -38,29 +38,31 @@ class Extractor {
 	 * @param string $dest
 	 */
 	private static function extract_zip( $zipfile, $dest ) {
-		if ( ! class_exists( 'ZipArchive' ) || getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_PHAR' ) ) {
-			WP_CLI::warning( class_exists( 'PharData' ) ? 'ZipArchive not installed, trying PharData.' : 'ZipArchive not installed, trying shell \'unzip\' command.' );
-			self::extract_tarball( $zipfile, $dest, true /*is_zip*/ );
-			return;
+		if ( class_exists( 'PharData' ) && ! getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' ) ) {
+			try {
+				self::copy_overwrite_files( 'phar://' . $zipfile, $dest, 1 /*strip_components*/ );
+				return;
+			} catch ( \Exception $e ) {
+				WP_CLI::warning( 'Failed to extract zip file using PharData, falling back to ZipArchive (' . $e->getMessage() . ')' );
+			}
 		}
-
-		$zip = new ZipArchive;
-		if ( true !== ( $res = $zip->open( $zipfile ) ) ) {
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			throw new \Exception( 'Extracting a zip file requires ZipArchive or PharData.' );
+		}
+		$zip = new ZipArchive();
+		$res = $zip->open( $zipfile );
+		if ( true !== $res ) {
 			throw new \Exception( "ZipArchive failed to open '$zipfile': $res" );
 		}
-
 		$tempdir = Utils\get_temp_dir() . uniqid( 'wp-cli-extract-zip-', true );
 
 		if ( ! $zip->extractTo( $tempdir ) ) {
 			throw new \Exception( "ZipArchive failed to extract '$zipfile' to temporary directory '$tempdir'." );
 		}
-
 		if ( ! $zip->close() ) {
 			throw new \Exception( "ZipArchive failed to close '$zipfile'." );
 		}
-
 		self::copy_overwrite_files( $tempdir, $dest, 1 /*strip_components*/ );
-
 		self::rmdir( $tempdir );
 	}
 
@@ -69,16 +71,15 @@ class Extractor {
 	 *
 	 * @param string $tarball
 	 * @param string $dest
-	 * @param bool   $is_zip Optional. Whether zip file or not. Default false.
 	 */
-	private static function extract_tarball( $tarball, $dest, $is_zip = false ) {
+	private static function extract_tarball( $tarball, $dest ) {
 
 		if ( class_exists( 'PharData' ) && ! getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' ) ) {
 			try {
 				// Check if PHP bug #75273 likely to be triggered and copy to temporary tar if so.
 				$pre_tar = false;
 				// Only checking Ubuntu (and derivatives) as unfortunately Debian doesn't sign its PHP build so not easy to check for it.
-				if ( ! $is_zip && false !== strpos( PHP_VERSION, 'ubuntu' ) ) {
+				if ( false !== strpos( PHP_VERSION, 'ubuntu' ) ) {
 					$tar_size = filesize( $tarball );
 					$pre_tar = $tar_size > 4 * 1024 * 1024 && $tar_size % ( 8 * 1024 ) < 10;
 				}
@@ -89,7 +90,6 @@ class Extractor {
 					}
 
 					self::copy_overwrite_files( 'phar://' . $temp_tar, $dest, 1 /*strip_components*/ );
-
 					unlink( $temp_tar );
 				} else {
 
@@ -101,33 +101,16 @@ class Extractor {
 				if ( $pre_tar || sprintf( 'unable to decompress gzipped phar archive "%s" to temporary file', $tarball ) !== $e->getMessage() ) {
 					WP_CLI::warning( 'PharData failed, falling back to shell command (' . $e->getMessage() . ')' );
 				}
-				// Fall through to trying `tar xz` or `unzip` below.
+				// Fall through to trying `tar xz` below
 			}
 		}
 
-		if ( $is_zip ) {
-			$cmd = Utils\esc_cmd( 'unzip -o -qq %1$s -d %2$s', $tarball, $dest );
-		} else {
-			// Directory must exist for tar --directory to work.
-			if ( ! file_exists( $dest ) ) {
-				mkdir( $dest, 0777, true );
-			}
-			$cmd = Utils\esc_cmd( 'tar xz --strip-components=1 --directory=%2$s -f %1$s', $tarball, $dest );
+		// Directory must exist for tar --directory to work.
+		if ( ! file_exists( $dest ) ) {
+			mkdir( $dest, 0777, true );
 		}
-
-		$process_run = WP_CLI::launch( $cmd, false /*exit_on_error*/, true /*return_detailed*/ );
-
-		if ( 0 !== $process_run->return_code ) {
-			throw new \Exception( sprintf( "Shell command '%s' returned %d: %s", $process_run->command, $process_run->return_code, $process_run->stderr ) );
-		}
-
-		if ( $is_zip ) {
-			$dest = Utils\trailingslashit( $dest );
-			if ( file_exists( $dest . 'wordpress' ) ) {
-				self::copy_overwrite_files( $dest . 'wordpress', $dest );
-				self::rmdir( $dest . 'wordpress' );
-			}
-		}
+		$cmd = Utils\esc_cmd( 'tar xz --strip-components=1 --directory=%2$s -f %1$s', $tarball, $dest );
+		WP_CLI::launch( $cmd );
 	}
 
 	public static function copy_overwrite_files( $source, $dest, $strip_components = 0 ) {
