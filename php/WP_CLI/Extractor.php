@@ -98,7 +98,7 @@ class Extractor {
 				return;
 			} catch ( \Exception $e ) {
 				// Can fail on Debian due to PHP bug #75273 so don't warn but fall through silently if message matches.
-				if ( ! $pre_tar && sprintf( 'unable to decompress gzipped phar archive "%s" to temporary file', $tarball ) === $e->getMessage() ) {
+				if ( $pre_tar || sprintf( 'unable to decompress gzipped phar archive "%s" to temporary file', $tarball ) !== $e->getMessage() ) {
 					WP_CLI::warning( 'PharData failed, falling back to shell command (' . $e->getMessage() . ')' );
 				}
 				// Fall through to trying `tar xz` or `unzip` below.
