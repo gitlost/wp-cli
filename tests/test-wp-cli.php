@@ -34,4 +34,23 @@ class WP_CLI_Test extends PHPUnit_Framework_TestCase {
 		$this->assertTrue( false !== strpos( trim( $output[0] ), $err_msg ) );
 	}
 
+	public function testGetPhpBinary() {
+		$env_php_used = getenv( 'WP_CLI_PHP_USED' );
+		$env_php = getenv( 'WP_CLI_PHP' );
+
+		putenv( 'WP_CLI_PHP_USED' );
+		putenv( 'WP_CLI_PHP' );
+
+		$php_binary = WP_CLI::get_php_binary();
+
+		$output = array();
+		$return_var = -1;
+		exec( $php_binary . ' --version', $output, $return_var );
+		$this->assertSame( 0, $return_var );
+		$this->assertTrue( ! empty( $output ) );
+		$this->assertTrue( false !== stripos( $output[0], 'php' ) );
+
+		putenv( false === $env_php_used ? 'WP_CLI_PHP_USED' : "WP_CLI_PHP_USED=$env_php_used" );
+		putenv( false === $env_php ? 'WP_CLI_PHP' : "WP_CLI_PHP=$env_php" );
+	}
 }
