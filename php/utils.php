@@ -60,7 +60,7 @@ function load_dependencies() {
 	}
 
 	if ( ! $has_autoload ) {
-		fputs( STDERR, "Internal error: Can't find Composer autoloader.\nTry running: composer install\n" );
+		fwrite( STDERR, "Internal error: Can't find Composer autoloader.\nTry running: composer install\n" );
 		exit( 3 );
 	}
 }
@@ -229,12 +229,12 @@ function locate_wp_config() {
 	static $path;
 
 	if ( null === $path ) {
+		$path = false;
+
 		if ( file_exists( ABSPATH . 'wp-config.php' ) ) {
 			$path = ABSPATH . 'wp-config.php';
 		} elseif ( file_exists( ABSPATH . '../wp-config.php' ) && ! file_exists( ABSPATH . '/../wp-settings.php' ) ) {
 			$path = ABSPATH . '../wp-config.php';
-		} else {
-			$path = false;
 		}
 
 		if ( $path ) {
@@ -246,7 +246,9 @@ function locate_wp_config() {
 }
 
 function wp_version_compare( $since, $operator ) {
-	return version_compare( str_replace( array( '-src' ), '', $GLOBALS['wp_version'] ), $since, $operator );
+	$wp_version = str_replace( '-src', '', $GLOBALS['wp_version'] );
+	$since = str_replace( '-src', '', $since );
+	return version_compare( $wp_version, $since, $operator );
 }
 
 /**
@@ -361,9 +363,9 @@ function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
 	do {
 		$tmpfile = basename( $filename );
 		$tmpfile = preg_replace( '|\.[^.]*$|', '', $tmpfile );
-		$tmpfile .= '-' . substr( md5( (string) rand() ), 0, 6 );
+		$tmpfile .= '-' . substr( md5( (string) mt_rand() ), 0, 6 );
 		$tmpfile = $tmpdir . $tmpfile . '.tmp';
-		$fp = fopen( $tmpfile, 'x' );
+		$fp = fopen( $tmpfile, 'xb' );
 		if ( ! $fp && is_writable( $tmpdir ) && file_exists( $tmpfile ) ) {
 			$tmpfile = '';
 			continue;
@@ -382,10 +384,10 @@ function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
 
 	$editor = getenv( 'EDITOR' );
 	if ( ! $editor ) {
+		$editor = 'vi';
+
 		if ( isset( $_SERVER['OS'] ) && false !== strpos( $_SERVER['OS'], 'indows' ) ) {
 			$editor = 'notepad';
-		} else {
-			$editor = 'vi';
 		}
 	}
 
@@ -419,7 +421,7 @@ function mysql_host_to_cli_args( $raw_host ) {
 		list( $assoc_args['host'], $extra ) = $host_parts;
 		$extra = trim( $extra );
 		if ( is_numeric( $extra ) ) {
-			$assoc_args['port'] = intval( $extra );
+			$assoc_args['port'] = (int) $extra;
 			$assoc_args['protocol'] = 'tcp';
 		} elseif ( '' !== $extra ) {
 			$assoc_args['socket'] = $extra;
@@ -609,8 +611,7 @@ function http_request( $method, $url, $data = null, $headers = array(), $options
 	}
 
 	try {
-		$request = \Requests::request( $url, $headers, $data, $method, $options );
-		return $request;
+		return \Requests::request( $url, $headers, $data, $method, $options );
 	} catch ( \Requests_Exception $ex ) {
 		// CURLE_SSL_CACERT_BADFILE only defined for PHP >= 7.
 		if ( 'curlerror' !== $ex->getType() || ! in_array( curl_errno( $ex->getData() ), array( CURLE_SSL_CONNECT_ERROR, CURLE_SSL_CERTPROBLEM, 77 /*CURLE_SSL_CACERT_BADFILE*/ ), true ) ) {
@@ -716,11 +717,13 @@ function get_named_sem_ver( $new_version, $original_version ) {
 
 	if ( ! is_null( $minor ) && Semver::satisfies( $new_version, "{$major}.{$minor}.x" ) ) {
 		return 'patch';
-	} elseif ( Semver::satisfies( $new_version, "{$major}.x.x" ) ) {
-		return 'minor';
-	} else {
-		return 'major';
 	}
+
+	if ( Semver::satisfies( $new_version, "{$major}.x.x" ) ) {
+		return 'minor';
+	}
+
+	return 'major';
 }
 
 /**
@@ -788,13 +791,13 @@ function get_temp_dir() {
 		return $temp;
 	}
 
+	$temp = '/tmp/';
+
 	// `sys_get_temp_dir()` introduced PHP 5.2.1.
 	if ( $try = sys_get_temp_dir() ) {
 		$temp = trailingslashit( $try );
 	} elseif ( $try = ini_get( 'upload_tmp_dir' ) ) {
 		$temp = trailingslashit( $try );
-	} else {
-		$temp = '/tmp/';
 	}
 
 	if ( ! is_writable( $temp ) ) {
@@ -853,25 +856,28 @@ function parse_ssh_url( $url, $component = -1 ) {
  * @access public
  * @category Input
  *
- * @param string  $noun      Resource being affected (e.g. plugin)
- * @param string  $verb      Type of action happening to the noun (e.g. activate)
- * @param integer $total     Total number of resource being affected.
- * @param integer $successes Number of successful operations.
- * @param integer $failures  Number of failures.
+ * @param string       $noun      Resource being affected (e.g. plugin)
+ * @param string       $verb      Type of action happening to the noun (e.g. activate)
+ * @param integer      $total     Total number of resource being affected.
+ * @param integer      $successes Number of successful operations.
+ * @param integer      $failures  Number of failures.
+ * @param null|integer $skips     Optional. Number of skipped operations. Default null (don't show skips).
  */
-function report_batch_operation_results( $noun, $verb, $total, $successes, $failures ) {
+function report_batch_operation_results( $noun, $verb, $total, $successes, $failures, $skips = null ) {
 	$plural_noun = $noun . 's';
 	$past_tense_verb = past_tense_verb( $verb );
 	$past_tense_verb_upper = ucfirst( $past_tense_verb );
 	if ( $failures ) {
+		$failed_skipped_message = null === $skips ? '' : " ({$failures} failed" . ( $skips ? ", {$skips} skipped" : '' ) . ')';
 		if ( $successes ) {
-			WP_CLI::error( "Only {$past_tense_verb} {$successes} of {$total} {$plural_noun}." );
+			WP_CLI::error( "Only {$past_tense_verb} {$successes} of {$total} {$plural_noun}{$failed_skipped_message}." );
 		} else {
-			WP_CLI::error( "No {$plural_noun} {$past_tense_verb}." );
+			WP_CLI::error( "No {$plural_noun} {$past_tense_verb}{$failed_skipped_message}." );
 		}
 	} else {
-		if ( $successes ) {
-			WP_CLI::success( "{$past_tense_verb_upper} {$successes} of {$total} {$plural_noun}." );
+		$skipped_message = $skips ? " ({$skips} skipped)" : '';
+		if ( $successes || $skips ) {
+			WP_CLI::success( "{$past_tense_verb_upper} {$successes} of {$total} {$plural_noun}{$skipped_message}." );
 		} else {
 			$message = $total > 1 ? ucfirst( $plural_noun ) : ucfirst( $noun );
 			WP_CLI::success( "{$message} already {$past_tense_verb}." );
@@ -934,14 +940,15 @@ function basename( $path, $suffix = '' ) {
  *
  * @return bool
  */
+// @codingStandardsIgnoreLine
 function isPiped() {
 	$shellPipe = getenv( 'SHELL_PIPE' );
 
 	if ( false !== $shellPipe ) {
 		return filter_var( $shellPipe, FILTER_VALIDATE_BOOLEAN );
-	} else {
-		return (function_exists( 'posix_isatty' ) && ! posix_isatty( STDOUT ));
 	}
+
+	return (function_exists( 'posix_isatty' ) && ! posix_isatty( STDOUT ));
 }
 
 /**
@@ -1012,7 +1019,9 @@ function glob_brace( $pattern, $dummy_flags = null ) {
 				} else {
 					if ( ( '}' === $pattern[ $current ] && 0 === $depth-- ) || ( ',' === $pattern[ $current ] && 0 === $depth ) ) {
 						break;
-					} elseif ( '{' === $pattern[ $current++ ] ) {
+					}
+
+					if ( '{' === $pattern[ $current++ ] ) {
 						$depth++;
 					}
 				}
@@ -1056,7 +1065,7 @@ function glob_brace( $pattern, $dummy_flags = null ) {
 					. substr( $pattern, $p, $next - $p )
 					. substr( $pattern, $rest + 1 );
 
-		if ( ( $result = glob_brace( $subpattern ) ) ) {
+		if ( $result = glob_brace( $subpattern ) ) {
 			$paths = array_merge( $paths, $result );
 		}
 
@@ -1088,6 +1097,31 @@ function glob_brace( $pattern, $dummy_flags = null ) {
  * @return string
  */
 function get_suggestion( $target, array $options, $threshold = 2 ) {
+
+	$suggestion_map = array(
+		'check' => 'check-update',
+		'clear' => 'flush',
+		'decrement' => 'decr',
+		'del' => 'delete',
+		'directory' => 'dir',
+		'exec' => 'eval',
+		'exec-file' => 'eval-file',
+		'increment' => 'incr',
+		'language' => 'locale',
+		'lang' => 'locale',
+		'new' => 'create',
+		'number' => 'count',
+		'remove' => 'delete',
+		'regen' => 'regenerate',
+		'rep' => 'replace',
+		'repl' => 'replace',
+		'v' => 'version',
+	);
+
+	if ( array_key_exists( $target, $suggestion_map ) ) {
+		return $suggestion_map[ $target ];
+	}
+
 	if ( empty( $options ) ) {
 		return '';
 	}

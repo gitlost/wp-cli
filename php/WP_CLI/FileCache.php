@@ -139,9 +139,9 @@ class FileCache {
 
 		if ( $filename ) {
 			return file_put_contents( $filename, $contents ) && touch( $filename );
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -156,9 +156,9 @@ class FileCache {
 
 		if ( $filename ) {
 			return file_get_contents( $filename );
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -173,9 +173,9 @@ class FileCache {
 
 		if ( $filename ) {
 			return copy( $source, $filename ) && touch( $filename );
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -191,9 +191,9 @@ class FileCache {
 
 		if ( $filename ) {
 			return copy( $filename, $target );
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**
@@ -211,9 +211,9 @@ class FileCache {
 
 		if ( file_exists( $filename ) ) {
 			return unlink( $filename );
-		} else {
-			return false;
 		}
+
+		return false;
 	}
 
 	/**

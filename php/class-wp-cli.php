@@ -120,9 +120,9 @@ class WP_CLI {
 			$_SERVER['SERVER_NAME'] = $url_parts['host'];
 		}
 
-		$_SERVER['REQUEST_URI'] = $f('path') . ( isset( $url_parts['query'] ) ? '?' . $url_parts['query'] : '' );
+		$_SERVER['REQUEST_URI'] = $f( 'path' ) . ( isset( $url_parts['query'] ) ? '?' . $url_parts['query'] : '' );
 		$_SERVER['SERVER_PORT'] = \WP_CLI\Utils\get_flag_value( $url_parts, 'port', '80' );
-		$_SERVER['QUERY_STRING'] = $f('query');
+		$_SERVER['QUERY_STRING'] = $f( 'query' );
 	}
 
 	/**
@@ -331,22 +331,24 @@ class WP_CLI {
 			// Object Class Calling
 			if ( function_exists( 'spl_object_hash' ) ) {
 				return spl_object_hash( $function[0] ) . $function[1];
-			} else {
-				$obj_idx = get_class( $function[0] ) . $function[1];
-				if ( ! isset( $function[0]->wp_filter_id ) ) {
-					if ( false === $priority ) {
-						return false;
-					}
-					$obj_idx .= isset( $wp_filter[ $tag ][ $priority ] ) ? count( (array) $wp_filter[ $tag ][ $priority ] ) : $filter_id_count;
-					$function[0]->wp_filter_id = $filter_id_count;
-					++$filter_id_count;
-				} else {
-					$obj_idx .= $function[0]->wp_filter_id;
-				}
-
-				return $obj_idx;
 			}
-		} elseif ( is_string( $function[0] ) ) {
+
+			$obj_idx = get_class( $function[0] ) . $function[1];
+			if ( ! isset( $function[0]->wp_filter_id ) ) {
+				if ( false === $priority ) {
+					return false;
+				}
+				$obj_idx .= isset( $wp_filter[ $tag ][ $priority ] ) ? count( (array) $wp_filter[ $tag ][ $priority ] ) : $filter_id_count;
+				$function[0]->wp_filter_id = $filter_id_count;
+				++$filter_id_count;
+			} else {
+				$obj_idx .= $function[0]->wp_filter_id;
+			}
+
+			return $obj_idx;
+		}
+
+		if ( is_string( $function[0] ) ) {
 			// Static Calling
 			return $function[0] . '::' . $function[1];
 		}
@@ -894,18 +896,18 @@ class WP_CLI {
 		$render_data = function( $data ) {
 			if ( is_array( $data ) || is_object( $data ) ) {
 				return json_encode( $data );
-			} else {
-				return '"' . $data . '"';
 			}
+
+			return '"' . $data . '"';
 		};
 
 		if ( is_object( $errors ) && is_a( $errors, 'WP_Error' ) ) {
 			foreach ( $errors->get_error_messages() as $message ) {
 				if ( $errors->get_error_data() ) {
 					return $message . ' ' . $render_data( $errors->get_error_data() );
-				} else {
-					return $message;
 				}
+
+				return $message;
 			}
 		}
 	}
@@ -946,9 +948,9 @@ class WP_CLI {
 
 		if ( $return_detailed ) {
 			return $results;
-		} else {
-			return $results->return_code;
 		}
+
+		return $results->return_code;
 	}
 
 	/**
@@ -1111,17 +1113,17 @@ class WP_CLI {
 		if ( $launch ) {
 			Utils\check_proc_available( 'launch option' );
 
+			$descriptors = array(
+				0 => STDIN,
+				1 => STDOUT,
+				2 => STDERR,
+			);
+
 			if ( $return ) {
 				$descriptors = array(
 					0 => STDIN,
 					1 => array( 'pipe', 'w' ),
 					2 => array( 'pipe', 'w' ),
-				);
-			} else {
-				$descriptors = array(
-					0 => STDIN,
-					1 => STDOUT,
-					2 => STDERR,
 				);
 			}
 
@@ -1173,9 +1175,9 @@ class WP_CLI {
 			$argv = Utils\parse_str_to_argv( $command );
 			list( $args, $assoc_args, $runtime_config ) = $configurator->parse_args( $argv );
 			if ( $return ) {
-				ob_start();
 				$existing_logger = self::$logger;
 				self::$logger = new WP_CLI\Loggers\Execution;
+				self::$logger->ob_start();
 			}
 			if ( ! $exit_error ) {
 				self::$capture_exit = true;
@@ -1192,8 +1194,9 @@ class WP_CLI {
 			}
 			if ( $return ) {
 				$execution_logger = self::$logger;
+				$execution_logger->ob_end();
 				self::$logger = $existing_logger;
-				$stdout = trim( ob_get_clean() );
+				$stdout = $execution_logger->stdout;
 				$stderr = $execution_logger->stderr;
 				if ( true === $return || 'stdout' === $return ) {
 					$retval = trim( $stdout );
@@ -1260,6 +1263,7 @@ class WP_CLI {
 	}
 
 	// back-compat
+	// @codingStandardsIgnoreLine
 	public static function addCommand( $name, $class ) {
 		trigger_error(
 			sprintf(

@@ -24,7 +24,7 @@
 		"php": ">=5.3.29",
 		"composer/composer": "^1.2.0",
 		"composer/semver": "~1.0",
-		"justinrainbow/json-schema": "5.2.1",
+		"justinrainbow/json-schema": "~5.2.5",
 		"mustache/mustache": "~2.4",
 		"ramsey/array_column": "~1.1",
 		"rmccue/requests": "~1.6",
@@ -69,6 +69,7 @@
 		"dealerdirect/phpcodesniffer-composer-installer": "^0.4.3",
 		"phpunit/phpunit": "3.7.*",
 		"roave/security-advisories": "dev-master",
+		"wimg/php-compatibility": "^8.0",
 		"wp-coding-standards/wpcs": "^0.13.1"
 	},
 	"suggest": {

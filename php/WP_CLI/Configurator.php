@@ -50,7 +50,7 @@ class Configurator {
 	/**
 	 * @param string $path Path to config spec file.
 	 */
-	function __construct( $path ) {
+	public function __construct( $path ) {
 		$this->spec = include $path;
 
 		$defaults = array(
@@ -73,7 +73,7 @@ class Configurator {
 	 *
 	 * @return array
 	 */
-	function to_array() {
+	public function to_array() {
 		return array( $this->config, $this->extra_config );
 	}
 
@@ -82,7 +82,7 @@ class Configurator {
 	 *
 	 * @return array
 	 */
-	function get_spec() {
+	public function get_spec() {
 		return $this->spec;
 	}
 
@@ -91,7 +91,7 @@ class Configurator {
 	 *
 	 * @return array
 	 */
-	function get_aliases() {
+	public function get_aliases() {
 		if ( $runtime_alias = getenv( 'WP_CLI_RUNTIME_ALIAS' ) ) {
 			$returned_aliases = array();
 			foreach ( json_decode( $runtime_alias, true ) as $key => $value ) {
@@ -105,9 +105,9 @@ class Configurator {
 				}
 			}
 			return $returned_aliases;
-		} else {
-			return $this->aliases;
 		}
+
+		return $this->aliases;
 	}
 
 	/**
@@ -338,9 +338,7 @@ class Configurator {
 	 * @param mixed $val A string or an array
 	 */
 	private static function arrayify( &$val ) {
-		if ( ! is_array( $val ) ) {
-			$val = array( $val );
-		}
+		$val = (array) $val;
 	}
 
 	/**

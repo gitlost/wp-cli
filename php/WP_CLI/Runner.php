@@ -86,10 +86,11 @@ class Runner {
 
 		if ( is_readable( $config_path ) ) {
 			return $config_path;
-		} else {
-			$this->_global_config_path_debug = 'No readable global config found';
-			return false;
 		}
+
+		$this->_global_config_path_debug = 'No readable global config found';
+
+		return false;
 	}
 
 	/**
@@ -114,16 +115,18 @@ class Runner {
 				static $wp_load_count = 0;
 				$wp_load_path = $dir . DIRECTORY_SEPARATOR . 'wp-load.php';
 				if ( file_exists( $wp_load_path ) ) {
-					$wp_load_count += 1;
+					++ $wp_load_count;
 				}
 				return $wp_load_count > 1;
 			}
 		);
+
+		$this->_project_config_path_debug = 'No project config found';
+
 		if ( ! empty( $project_config_path ) ) {
 			$this->_project_config_path_debug = 'Using project config: ' . $project_config_path;
-		} else {
-			$this->_project_config_path_debug = 'No project config found';
 		}
+
 		return $project_config_path;
 	}
 
@@ -278,14 +281,15 @@ class Runner {
 						$parent_name,
 						! empty( $suggestion ) ? PHP_EOL . "Did you mean '{$suggestion}'?" : ''
 					);
-				} else {
-					$suggestion = $this->get_subcommand_suggestion( $full_name, $command );
-					return sprintf(
-						"'%s' is not a registered wp command. See 'wp help' for available commands.%s",
-						$full_name,
-						! empty( $suggestion ) ? PHP_EOL . "Did you mean '{$suggestion}'?" : ''
-					);
 				}
+
+				$suggestion = $this->get_subcommand_suggestion( $full_name, $command );
+
+				return sprintf(
+					"'%s' is not a registered wp command. See 'wp help' for available commands.%s",
+					$full_name,
+					! empty( $suggestion ) ? PHP_EOL . "Did you mean '{$suggestion}'?" : ''
+				);
 			}
 
 			if ( $this->is_command_disabled( $subcommand ) ) {
@@ -321,10 +325,10 @@ class Runner {
 
 		$name = implode( ' ', $cmd_path );
 
+		$extra_args = array();
+
 		if ( isset( $this->extra_config[ $name ] ) ) {
 			$extra_args = $this->extra_config[ $name ];
-		} else {
-			$extra_args = array();
 		}
 
 		WP_CLI::debug( 'Running command: ' . $name, 'bootstrap' );
@@ -756,7 +760,7 @@ class Runner {
 			WP_CLI::error(
 				"WP-CLI needs WordPress $minimum_version or later to work properly. " .
 				"The version currently installed is $wp_version.\n" .
-				"Try running `wp core download --force`."
+				'Try running `wp core download --force`.'
 			);
 		}
 		// @codingStandardsIgnoreEnd
@@ -767,10 +771,9 @@ class Runner {
 
 		$argv = array_slice( $GLOBALS['argv'], 1 );
 
+		$this->alias = null;
 		if ( ! empty( $argv[0] ) && preg_match( '#' . Configurator::ALIAS_REGEX . '#', $argv[0], $matches ) ) {
 			$this->alias = array_shift( $argv );
-		} else {
-			$this->alias = null;
 		}
 
 		// File config
@@ -918,9 +921,9 @@ class Runner {
 				}
 				$this->run_alias_group( $group_aliases );
 				exit;
-			} else {
-				$this->set_alias( $this->alias );
 			}
+
+			$this->set_alias( $this->alias );
 		}
 
 		if ( empty( $this->arguments ) ) {
@@ -1074,8 +1077,8 @@ class Runner {
 			if ( array_key_exists( $key, $wp_cli_original_defined_vars ) || 'wp_cli_original_defined_vars' === $key ) {
 				continue;
 			}
-			global $$key;
-			$$key = $var;
+			global ${$key};
+			${$key} = $var;
 		}
 
 		$this->maybe_update_url_from_domain_constant();
@@ -1299,10 +1302,10 @@ class Runner {
 					if ( $has_param ) {
 						$explanation = 'Verify `--url=<url>` matches an existing site.';
 					} else {
+						$explanation = "Define DOMAIN_CURRENT_SITE in 'wp-config.php' or use `--url=<url>` to override.";
+
 						if ( $has_const ) {
 							$explanation = 'Verify DOMAIN_CURRENT_SITE matches an existing site or use `--url=<url>` to override.';
-						} else {
-							$explanation = "Define DOMAIN_CURRENT_SITE in 'wp-config.php' or use `--url=<url>` to override.";
 						}
 					}
 					if ( $explanation ) {
@@ -1422,13 +1425,14 @@ class Runner {
 			if ( ! is_array( $skipped_themes ) ) {
 				$skipped_themes = explode( ',', $skipped_themes );
 			}
+
+			$checked_value = $value;
 			// Always check against the stylesheet value
 			// This ensures a child theme can be skipped when template differs
 			if ( false !== stripos( current_filter(), 'option_template' ) ) {
 				$checked_value = get_option( 'stylesheet' );
-			} else {
-				$checked_value = $value;
 			}
+
 			if ( '' === $checked_value || in_array( $checked_value, $skipped_themes ) ) {
 				return '';
 			}
@@ -1498,7 +1502,7 @@ class Runner {
 
 		$existing_phar = realpath( $_SERVER['argv'][0] );
 		// Phar needs to be writable to be easily updateable.
-		if ( ! is_writable( $existing_phar ) || ! is_writeable( dirname( $existing_phar ) ) ) {
+		if ( ! is_writable( $existing_phar ) || ! is_writable( dirname( $existing_phar ) ) ) {
 			return;
 		}
 
