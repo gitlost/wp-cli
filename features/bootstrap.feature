@@ -249,11 +249,13 @@ Feature: Bootstrap WP-CLI
       Success:
       """
 
-    When I run `wp core install --url=example.com --title=example --admin_user=example --admin_email=example@example.org`
+    # Use try to cater for wp-db errors in old WPs.
+    When I try `wp core install --url=example.com --title=example --admin_user=example --admin_email=example@example.org`
     Then STDOUT should contain:
       """
       Success:
       """
+    And the return code should be 0
 
     When I run `wp eval 'echo constant( "WP_CLI_TEST_CONSTANT" );'`
     Then STDOUT should be:
