@@ -92,7 +92,7 @@ Feature: Get help about WP-CLI commands
       """
     And STDERR should be empty
 
-  # As of 4.8.1 (fixed in trunk), WP isn't compatible with PHP 7.2 due to `__autoload()` in "wp-includes/compat.php".
+  # Fixed in trunk, WP isn't compatible with PHP 7.2 due to `__autoload()` in "wp-includes/compat.php".
   @less-than-php-7.2
   Scenario: Help when WordPress is downloaded but not installed
     Given an empty directory
