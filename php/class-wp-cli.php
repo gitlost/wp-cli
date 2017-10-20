@@ -1033,7 +1033,8 @@ class WP_CLI {
 			return PHP_BINARY;
 		}
 
-		if ( @ is_executable( PHP_BINDIR . '/php' ) || ( Utils\is_windows() && @ is_executable( PHP_BINDIR . '/php.exe' ) ) ) {
+		// @codingStandardsIgnoreLine
+		if ( @is_executable( PHP_BINDIR . '/php' ) || ( Utils\is_windows() && @is_executable( PHP_BINDIR . '/php.exe' ) ) ) {
 			return PHP_BINDIR . '/php';
 		}
 

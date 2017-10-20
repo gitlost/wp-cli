@@ -363,7 +363,7 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 
 		$exception = null;
 		try {
-			Utils\http_request( 'GET', 'https://nosuchhost_asdf_asdf_asdf.com', null /*data*/, null /*headers*/, array( 'timeout' => 1 ) );
+			Utils\http_request( 'GET', 'https://nosuchhost_asdf_asdf_asdf.com', null /*data*/, array() /*headers*/, array( 'timeout' => 0 ) );
 		} catch ( \WP_CLI\ExitException $ex ) {
 			$exception = $ex;
 		}
@@ -420,7 +420,7 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		$logger = new \WP_CLI\Loggers\Execution;
 		WP_CLI::set_logger( $logger );
 
-		Utils\http_request( 'GET', 'https://example.com', null /*data*/, null /*headers*/, array( 'timeout' => 1 ) );
+		Utils\http_request( 'GET', 'https://example.com' );
 
 		// Undo bad CAcert hack before asserting.
 		unlink( $bad_cacert_path );

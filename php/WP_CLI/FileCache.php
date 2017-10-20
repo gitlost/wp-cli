@@ -61,7 +61,7 @@ class FileCache {
 			$this->enabled = false;
 		}
 
-		if ( null === self::$finderDummy ) {
+		if ( null === self::$finderDummy && $this->enabled ) {
 			/*
 			 * Make sure Finder & helper classes used in clean() are loaded as otherwise calling clean() in a `register_shutdown_function`
 			 * can fail in certain circumstances - a PHP issue not easily reproducible but witnessed on Travis and locally.

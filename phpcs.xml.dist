@@ -32,7 +32,7 @@
 	<rule ref="WordPress-Core">
 		<exclude name="Generic.PHP.NoSilencedErrors.Discouraged" />
         <!--exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" /--> <!--Unreported by phpcs but applied by phpcbf. Enable if running phpcbf. -->
-        <!--exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" /--> <!--Unreported by phpcs but applied by phpcb. Enable if running phpcbf.  -->
+        <!--exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" /--> <!--Unreported by phpcs but applied by phpcbf. Enable if running phpcbf.  -->
 		<exclude name="PEAR.Functions.FunctionCallSignature.Indent" />
 		<exclude name="Squiz.PHP.DisallowMultipleAssignments.Found" />
 		<exclude name="WordPress.Arrays.ArrayDeclarationSpacing.AssociativeKeyFound" />

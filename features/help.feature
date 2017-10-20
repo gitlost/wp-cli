@@ -50,7 +50,7 @@ Feature: Get help about WP-CLI commands
   @require-wp-4.3
   Scenario: Help for internal commands with WP
     Given a WP install
-	# Check for errors/warnings when loading WP.
+    # Check for errors/warnings when loading WP.
     And a stderr-error-log.php file:
       """
       <?php define( 'WP_DEBUG', true ); define( 'WP_DEBUG_DISPLAY', null ); define( 'WP_DEBUG_LOG', false ); ini_set( "error_log", '' ); ini_set( 'display_errors', 'STDERR' );
