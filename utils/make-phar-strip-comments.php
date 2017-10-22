@@ -15,8 +15,8 @@ function make_phar_strip_comments( $contents, $keep_doc_comments ) {
 			return $t;
 		}
 		if ( T_COMMENT === $t[0] || ( ! $keep_doc_comments && T_DOC_COMMENT === $t[0] ) ) {
-			if ( preg_match( '/copyright|licen[sc]e|\(c\)/i', $t[1] ) ) {
-				// Keep for copyright reasons.
+			if ( preg_match( '/copyright|licen[sc]e|\(c\)|@before|@after/i', $t[1] ) ) {
+				// Keep for copyright and behat reasons.
 				return $t[1];
 			}
 			return str_repeat( "\n", substr_count( $t[1], "\n" ) ); // Strip everything but newlines.
