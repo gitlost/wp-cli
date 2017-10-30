@@ -684,7 +684,7 @@ Feature: Get help about WP-CLI commands
       """
     And STDERR should be empty
 
-    When I run `COLUMNS=80 wp help test-wordwrap my_command | wc -L`
+    When I run `COLUMNS=80 wp help test-wordwrap my_command | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:
       """
       80
@@ -760,7 +760,7 @@ Feature: Get help about WP-CLI commands
       """
     And STDERR should be empty
 
-    When I run `TERM=vt100 COLUMNS=40 wp help test-wordwrap my_command | sed '/\-\-ssh/d' | wc -L`
+    When I run `TERM=vt100 COLUMNS=40 wp help test-wordwrap my_command | sed '/\-\-ssh/d' | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:
       """
       40
@@ -899,7 +899,7 @@ Feature: Get help about WP-CLI commands
       """
     And STDERR should be empty
 
-    When I run `TERM=vt100 COLUMNS=80 wp help test-wordwrap | wc -L`
+    When I run `TERM=vt100 COLUMNS=80 wp help test-wordwrap | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:
       """
       80
@@ -917,9 +917,11 @@ Feature: Get help about WP-CLI commands
 
       class WP_CLI_Foo_Bar_Command extends WP_CLI_Command {
           /**
-          * The command which has a link in long description.
+          * A command that has a link in its long description.
           *
-          * This is a [reference link](https://wordpress.org/) and [second link](http://wp-cli.org/). It should be displayed very nice!
+          * This is a [reference link](https://wordpress.org/).
+          * Also, there is a [second link](http://wp-cli.org/).
+          * They should be displayed nicely!
           *
           * @synopsis <constant-name>
           */
@@ -937,8 +939,10 @@ Feature: Get help about WP-CLI commands
     When I run `TERM=vt100 COLUMNS=80 wp help reference-link`
     Then STDOUT should contain:
       """
-        This is a [reference link][1] and [second link][2]. It should be displayed
-        very nice!
+        This is a [reference link][1].
+        Also, there is a [second link][2].
+        They should be displayed nicely!
+
         ---
         [1] https://wordpress.org/
         [2] http://wp-cli.org/
@@ -948,7 +952,60 @@ Feature: Get help about WP-CLI commands
     Then STDOUT should contain:
       """
         See references for [Roles and Capabilities][1] and [WP User class][2].
+
         ---
         [1] https://codex.wordpress.org/Roles_and_Capabilities
         [2] https://codex.wordpress.org/Class_Reference/WP_User
+      """
+
+  Scenario: Very long description for top-level command which has reference link display well
+    Given a WP install
+    And a command.php file:
+      """
+      <?php
+
+      if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+          return;
+      }
+
+      class WP_CLI_Foo_Bar_Command extends WP_CLI_Command {
+          /**
+          * A command that has a link in its long description.
+          *
+          * This is a [reference link](https://wordpress.org/). Also, there is a [second link](http://wp-cli.org/). They should be displayed nicely! Wow! This is a very, very long description.
+          *
+          * @synopsis <constant-name>
+          */
+          public function __invoke( $args, $assoc_args ) {}
+      }
+
+      WP_CLI::add_command( 'reference-link', 'WP_CLI_Foo_Bar_Command' );
+      """
+    And a wp-cli.yml file:
+      """
+      require:
+        - command.php
+      """
+
+    When I run `TERM=vt100 COLUMNS=80 wp help reference-link`
+    Then STDOUT should contain:
+      """
+        This is a [reference link][1]. Also, there is a [second link][2]. They should
+        be displayed nicely! Wow! This is a very, very long description.
+
+        ---
+        [1] https://wordpress.org/
+        [2] http://wp-cli.org/
+      """
+
+    When I run `TERM=vt100 COLUMNS=60 wp help reference-link`
+    Then STDOUT should contain:
+      """
+        This is a [reference link][1]. Also, there is a [second
+        link][2]. They should be displayed nicely! Wow! This is a
+        very, very long description.
+
+        ---
+        [1] https://wordpress.org/
+        [2] http://wp-cli.org/
       """
