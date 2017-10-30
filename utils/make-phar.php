@@ -87,6 +87,7 @@ function add_file( $phar, $path ) {
 					'-command\/src\/',
 					'\/wp-cli\/[^\n]+?-command\/',
 					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+?\/',
+					'\/(?:dealerdirect|squizlabs|wimg)\/',
 				);
 			} else {
 				$strips = array(
@@ -95,6 +96,7 @@ function add_file( $phar, $path ) {
 					'\/symfony\/(?!console|filesystem|finder|polyfill-mbstring|process)[^\/]+?\/',
 					'\/composer\/spdx-licenses\/',
 					'\/Composer\/(?:Command\/|Compiler\.php|Console\/|Downloader\/Pear|Installer\/Pear|Question\/|Repository\/Pear|SelfUpdate\/)',
+					'\/(?:dealerdirect|squizlabs|wimg)\/',
 				);
 			}
 			$strip_res = array_map( function ( $v ) {
