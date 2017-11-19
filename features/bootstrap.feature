@@ -13,6 +13,7 @@ Feature: Bootstrap WP-CLI
           }
       }
       """
+    # Note: Composer outputs messages to stderr.
     And I run `composer install --no-interaction 2>&1`
 
     When I run `vendor/bin/wp cli version`

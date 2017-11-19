@@ -295,8 +295,31 @@ Feature: Have a config file
       """
     And the return code should be 0
 
-    When I run `wp option get home --debug=foo`
-    Then STDERR should be empty
+    When I try `wp option get home --debug=foo`
+    Then STDERR should not contain:
+      """
+      No readable global config found
+      """
+    Then STDERR should not contain:
+      """
+      No project config found
+      """
+    And STDERR should not contain:
+      """
+      Begin WordPress load
+      """
+    And STDERR should not contain:
+      """
+      wp-config.php path:
+      """
+    And STDERR should not contain:
+      """
+      Loaded WordPress
+      """
+    And STDERR should not contain:
+      """
+      Running command: option get
+      """
     And the return code should be 0
 
   Scenario: Missing required files should not fatal WP-CLI

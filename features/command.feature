@@ -586,6 +586,7 @@ Feature: WP-CLI Commands
       """
       usage: wp foo <message> --apple=<apple> [--meal=<meal>]
       """
+    And STDERR should be empty
     And the return code should be 1
 
     When I run `wp help foo`
@@ -654,6 +655,36 @@ Feature: WP-CLI Commands
       """
       Message is: hello
       Success: dinner
+      """
+
+  Scenario: Register a longdesc for a given command
+    Given an empty directory
+    And a custom-cmd.php file:
+      """
+      <?php
+      function foo() {
+        WP_CLI::success( 'Command run.' );
+      }
+      WP_CLI::add_command( 'foo', 'foo', array(
+        'shortdesc'   => 'My awesome function command',
+        'when'        => 'before_wp_load',
+        'longdesc'    => '## EXAMPLES ' . PHP_EOL . PHP_EOL . '  # Run the custom foo command',
+      ) );
+      """
+    And a wp-cli.yml file:
+      """
+      require:
+        - custom-cmd.php
+      """
+
+    When I run `wp help foo`
+    Then STDOUT should contain:
+      """
+      EXAMPLES
+      """
+    And STDOUT should contain:
+      """
+      # Run the custom foo command
       """
 
   Scenario: Register a command with default and accepted arguments.
@@ -997,9 +1028,9 @@ Feature: WP-CLI Commands
       """
       test-command-2
       """
-    And STDERR should contain:
+    And STDERR should be:
       """
-      Warning: Aborting the addition of the command 'test-command-2'
+      Warning: Aborting the addition of the command 'test-command-2' with reason: Testing hooks..
       """
     And the return code should be 0
 
@@ -1347,7 +1378,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'my-namespaced-command', 'My_Command_Namespace' );
       """
 
-    When I try `wp help --require=command-namespace.php`
+    When I run `wp help --require=command-namespace.php`
     Then STDOUT should contain:
       """
       my-namespaced-command
@@ -1376,7 +1407,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'my-namespaced-command', 'My_Command_Namespace' );
       """
 
-    When I try `wp help --require=command-namespace.php`
+    When I run `wp help --require=command-namespace.php`
     Then STDOUT should contain:
       """
       my-namespaced-command
@@ -1405,7 +1436,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'my-namespaced-command', 'My_Namespaced_Command' );
       """
 
-    When I try `wp help --require=command-namespace.php`
+    When I run `wp help --require=command-namespace.php`
     Then STDOUT should contain:
       """
       my-namespaced-command
@@ -1428,7 +1459,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'my-namespaced-command', 'My_Command_Namespace' );
       """
 
-    When I try `wp --require=command-namespace.php my-namespaced-command`
+    When I run `wp --require=command-namespace.php my-namespaced-command`
     Then STDOUT should contain:
       """
       The namespace my-namespaced-command does not contain any usable commands in the current context.

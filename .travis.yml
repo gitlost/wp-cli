@@ -64,6 +64,7 @@ cache:
 branches:
   only:
     - master
+    - /^release-.+$/
 
 notifications:
   email:

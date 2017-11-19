@@ -50,13 +50,8 @@ Feature: Get help about WP-CLI commands
   @require-wp-4.3
   Scenario: Help for internal commands with WP
     Given a WP install
-    # Check for errors/warnings when loading WP.
-    And a stderr-error-log.php file:
-      """
-      <?php define( 'WP_DEBUG', true ); define( 'WP_DEBUG_DISPLAY', null ); define( 'WP_DEBUG_LOG', false ); ini_set( "error_log", '' ); ini_set( 'display_errors', 'STDERR' );
-      """
 
-    When I run `wp --require=stderr-error-log.php help`
+    When I run `wp help`
     Then STDOUT should contain:
       """
         Run 'wp help <command>' to get more information on a specific command.
@@ -64,28 +59,28 @@ Feature: Get help about WP-CLI commands
       """
     And STDERR should be empty
 
-    When I run `wp --require=stderr-error-log.php help core`
+    When I run `wp help core`
     Then STDOUT should contain:
       """
         wp core
       """
     And STDERR should be empty
 
-    When I run `wp --require=stderr-error-log.php help core download`
+    When I run `wp help core download`
     Then STDOUT should contain:
       """
         wp core download
       """
     And STDERR should be empty
 
-    When I run `wp --require=stderr-error-log.php help help`
+    When I run `wp help help`
     Then STDOUT should contain:
       """
         wp help
       """
     And STDERR should be empty
 
-    When I run `wp --require=stderr-error-log.php help help`
+    When I run `wp help help`
     Then STDOUT should contain:
       """
       GLOBAL PARAMETERS

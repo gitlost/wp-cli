@@ -32,7 +32,7 @@ Feature: Skipping plugins
       """
 
     # Can specify multiple plugins to skip
-    When I try `wp eval --skip-plugins=hello,akismet 'ini_set( "error_log", null ); echo hello_dolly();'`
+    When I try `wp eval --skip-plugins=hello,akismet 'echo hello_dolly();'`
     Then STDERR should contain:
       """
       Call to undefined function hello_dolly()
@@ -56,7 +56,7 @@ Feature: Skipping plugins
       """
 
     When I run `wp plugin activate hello`
-    And I try `wp eval 'ini_set( "error_log", null ); echo hello_dolly();'`
+    And I try `wp eval 'echo hello_dolly();'`
     Then STDERR should contain:
       """
       Call to undefined function hello_dolly()
@@ -71,7 +71,7 @@ Feature: Skipping plugins
       """
 
     When I run `wp plugin activate hello`
-    And I try `wp eval 'ini_set( "error_log", null ); echo hello_dolly();'`
+    And I try `wp eval 'echo hello_dolly();'`
     Then STDERR should contain:
       """
       Call to undefined function hello_dolly()
@@ -80,11 +80,21 @@ Feature: Skipping plugins
 
   Scenario: Skip network active plugins
     Given a WP multisite install
-    And I try `wp plugin deactivate akismet hello`
-    Then the return code should be 0
-    Given I run `wp plugin activate --network akismet hello`
 
-    When I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`
+    When I try `wp plugin deactivate akismet hello`
+    Then STDERR should be:
+      """
+      Warning: Plugin 'akismet' isn't active.
+      Warning: Plugin 'hello' isn't active.
+      """
+    And STDOUT should be:
+      """
+      Success: Plugins already deactivated.
+      """
+    And the return code should be 0
+
+    When I run `wp plugin activate --network akismet hello`
+    And I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`
     Then STDOUT should be:
       """
       truetrue
