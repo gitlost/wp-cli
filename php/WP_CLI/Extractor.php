@@ -43,7 +43,7 @@ class Extractor {
 				self::copy_overwrite_files( 'phar://' . $zipfile, $dest, 1 /*strip_components*/ );
 				return;
 			} catch ( \Exception $e ) {
-				WP_CLI::warning( sprintf( "Falling back to ZipArchive. PharData failed: %s.", $e->getMessage() ) );
+				WP_CLI::warning( sprintf( 'Falling back to ZipArchive. PharData failed: %s.', $e->getMessage() ) );
 			}
 		}
 		if ( ! class_exists( 'ZipArchive' ) ) {
