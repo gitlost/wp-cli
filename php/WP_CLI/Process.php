@@ -133,14 +133,14 @@ class Process {
 	}
 
 	/**
-	 * Run the command, but throw an Exception if the conditions aren't as given.
+	 * Run the command, but throw an Exception if the non-null args aren't as given.
 	 *
 	 * @return ProcessRun
 	 */
-	public function run_check_full( $return_code = 0, $stderr_empty = null, $stdout_empty = null ) {
+	public function run_check_args( $return_code = null, $stderr_empty = null, $stdout_empty = null ) {
 		$r = $this->run();
 
-		if ( $return_code !== $r->return_code ) {
+		if ( null !== $return_code && $r->return_code !== $return_code ) {
 			throw new \RuntimeException( $r );
 		}
 		if ( null !== $stderr_empty && empty( $r->stderr ) !== $stderr_empty ) {

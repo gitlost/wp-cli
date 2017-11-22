@@ -5,22 +5,15 @@ use Behat\Gherkin\Node\PyStringNode,
     WP_CLI\Process;
 
 function invoke_proc( $proc, $mode ) {
-	if ( 'run' === $mode ) {
-		return $proc->run_check_stderr();
-	}
-	if ( 'try' === $mode ) {
-		return $proc->run();
-	}
-	if ( 'mistakenly try' === $mode ) {
-		$return_code = 1;
-		$stderr_empty = false;
-		$stdout_empty = true;
-	} else {
-		$return_code = 0;
-		$stderr_empty = false;
-		$stdout_empty = false;
-	}
-	return $proc->run_check_full( $return_code, $stderr_empty, $stdout_empty );
+	$map = array(
+		'run' => array( 0, true, null ),
+		'try' => array( null, null, null ),
+		'mistakenly try' => array( 1, false, true ),
+		'successfully try' => array( 0, false, false ),
+	);
+	$args = $map[ $mode ];
+
+	return $proc->run_check_args( $args[0] /*return_code*/, $args[1] /*stderr_empty*/, $args[2] /*stdout_empty*/ );
 }
 
 function capture_email_sends( $stdout ) {
