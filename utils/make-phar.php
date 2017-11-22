@@ -70,7 +70,7 @@ function add_file( $phar, $path ) {
 
 	$file_contents = file_get_contents( $path );
 	if ( 0 === substr_compare( $path, '.php', -4 ) && ! isset( $scaffold_package_phps[ substr( $key, 1 ) ] ) ) { // `substr()` to remove initial slash.
-		$is_wp_cli_command = preg_match( '/\/(?:php\/commands|vendor\/wp-cli\/[^\/]+?-command\/src)\//', $path );
+		$is_wp_cli_command = preg_match( '/\/(?:php\/commands|[^\/]+?-command\/src)\//', $path );
 		$file_contents = make_phar_strip_comments( $file_contents, $is_wp_cli_command /*keep_doc_comments*/ );
 	}
 
