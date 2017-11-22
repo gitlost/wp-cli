@@ -53,8 +53,6 @@ Feature: Run a WP-CLI command
       http://example.com
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> run 'eval "echo wp_get_current_user()->user_login . PHP_EOL;"'`
     Then STDOUT should be:
@@ -62,8 +60,6 @@ Feature: Run a WP-CLI command
       admin
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `WP_CLI_CONFIG_PATH=config.yml wp <flag> run 'user get'`
     Then STDOUT should be:
@@ -71,8 +67,6 @@ Feature: Run a WP-CLI command
       admin@example.com
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
       | flag        |
@@ -87,32 +81,24 @@ Feature: Run a WP-CLI command
       """
       returned: 'http://example.com'
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> --return run 'eval "echo wp_get_current_user()->user_login . PHP_EOL;"'`
     Then STDOUT should be:
       """
       returned: 'admin'
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> --return=stderr run 'eval "echo wp_get_current_user()->user_login . PHP_EOL;"'`
     Then STDOUT should be:
       """
       returned: ''
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> --return=return_code run 'eval "echo wp_get_current_user()->user_login . PHP_EOL;"'`
     Then STDOUT should be:
       """
       returned: 0
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> --return=all run 'eval "echo wp_get_current_user()->user_login . PHP_EOL;"'`
     Then STDOUT should be:
@@ -123,16 +109,12 @@ Feature: Run a WP-CLI command
         'return_code' => 0,
       )
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `WP_CLI_CONFIG_PATH=config.yml wp --return <flag> run 'user get'`
     Then STDOUT should be:
       """
       returned: 'admin@example.com'
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
       | flag        |
@@ -159,13 +141,12 @@ Feature: Run a WP-CLI command
   Scenario Outline: Exit on error by default
     Given a WP install
 
-    When I try `wp run <flag> 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'`
+    When I try `wp run <flag> 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'` with return code 1
     Then STDOUT should be empty
     And STDERR should be:
       """
       Error: 1
       """
-    And the return code should be 1
 
     Examples:
       | flag        |
@@ -175,7 +156,7 @@ Feature: Run a WP-CLI command
   Scenario Outline: Override erroring on exit
     Given a WP install
 
-    When I try `wp run <flag> --no-exit_error --return=all 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'`
+    When I run `wp run <flag> --no-exit_error --return=all 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'`
     Then STDOUT should be:
       """
       returned: array (
@@ -184,16 +165,12 @@ Feature: Run a WP-CLI command
         'return_code' => 1,
       )
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp <flag> --no-exit_error run 'option get foo$bar'`
     Then STDOUT should be:
       """
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
       | flag        |
@@ -214,8 +191,6 @@ Feature: Run a WP-CLI command
         'return_code' => 1,
       )
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp run <flag> --no-exit_error --return=all 'eval "echo '\'echo\''; WP_CLI::log( '\'log\'' ); WP_CLI::warning( '\'warning\''); WP_CLI::success( '\'success\'' );"'`
     Then STDOUT should be:
@@ -227,8 +202,6 @@ Feature: Run a WP-CLI command
         'return_code' => 0,
       )
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
       | flag        |
@@ -237,16 +210,13 @@ Feature: Run a WP-CLI command
 
   Scenario Outline: Installed packages work as expected
     Given a WP install
-
-    When I run `wp package install wp-cli/scaffold-package-command`
-    Then STDERR should be empty
+    And I run `wp package install wp-cli/scaffold-package-command`
 
     When I run `wp <flag> run 'help scaffold package'`
     Then STDOUT should contain:
       """
       wp scaffold package <name>
       """
-    And STDERR should be empty
 
     Examples:
     | flag        |
@@ -263,8 +233,6 @@ Feature: Run a WP-CLI command
       Success: Rewrite structure set.
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
     | flag        |
@@ -280,8 +248,6 @@ Feature: Run a WP-CLI command
       http://example.com/?cat=1
       returned: NULL
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     Examples:
     | flag        |

@@ -131,4 +131,19 @@ class Process {
 
 		return $r;
 	}
+
+	/**
+	 * Run the command, but throw an Exception if the return code isn't as given.
+	 *
+	 * @return ProcessRun
+	 */
+	public function run_check_return_code( $return_code = 0 ) {
+		$r = $this->run();
+
+		if ( $return_code != $r->return_code ) {
+			throw new \RuntimeException( $r );
+		}
+
+		return $r;
+	}
 }

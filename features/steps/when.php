@@ -4,14 +4,11 @@ use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode,
     WP_CLI\Process;
 
-function invoke_proc( $proc, $mode ) {
-	$map = array(
-		'run' => 'run_check_stderr',
-		'try' => 'run'
-	);
-	$method = $map[ $mode ];
-
-	return $proc->$method();
+function invoke_proc( $proc, $mode, $return_code = 0 ) {
+	if ( 'run' === $mode ) {
+		return $proc->run_check_stderr();
+	}
+	return $return_code ? $proc->run_check_return_code( $return_code ) : $proc->run();
 }
 
 function capture_email_sends( $stdout ) {
@@ -25,10 +22,10 @@ $steps->When( '/^I launch in the background `([^`]+)`$/',
 	}
 );
 
-$steps->When( '/^I (run|try) `([^`]+)`$/',
-	function ( $world, $mode, $cmd ) {
+$steps->When( '/^I (run|try) `([^`]+)`(?: with return code (\d+))?$/',
+	function ( $world, $mode, $cmd, $return_code = 0 ) {
 		$cmd = $world->replace_variables( $cmd );
-		$world->result = invoke_proc( $world->proc( $cmd ), $mode );
+		$world->result = invoke_proc( $world->proc( $cmd ), $mode, (int) $return_code );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}
 );
