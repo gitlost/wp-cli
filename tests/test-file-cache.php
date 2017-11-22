@@ -42,6 +42,8 @@ class FileCacheTest extends PHPUnit_Framework_TestCase {
 
 		$this->assertFalse( file_exists( $cache_dir . '/max_size' ) );
 		$this->assertFalse( file_exists( $cache_dir . '/ttl' ) );
+
+		rmdir( $cache_dir );
 	}
 
 	/**

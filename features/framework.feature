@@ -186,7 +186,6 @@ Feature: Load WP-CLI
     And a invalid-host.php file:
       """
       <?php
-      ini_set( 'error_log', null );
       define( 'DB_HOST', 'localghost' );
       """
 
@@ -280,6 +279,7 @@ Feature: Load WP-CLI
       Run `wp core install` to create database tables.
       """
     And STDOUT should be empty
+    And the return code should be 1
 
   Scenario: Show potential table prefixes when site isn't found, single site.
     Given a WP install
@@ -293,6 +293,7 @@ Feature: Load WP-CLI
       Or, run `wp core install` to create database tables.
       """
     And STDOUT should be empty
+    And the return code should be 1
 
     # Use try to cater for wp-db errors in old WPs.
     When I try `wp core install --url=example.com --title=example --admin_user=wpcli --admin_email=wpcli@example.com`
@@ -312,6 +313,7 @@ Feature: Load WP-CLI
       Or, run `wp core install` to create database tables.
       """
     And STDOUT should be empty
+    And the return code should be 1
 
   @require-wp-3.9
   Scenario: Display a more helpful error message when site can't be found
