@@ -143,10 +143,10 @@ class Process {
 		if ( $return_code !== $r->return_code ) {
 			throw new \RuntimeException( $r );
 		}
-		if ( null !== $stderr_empty && $stderr_empty !== empty( $r->stderr ) ) {
+		if ( null !== $stderr_empty && empty( $r->stderr ) !== $stderr_empty ) {
 			throw new \RuntimeException( $r );
 		}
-		if ( null !== $stdout_empty && $stdout_empty !== empty( $r->stdout ) ) {
+		if ( null !== $stdout_empty && empty( $r->stdout ) !== $stdout_empty ) {
 			throw new \RuntimeException( $r );
 		}
 
