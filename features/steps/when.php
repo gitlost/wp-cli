@@ -4,11 +4,23 @@ use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode,
     WP_CLI\Process;
 
-function invoke_proc( $proc, $mode, $return_code = 0 ) {
+function invoke_proc( $proc, $mode ) {
 	if ( 'run' === $mode ) {
 		return $proc->run_check_stderr();
 	}
-	return $return_code ? $proc->run_check_return_code( $return_code ) : $proc->run();
+	if ( 'try' === $mode ) {
+		return $proc->run();
+	}
+	if ( 'mistakenly try' === $mode ) {
+		$return_code = 1;
+		$stderr_empty = false;
+		$stdout_empty = true;
+	} else {
+		$return_code = 0;
+		$stderr_empty = false;
+		$stdout_empty = null;
+	}
+	return $proc->run_check_full( $return_code, $stderr_empty, $stdout_empty );
 }
 
 function capture_email_sends( $stdout ) {
@@ -22,10 +34,10 @@ $steps->When( '/^I launch in the background `([^`]+)`$/',
 	}
 );
 
-$steps->When( '/^I (run|try) `([^`]+)`(?: with return code (\d+))?$/',
-	function ( $world, $mode, $cmd, $return_code = 0 ) {
+$steps->When( '/^I (run|try|mistakenly try|dubiously try) `([^`]+)`$/',
+	function ( $world, $mode, $cmd, $return_code = 0, $stdout_empty = '' ) {
 		$cmd = $world->replace_variables( $cmd );
-		$world->result = invoke_proc( $world->proc( $cmd ), $mode, (int) $return_code );
+		$world->result = invoke_proc( $world->proc( $cmd ), $mode );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}
 );

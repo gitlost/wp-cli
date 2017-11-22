@@ -141,9 +141,8 @@ Feature: Run a WP-CLI command
   Scenario Outline: Exit on error by default
     Given a WP install
 
-    When I try `wp run <flag> 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'` with return code 1
-    Then STDOUT should be empty
-    And STDERR should be:
+    When I mistakenly try `wp run <flag> 'eval "WP_CLI::error( var_export( get_current_user_id(), true ) );"'`
+    Then STDERR should be:
       """
       Error: 1
       """

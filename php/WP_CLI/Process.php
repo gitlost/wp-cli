@@ -133,14 +133,20 @@ class Process {
 	}
 
 	/**
-	 * Run the command, but throw an Exception if the return code isn't as given.
+	 * Run the command, but throw an Exception if the conditions aren't as given.
 	 *
 	 * @return ProcessRun
 	 */
-	public function run_check_return_code( $return_code = 0 ) {
+	public function run_check_full( $return_code = 0, $stderr_empty = null, $stdout_empty = null ) {
 		$r = $this->run();
 
-		if ( $return_code != $r->return_code ) {
+		if ( $return_code !== $r->return_code ) {
+			throw new \RuntimeException( $r );
+		}
+		if ( null !== $stderr_empty && $stderr_empty !== empty( $r->stderr ) ) {
+			throw new \RuntimeException( $r );
+		}
+		if ( null !== $stdout_empty && $stdout_empty !== empty( $r->stdout ) ) {
 			throw new \RuntimeException( $r );
 		}
 
