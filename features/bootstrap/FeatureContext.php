@@ -300,7 +300,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$errno = posix_get_last_error();
 			// Ignore "No such process" error as that's what we want.
 			if ( 3 /*ESRCH*/ !== $errno ) {
-				throw new RuntimeException( posix_strerror( $errno ) );
+				throw new \RuntimeException( posix_strerror( $errno ) );
 			}
 		}
 	}
@@ -546,14 +546,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public function create_db() {
 		$dbname = self::$db_settings['dbname'];
-		self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "CREATE DATABASE IF NOT EXISTS $dbname" ) );
+		self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "CREATE DATABASE IF NOT EXISTS `$dbname` CHARSET 'UTF8'" ) );
 		self::$have_dropped_db = false;
 	}
 
 	public function drop_db() {
 		if ( ! self::$have_dropped_db ) {
 			$dbname = self::$db_settings['dbname'];
-			self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "DROP DATABASE IF EXISTS $dbname" ) );
+			self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "DROP DATABASE IF EXISTS `$dbname`" ) );
 			self::$have_dropped_db = true;
 		}
 	}
@@ -594,7 +594,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		if ( !$status['running'] ) {
 			$stderr = is_resource( $pipes[2] ) ? ( ': ' . stream_get_contents( $pipes[2] ) ) : '';
-			throw new RuntimeException( sprintf( "Failed to start background process '%s'%s.", $cmd, $stderr ) );
+			throw new \RuntimeException( sprintf( "Failed to start background process '%s'%s.", $cmd, $stderr ) );
 		} else {
 			$this->running_procs[] = $proc;
 		}
