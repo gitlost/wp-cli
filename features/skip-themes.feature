@@ -14,7 +14,6 @@ Feature: Skipping themes
       """
       true
       """
-    And STDERR should be empty
 
     # The specified theme should be skipped
     When I run `wp --skip-themes=espied eval 'var_export( function_exists( "espied_scripts" ) );'`
@@ -22,7 +21,6 @@ Feature: Skipping themes
       """
       false
       """
-    And STDERR should be empty
     
     # All themes should be skipped
     When I run `wp --skip-themes eval 'var_export( function_exists( "espied_scripts" ) );'`
@@ -30,7 +28,6 @@ Feature: Skipping themes
       """
       false
       """
-    And STDERR should be empty
     
     # Skip another theme
     When I run `wp --skip-themes=classic eval 'var_export( function_exists( "espied_scripts" ) );'`
@@ -38,7 +35,6 @@ Feature: Skipping themes
       """
       true
       """
-    And STDERR should be empty
     
     # The specified theme should still show up as an active theme
     When I run `wp --skip-themes theme status espied`
@@ -46,7 +42,6 @@ Feature: Skipping themes
       """
       Active
       """
-    And STDERR should be empty
 
     # Skip several themes
     When I run `wp --skip-themes=classic,espied eval 'var_export( function_exists( "espied_scripts" ) );'`
@@ -54,7 +49,6 @@ Feature: Skipping themes
       """
       false
       """
-    And STDERR should be empty
 
   Scenario: Skip parent and child themes
     Given a WP install
@@ -70,14 +64,12 @@ Feature: Skipping themes
       """
       true
       """
-    And STDERR should be empty
 
     When I run `wp --skip-themes=espied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
-    And STDERR should be empty
 
     When I run `wp theme activate sidespied`
     When I run `wp eval 'var_export( function_exists( "espied_scripts" ) );'`
@@ -85,42 +77,36 @@ Feature: Skipping themes
       """
       true
       """
-    And STDERR should be empty
 
     When I run `wp eval 'var_export( function_exists( "sidespied_scripts" ) );'`
     Then STDOUT should be:
       """
       true
       """
-    And STDERR should be empty
 
     When I run `wp --skip-themes=sidespied eval 'var_export( function_exists( "espied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
-    And STDERR should be empty
 
     When I run `wp --skip-themes=sidespied eval 'var_export( function_exists( "sidespied_scripts" ) );'`
     Then STDOUT should be:
       """
       false
       """
-    And STDERR should be empty
 
     When I run `wp --skip-themes=sidespied eval 'echo get_template_directory();'`
     Then STDOUT should contain:
       """
       wp-content/themes/espied
       """
-    And STDERR should be empty
 
     When I run `wp --skip-themes=sidespied eval 'echo get_stylesheet_directory();'`
     Then STDOUT should contain:
       """
       wp-content/themes/sidespied
       """
-    And STDERR should be empty
 
   Scenario: Skipping multiple themes via config file
     Given a WP install
@@ -143,7 +129,6 @@ Feature: Skipping themes
       """
       A classic
       """
-    And STDERR should be empty
 
     # The espied theme should show up as an installed theme
     When I run `wp theme status`
@@ -151,7 +136,6 @@ Feature: Skipping themes
       """
       I espied
       """
-    And STDERR should be empty
     
     And I run `wp theme activate espied`
 
@@ -161,4 +145,3 @@ Feature: Skipping themes
       """
       false
       """
-    And STDERR should be empty

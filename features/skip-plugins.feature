@@ -81,7 +81,7 @@ Feature: Skipping plugins
   Scenario: Skip network active plugins
     Given a WP multisite install
 
-    When I try `wp plugin deactivate akismet hello`
+    When I successfully try `wp plugin deactivate akismet hello`
     Then STDERR should be:
       """
       Warning: Plugin 'akismet' isn't active.
@@ -91,7 +91,6 @@ Feature: Skipping plugins
       """
       Success: Plugins already deactivated.
       """
-    And the return code should be 0
 
     When I run `wp plugin activate --network akismet hello`
     And I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`

@@ -52,7 +52,6 @@ Feature: `wp cli` tasks
     """
     package_url
     """
-    And STDERR should be empty
 
   @github-api
   Scenario: Do WP-CLI Update
@@ -78,8 +77,6 @@ Feature: `wp cli` tasks
     """
     Success:
     """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -117,8 +114,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to 0.14.1
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -140,8 +135,6 @@ Feature: `wp cli` tasks
     """
     0.14.1
     """
-    And STDERR should be empty
-    And the return code should be 0
 
   @github-api
   Scenario: Install WP-CLI nightly
@@ -158,8 +151,6 @@ Feature: `wp cli` tasks
       Success: Updated WP-CLI to the latest nightly release.
       """
 
-    And STDERR should be empty
-    And the return code should be 0
 
   @github-api
   Scenario: Install WP-CLI stable
@@ -187,8 +178,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to the latest stable release.
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should be:
@@ -210,5 +199,3 @@ Feature: `wp cli` tasks
       """
       17"current":
       """
-    And STDERR should be empty
-    And the return code should be 0

@@ -18,7 +18,7 @@ function invoke_proc( $proc, $mode ) {
 	} else {
 		$return_code = 0;
 		$stderr_empty = false;
-		$stdout_empty = null;
+		$stdout_empty = false;
 	}
 	return $proc->run_check_full( $return_code, $stderr_empty, $stdout_empty );
 }
@@ -34,7 +34,7 @@ $steps->When( '/^I launch in the background `([^`]+)`$/',
 	}
 );
 
-$steps->When( '/^I (run|try|mistakenly try|dubiously try) `([^`]+)`$/',
+$steps->When( '/^I (run|try|mistakenly try|successfully try) `([^`]+)`$/',
 	function ( $world, $mode, $cmd, $return_code = 0, $stdout_empty = '' ) {
 		$cmd = $world->replace_variables( $cmd );
 		$world->result = invoke_proc( $world->proc( $cmd ), $mode );

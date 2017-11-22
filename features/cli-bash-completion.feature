@@ -12,8 +12,6 @@ Feature: `wp cli completions` tasks
       """
       server
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp co" --point=100`
     Then STDOUT should contain:
@@ -24,8 +22,6 @@ Feature: `wp cli completions` tasks
       """
       core
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp core " --point=100`
     Then STDOUT should contain:
@@ -36,8 +32,6 @@ Feature: `wp cli completions` tasks
       """
       update
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help " --point=100`
     Then STDOUT should contain:
@@ -48,8 +42,6 @@ Feature: `wp cli completions` tasks
       """
       media
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help language core " --point=100`
     Then STDOUT should contain:
@@ -60,24 +52,18 @@ Feature: `wp cli completions` tasks
       """
       update
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp core" --point=100`
     Then STDOUT should contain:
       """
       core
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp core " --point=100`
     Then STDOUT should contain:
       """
       download
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line='wp bogus-comand ' --point=100`
     Then STDOUT should be empty
@@ -132,16 +118,12 @@ Feature: `wp cli completions` tasks
       """
       server
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp @e" --point=100`
     Then STDOUT should contain:
       """
       @example
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp @example " --point=100`
     Then STDOUT should not contain:
@@ -156,16 +138,12 @@ Feature: `wp cli completions` tasks
       """
       eval
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp @example plugin " --point=100`
     Then STDOUT should contain:
       """
       list
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help language core " --point=100`
     Then STDOUT should contain:
@@ -176,8 +154,6 @@ Feature: `wp cli completions` tasks
       """
       update
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help " --point=100`
     Then STDOUT should not contain:
@@ -188,24 +164,18 @@ Feature: `wp cli completions` tasks
       """
       post-type
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help core" --point=100`
     Then STDOUT should contain:
       """
       core
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp help core " --point=100`
     Then STDOUT should contain:
       """
       download
       """
-    And STDERR should be empty
-    And the return code should be 0
 
   Scenario: Bash Completion for global parameters
     Given an empty directory
@@ -279,8 +249,6 @@ Feature: `wp cli completions` tasks
       """
       --quiet=
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `wp cli completions --line="wp plugin list --path --p" --point=100`
     Then STDOUT should contain:

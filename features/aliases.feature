@@ -9,12 +9,11 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I try `wp core is-installed`
+    When I mistakenly try `wp core is-installed`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
       """
-    And the return code should be 1
 
     When I run `wp @foo core is-installed`
     Then the return code should be 0
@@ -25,12 +24,11 @@ Feature: Create shortcuts to specific WordPress installs
   Scenario: Error when invalid alias provided
     Given an empty directory
 
-    When I try `wp @test option get home`
+    When I mistakenly try `wp @test option get home`
     Then STDERR should be:
       """
       Error: Alias '@test' not found.
       """
-    And the return code should be 1
 
   Scenario: Provide suggestion when invalid alias is provided
     Given an empty directory
@@ -40,13 +38,12 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I try `wp @test option get home`
+    When I mistakenly try `wp @test option get home`
     Then STDERR should be:
       """
       Error: Alias '@test' not found.
       Did you mean '@test2'?
       """
-    And the return code should be 1
 
   Scenario: Treat global params as local when included in alias
     Given a WP install in 'foo'
@@ -62,7 +59,7 @@ Feature: Create shortcuts to specific WordPress installs
       http://example.com
       """
 
-    When I try `wp @foo option get home --path=foo`
+    When I mistakenly try `wp @foo option get home --path=foo`
     Then STDERR should contain:
       """
       Parameter errors:
@@ -71,7 +68,6 @@ Feature: Create shortcuts to specific WordPress installs
       """
       unknown --path parameter
       """
-    And the return code should be 1
 
     When I run `wp @foo eval 'echo get_current_user_id();' --user=admin`
     Then STDOUT should be:
@@ -92,7 +88,7 @@ Feature: Create shortcuts to specific WordPress installs
       1
       """
 
-    When I try `wp @foo eval 'echo get_current_user_id();' --user=admin`
+    When I mistakenly try `wp @foo eval 'echo get_current_user_id();' --user=admin`
     Then STDERR should contain:
       """
       Parameter errors:
@@ -101,7 +97,6 @@ Feature: Create shortcuts to specific WordPress installs
       """
       unknown --user parameter
       """
-    And the return code should be 1
 
   Scenario: Support global params specific to the WordPress install, not WP-CLI generally
     Given a WP install in 'foo'
@@ -171,12 +166,11 @@ Feature: Create shortcuts to specific WordPress installs
       @foo:
         path: none-existent-install
       """
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp @foo option get home`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp @foo option get home`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
       """
-    And the return code should be 1
 
   Scenario: Use a group of aliases to run a command against multiple installs
     Given a WP install in 'foo'
@@ -209,12 +203,11 @@ Feature: Create shortcuts to specific WordPress installs
       http://google.com
       """
 
-    When I try `wp @invalid option get home`
+    When I mistakenly try `wp @invalid option get home`
     Then STDERR should be:
       """
       Error: Group '@invalid' contains one or more invalid aliases: @baz
       """
-    And the return code should be 1
 
     When I run `wp @both option get home`
     Then STDOUT should be:
@@ -293,12 +286,11 @@ Feature: Create shortcuts to specific WordPress installs
   Scenario: Error when '@all' is used without aliases defined
     Given an empty directory
 
-    When I try `wp @all option get home`
+    When I mistakenly try `wp @all option get home`
     Then STDERR should be:
       """
       Error: Cannot use '@all' when no aliases are registered.
       """
-    And the return code should be 1
 
   Scenario: Alias for a subsite of a multisite install
     Given a WP multisite subdomain install
@@ -324,13 +316,12 @@ Feature: Create shortcuts to specific WordPress installs
       http://subsite.example.com
       """
 
-    When I try `wp @subsite option get siteurl --url=subsite.example.com`
+    When I mistakenly try `wp @subsite option get siteurl --url=subsite.example.com`
     Then STDERR should be:
       """
       Error: Parameter errors:
        unknown --url parameter
       """
-    And the return code should be 1
 
   Scenario: Global parameters should be passed to grouped aliases
     Given a WP install in 'foo'
@@ -346,7 +337,7 @@ Feature: Create shortcuts to specific WordPress installs
         - @bar
       """
 
-    When I try `wp core is-installed --allow-root --debug`
+    When I mistakenly try `wp core is-installed --allow-root --debug`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
@@ -355,7 +346,6 @@ Feature: Create shortcuts to specific WordPress installs
       """
       core is-installed --allow-root --debug
       """
-    And the return code should be 1
 
     When I try `wp @foo core is-installed --allow-root --debug`
     Then the return code should be 0
@@ -400,12 +390,11 @@ Feature: Create shortcuts to specific WordPress installs
         - @bar
       """
 
-    When I try `{INVOKE_WP_CLI_WITH_PHP_ARGS--ddisable_functions=<func>} @foobar core is-installed`
+    When I mistakenly try `{INVOKE_WP_CLI_WITH_PHP_ARGS--ddisable_functions=<func>} @foobar core is-installed`
     Then STDERR should contain:
       """
       Error: Cannot do 'group alias': The PHP functions `proc_open()` and/or `proc_close()` are disabled
       """
-    And the return code should be 1
 
     Examples:
       | func       |

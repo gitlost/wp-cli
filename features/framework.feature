@@ -160,12 +160,11 @@ Feature: Load WP-CLI
       });
       """
 
-    When I try `wp option get home`
+    When I successfully try `wp option get home`
     Then STDERR should contain:
       """
       Warning: Some code is trying to do a URL redirect.
       """
-    And the return code should be 0
 
   Scenario: It should be possible to work on a site in maintenance mode
     Given a WP install
@@ -189,19 +188,17 @@ Feature: Load WP-CLI
       define( 'DB_HOST', 'localghost' );
       """
 
-    When I try `wp --require=invalid-host.php option get home`
+    When I mistakenly try `wp --require=invalid-host.php option get home`
     Then STDERR should contain:
       """
       Error: Error establishing a database connection.
       """
-    And the return code should be 1
 
-    When I try `wp --require=invalid-host.php option get home`
+    When I mistakenly try `wp --require=invalid-host.php option get home`
     Then STDERR should contain:
       """
       Error: Error establishing a database connection.
       """
-    And the return code should be 1
 
   Scenario: Allow WP_CLI hooks to pass arguments to callbacks
     Given an empty directory
@@ -272,28 +269,24 @@ Feature: Load WP-CLI
     Given a WP install
     And I run `wp db reset --yes`
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: The site you have requested is not installed.
       Run `wp core install` to create database tables.
       """
-    And STDOUT should be empty
-    And the return code should be 1
 
   Scenario: Show potential table prefixes when site isn't found, single site.
     Given a WP install
     And "$table_prefix = 'wp_';" replaced with "$table_prefix = 'cli_';" in the wp-config.php file
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: The site you have requested is not installed.
       Your table prefix is 'cli_'. Found install with table prefix: wp_.
       Or, run `wp core install` to create database tables.
       """
-    And STDOUT should be empty
-    And the return code should be 1
 
     # Use try to cater for wp-db errors in old WPs.
     When I try `wp core install --url=example.com --title=example --admin_user=wpcli --admin_email=wpcli@example.com`
@@ -305,34 +298,30 @@ Feature: Load WP-CLI
 
     Given "$table_prefix = 'cli_';" replaced with "$table_prefix = 'test_';" in the wp-config.php file
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: The site you have requested is not installed.
       Your table prefix is 'test_'. Found installs with table prefix: cli_, wp_.
       Or, run `wp core install` to create database tables.
       """
-    And STDOUT should be empty
-    And the return code should be 1
 
   @require-wp-3.9
   Scenario: Display a more helpful error message when site can't be found
     Given a WP multisite install
     And "define( 'DOMAIN_CURRENT_SITE', 'example.com' );" replaced with "define( 'DOMAIN_CURRENT_SITE', 'example.org' );" in the wp-config.php file
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: Site 'example.org/' not found. Verify DOMAIN_CURRENT_SITE matches an existing site or use `--url=<url>` to override.
       """
-    And the return code should be 1
 
-    When I try `wp option get home --url=example.io`
+    When I mistakenly try `wp option get home --url=example.io`
     Then STDERR should be:
       """
       Error: Site 'example.io' not found. Verify `--url=<url>` matches an existing site.
       """
-    And the return code should be 1
 
     Given "define( 'DOMAIN_CURRENT_SITE', 'example.org' );" replaced with " " in the wp-config.php file
 
@@ -342,16 +331,14 @@ Feature: Load WP-CLI
       DOMAIN_CURRENT_SITE
       """
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: Site not found. Define DOMAIN_CURRENT_SITE in 'wp-config.php' or use `--url=<url>` to override.
       """
-    And the return code should be 1
 
-    When I try `wp option get home --url=example.io`
+    When I mistakenly try `wp option get home --url=example.io`
     Then STDERR should be:
       """
       Error: Site 'example.io' not found. Verify `--url=<url>` matches an existing site.
       """
-    And the return code should be 1

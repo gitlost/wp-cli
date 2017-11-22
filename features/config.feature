@@ -108,12 +108,11 @@ Feature: Have a config file
       eval-file
       """
 
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp help eval-file`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp help eval-file`
     Then STDERR should be:
       """
       Error: The 'eval-file' command has been disabled from the config file.
       """
-    And the return code should be 1
 
     When I run `WP_CLI_CONFIG_PATH=config.yml wp core`
     Then STDOUT should not contain:
@@ -127,19 +126,17 @@ Feature: Have a config file
       multisite-convert
       """
 
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp core multisite-convert`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp core multisite-convert`
     Then STDERR should contain:
       """
       command has been disabled
       """
-    And the return code should be 1
 
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp help core multisite-convert`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp help core multisite-convert`
     Then STDERR should contain:
       """
       Error: The 'core multisite-convert' command has been disabled from the config file.
       """
-    And the return code should be 1
 
   Scenario: 'core config' parameters
     Given an empty directory
@@ -178,12 +175,11 @@ Feature: Have a config file
       administrator
       """
 
-    When I try `wp user create examplejane`
+    When I mistakenly try `wp user create examplejane`
     Then STDERR should be:
       """
       Error: Sorry, that email address is already used!
       """
-    And the return code should be 1
 
     When I run `wp user create examplejane jane@example.com`
     Then STDOUT should not be empty
@@ -241,7 +237,7 @@ Feature: Have a config file
   Scenario: Load WordPress with `--debug`
     Given a WP install
 
-    When I try `wp option get home --debug`
+    When I successfully try `wp option get home --debug`
     Then STDERR should contain:
       """
       No readable global config found
@@ -266,14 +262,13 @@ Feature: Have a config file
       """
       Running command: option get
       """
-    And the return code should be 0
 
-    When I try `wp option get home --debug=bootstrap`
+    When I successfully try `wp option get home --debug=bootstrap`
     Then STDERR should contain:
       """
       No readable global config found
       """
-    Then STDERR should contain:
+    And STDERR should contain:
       """
       No project config found
       """
@@ -293,34 +288,12 @@ Feature: Have a config file
       """
       Running command: option get
       """
-    And the return code should be 0
 
-    When I try `wp option get home --debug=foo`
-    Then STDERR should not contain:
+    When I run `wp option get home --debug=foo`
+    Then STDOUT should contain:
       """
-      No readable global config found
+      http://example.com
       """
-    Then STDERR should not contain:
-      """
-      No project config found
-      """
-    And STDERR should not contain:
-      """
-      Begin WordPress load
-      """
-    And STDERR should not contain:
-      """
-      wp-config.php path:
-      """
-    And STDERR should not contain:
-      """
-      Loaded WordPress
-      """
-    And STDERR should not contain:
-      """
-      Running command: option get
-      """
-    And the return code should be 0
 
   Scenario: Missing required files should not fatal WP-CLI
     Given an empty directory
@@ -330,12 +303,11 @@ Feature: Have a config file
       - missing-file.php
     """
 
-    When I try `wp help`
+    When I mistakenly try `wp help`
     Then STDERR should contain:
       """
       Error: Required file 'missing-file.php' doesn't exist (from project's wp-cli.yml).
       """
-    And the return code should be 1
 
     When I run `wp cli info`
     Then STDOUT should not be empty
@@ -351,22 +323,20 @@ Feature: Have a config file
         - /foo/baz.php
       """
 
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp help`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp help`
     Then STDERR should contain:
       """
       Error: Required file 'baz.php' doesn't exist (from global config.yml).
       """
-    And the return code should be 1
 
   Scenario: Missing required file as runtime argument
     Given an empty directory
 
-    When I try `wp help --require=foo.php`
+    When I mistakenly try `wp help --require=foo.php`
     Then STDERR should contain:
       """
       Error: Required file 'foo.php' doesn't exist (from runtime argument).
       """
-    And the return code should be 1
 
   Scenario: Config inheritance from project to global
     Given an empty directory
@@ -533,12 +503,11 @@ if ( !defined('ABSPATH') )
 require_once(ABSPATH . 'wp-settings.php');
       """
 
-    When I try `wp option get home`
+    When I mistakenly try `wp option get home`
     Then STDERR should be:
       """
       Error: Site 'example.dev/' not found. Verify DOMAIN_CURRENT_SITE matches an existing site or use `--url=<url>` to override.
       """
-    And the return code should be 1
 
     When I run `wp option get home --url=example.com`
     Then STDOUT should be:

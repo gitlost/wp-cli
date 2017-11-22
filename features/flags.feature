@@ -27,19 +27,17 @@ Feature: Global flags
   Scenario: Invalid URL
     Given a WP multisite install
 
-    When I try `wp post list --url=invalid.example.com`
+    When I mistakenly try `wp post list --url=invalid.example.com`
     Then STDERR should be:
       """
       Error: Site 'invalid.example.com' not found. Verify `--url=<url>` matches an existing site.
       """
-    And the return code should be 1
 
   Scenario: Quiet run
     Given a WP install
 
-    When I try `wp non-existing-command --quiet`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp non-existing-command --quiet`
+    Then STDERR should be:
       """
       Error: 'non-existing-command' is not a registered wp command. See 'wp help' for available commands.
       """
@@ -58,9 +56,8 @@ Feature: Global flags
       """
     And the return code should be 0
 
-    When I try `wp eval 'echo CONST_WITHOUT_QUOTES;' --debug`
-    Then the return code should be 0
-    And STDOUT should be:
+    When I successfully try `wp eval 'echo CONST_WITHOUT_QUOTES;' --debug`
+    Then STDOUT should be:
       """
       CONST_WITHOUT_QUOTES
       """
@@ -90,9 +87,8 @@ Feature: Global flags
       admin
       """
 
-    When I try `wp --user=non-existing-user eval 'echo wp_get_current_user()->user_login;'`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp --user=non-existing-user eval 'echo wp_get_current_user()->user_login;'`
+    Then STDERR should be:
       """
       Error: Invalid user ID, email or login: 'non-existing-user'
       """
@@ -209,19 +205,17 @@ Feature: Global flags
   Scenario: Enabling/disabling color
     Given a WP install
 
-    When I try `wp --no-color non-existent-command`
+    When I mistakenly try `wp --no-color non-existent-command`
     Then STDERR should be:
       """
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And the return code should be 1
 
-    When I try `wp --color non-existent-command`
+    When I mistakenly try `wp --color non-existent-command`
     Then STDERR should contain:
       """
       [31;1mError:
       """
-    And the return code should be 1
 
   Scenario: Use `WP_CLI_STRICT_ARGS_MODE` to distinguish between global and local args
     Given an empty directory
@@ -272,12 +266,11 @@ Feature: Global flags
   Scenario: Using --http=<url> requires wp-cli/restful
     Given an empty directory
 
-    When I try `wp --http=foo.dev`
+    When I mistakenly try `wp --http=foo.dev`
     Then STDERR should be:
       """
       Error: RESTful WP-CLI needs to be installed. Try 'wp package install wp-cli/restful'.
       """
-    And the return code should be 1
 
   Scenario: Strict args mode should be passed on to ssh
     When I try `WP_CLI_STRICT_ARGS_MODE=1 wp --debug --ssh=/ --version`
@@ -302,3 +295,4 @@ Feature: Global flags
       Running SSH command: docker exec --user 'user' 'wordpress' sh -c
       """
     And the return code should not be 0
+
