@@ -30,7 +30,7 @@ jobs:
     - stage: test
       script: ./ci/test.sh
       php: 7.0
-      env: WP_VERSION=latest WP_CLI_TEST_LOG_RUN_TIMES=1
+      env: WP_VERSION=latest WP_CLI_TEST_LOG_RUN_TIMES='stdout,40,40'
     - stage: test
       script: ./ci/test.sh
       php: 5.6

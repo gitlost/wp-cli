@@ -675,7 +675,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			mkdir( self::$install_cache_dir );
 		}
 
-		$subdir = $this->replace_variables( $subdir );
+		if ( $subdir ) {
+			$subdir = $this->replace_variables( $subdir );
+		}
 
 		$this->create_db();
 		$this->create_run_dir();
@@ -705,7 +707,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			if ( $install_cache_path ) {
 				mkdir( $install_cache_path );
 				self::dir_diff_copy( $run_dir, self::$cache_dir, $install_cache_path );
-				self::run_sql( 'mysqldump --no-defaults', array( 'result-file' => "{$install_cache_path}.sql" ), true /*add_database*/ );
+				self::run_sql(
+					'mysqldump --no-defaults --skip-opt --skip-comments --add-drop-table --create-options --extended-insert',
+					array( 'result-file' => "{$install_cache_path}.sql" ), true /*add_database*/
+				);
 			}
 		}
 	}
