@@ -1572,6 +1572,18 @@ class Runner {
 		// In case the operation fails, ensure the timestamp has been updated.
 		$cache->write( $cache_key, time() );
 
+		// Ask before doing remote request.
+		$current_command = implode( ' ', $this->arguments );
+		$msg =  sprintf(
+			"(Note you can control whether and when to check for updates with the 'WP_CLI_DISABLE_AUTO_CHECK_UPDATE' and 'WP_CLI_AUTO_CHECK_UPDATE_DAYS' environment variables.)\n" .
+			'You have version %s. Would you like to check if an update of WP-CLI is available?', WP_CLI_VERSION
+		);
+		if ( ! WP_CLI::ask( $msg ) ) {
+			WP_CLI::log( sprintf( "Continuing with your current command '%s'...", $current_command ) );
+			return;
+		}
+
+		WP_CLI::log( "Checking for an update of WP-CLI..." );
 		// Check whether any updates are available.
 		ob_start();
 		WP_CLI::run_command(
@@ -1586,9 +1598,12 @@ class Runner {
 		}
 
 		// Looks like an update is available, so let's prompt to update.
+		WP_CLI::log( sprintf( "Update found - invoking 'cli update' (please note that if you decide to update, your current command '%s' will not complete)...", $current_command ) );
+
 		WP_CLI::run_command( array( 'cli', 'update' ) );
-		// If the Phar was replaced, we can't proceed with the original process.
-		exit;
+
+		// If the Phar was replaced, we've exited so don't get here.
+		WP_CLI::log( sprintf( "Continuing with your current command '%s'...", $current_command ) );
 	}
 
 	/**
