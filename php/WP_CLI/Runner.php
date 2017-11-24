@@ -1540,7 +1540,7 @@ class Runner {
 		}
 
 		// Only check for update when a human is operating.
-		if ( ! function_exists( 'posix_isatty' ) || ! posix_isatty( STDOUT ) ) {
+		if ( Utils\isPiped() ) {
 			return;
 		}
 

@@ -191,6 +191,125 @@ Feature: `wp cli` tasks
       WP-CLI {UPDATE_VERSION}
       """
 
+  @github-api
+  Scenario: Install WP-CLI via auto-update
+    Given an empty directory
+    And an empty cache
+    And a new Phar with version "0.14.0" and cli build
+    And a session_no file:
+      """
+      n
+      """
+    And a session_yes_no file:
+      """
+      y
+      n
+      """
+    And a session_yes_yes file:
+      """
+      y
+      y
+      """
+
+    When I run `{PHAR_PATH} cli check-update --field=version | head -1`
+    Then STDOUT should not be empty
+    And save STDOUT as {UPDATE_VERSION}
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_no`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Continuing with your current command 'help'...
+      """
+    And STDOUT should contain:
+      """
+      wp <command>
+      """
+    And STDOUT should not contain:
+      """
+      Checking for an update
+      """
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_yes_no`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Checking for an update of WP-CLI...
+      Update found - invoking 'cli update' (please note that if you decide to update, your current command 'help' will not complete)...
+      """
+    And STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to update to {UPDATE_VERSION}? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Continuing with your current command 'help'...
+      """
+    And STDOUT should contain:
+      """
+      wp <command>
+      """
+    And STDOUT should not contain:
+      """
+      Downloading
+      """
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_yes_yes`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Checking for an update of WP-CLI...
+      Update found - invoking 'cli update' (please note that if you decide to update, your current command 'help' will not complete)...
+      You have version 0.14.0. Would you like to update to {UPDATE_VERSION}? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Downloading from https://github.com/wp-cli/wp-cli/releases/download/v{UPDATE_VERSION}/wp-cli-{UPDATE_VERSION}.phar...
+      """
+    And STDOUT should contain:
+      """
+      New version works. Proceeding to replace.
+      """
+    And STDOUT should contain:
+      """
+      Success:
+      """
+    And STDOUT should not contain:
+      """
+      Continuing
+      """
+    And STDOUT should not contain:
+      """
+      wp <command>
+      """
+
+    When I run `{PHAR_PATH} cli check-update`
+    Then STDOUT should be:
+      """
+      Success: WP-CLI is at the latest version.
+      """
+
   Scenario: Dump the list of global parameters with values
     Given a WP install
 

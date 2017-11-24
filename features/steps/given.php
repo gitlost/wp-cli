@@ -35,12 +35,18 @@ $steps->Given( '/^an empty cache/',
 $steps->Given( '/^an? ([^\s]+) file:$/',
 	function ( $world, $path, PyStringNode $content ) {
 		$content = (string) $content . "\n";
-		$full_path = $world->variables['RUN_DIR'] . "/$path";
-		$dir = dirname( $full_path );
+		$path = $world->replace_variables( $path );
+		if ( ! WP_CLI\Utils\is_path_absolute( $path ) ) {
+			$path = $world->variables['RUN_DIR'] . "/$path";
+		}
+		if ( 0 !== strpos( $path, sys_get_temp_dir() ) ) {
+			throw new RuntimeException( sprintf( "Attempted to create a file '%s' that is not in the temp directory '%s'. " . __FILE__ . ':' . __LINE__, $path, sys_get_temp_dir() ) );
+		}
+		$dir = dirname( $path );
 		if ( ! file_exists( $dir ) ) {
 			mkdir( $dir, 0777, true /*recursive*/ );
 		}
-		file_put_contents( $full_path, $content );
+		file_put_contents( $path, $content );
 	}
 );
 
