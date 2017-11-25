@@ -1574,7 +1574,7 @@ class Runner {
 
 		// Ask before doing remote request.
 		$current_command = implode( ' ', $this->arguments );
-		$msg =  sprintf(
+		$msg = sprintf(
 			"(Note you can control whether and when to check for updates with the 'WP_CLI_DISABLE_AUTO_CHECK_UPDATE' and 'WP_CLI_AUTO_CHECK_UPDATE_DAYS' environment variables.)\n" .
 			'You have version %s. Would you like to check if an update of WP-CLI is available?', WP_CLI_VERSION
 		);
@@ -1583,7 +1583,7 @@ class Runner {
 			return;
 		}
 
-		WP_CLI::log( "Checking for an update of WP-CLI..." );
+		WP_CLI::log( 'Checking for an update of WP-CLI...' );
 		// Check whether any updates are available.
 		ob_start();
 		WP_CLI::run_command(
