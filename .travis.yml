@@ -14,6 +14,11 @@ before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - ./ci/prepare.sh
 
+after_script:
+  - ls -la vendor
+  - ls -la $HOME/.composer
+  - ls -la $HOME/.composer/cache
+
 jobs:
   include:
     - stage: sniff
