@@ -706,6 +706,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_cache_path ) {
 				mkdir( $install_cache_path );
+				self::dir_diff_copy( $run_dir, self::$cache_dir, $install_cache_path );
 				$install_cache_sql = $install_cache_path . '.sql';
 				self::run_sql( 'mysqldump --no-defaults --skip-comments', array( 'result-file' => $install_cache_sql ), true /*add_database*/ );
 				file_put_contents( $install_cache_sql, preg_replace( '/^\/\*[^*]+\*\/;\n/m', '', file_get_contents( $install_cache_sql ) ) ); // Remove conditional statements.
