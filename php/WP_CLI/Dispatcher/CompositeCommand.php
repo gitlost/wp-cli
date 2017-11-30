@@ -12,7 +12,8 @@ use \WP_CLI\Utils;
  */
 class CompositeCommand {
 
-	protected $name, $shortdesc, $synopsis, $docparser;
+	protected $name, $shortdesc, $longdesc, $docparser;
+	protected $synopsis; // Used by Subcommand.
 
 	protected $parent, $subcommands = array();
 
