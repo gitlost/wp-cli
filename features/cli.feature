@@ -30,7 +30,7 @@ Feature: `wp cli` tasks
   Scenario: Ability to set a custom version when building
     Given an empty directory
     And save the {SRC_DIR}/VERSION file as {TRUE_VERSION}
-    And a new Phar with version "1.2.3"
+    And a new Phar with version "1.2.3" and cli build
 
     When I run `{PHAR_PATH} cli version`
     Then STDOUT should be:
@@ -45,19 +45,18 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Check for updates
     Given an empty directory
-    And a new Phar with version "0.0.0"
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should contain:
     """
     package_url
     """
-    And STDERR should be empty
 
   @github-api
   Scenario: Do WP-CLI Update
     Given an empty directory
-    And a new Phar with version "0.0.0"
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -78,8 +77,6 @@ Feature: `wp cli` tasks
     """
     Success:
     """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -100,7 +97,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -117,8 +114,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to 0.14.1
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -129,7 +124,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --no-patch --yes`
     Then STDOUT should contain:
@@ -140,13 +135,11 @@ Feature: `wp cli` tasks
     """
     0.14.1
     """
-    And STDERR should be empty
-    And the return code should be 0
 
-  @require-php-5.6
+  @github-api
   Scenario: Install WP-CLI nightly
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --nightly --yes`
     Then STDOUT should contain:
@@ -158,13 +151,10 @@ Feature: `wp cli` tasks
       Success: Updated WP-CLI to the latest nightly release.
       """
 
-    And STDERR should be empty
-    And the return code should be 0
-
-  @github-api @less-than-php-7
+  @github-api
   Scenario: Install WP-CLI stable
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
     And a session file:
       """
       y
@@ -187,8 +177,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to the latest stable release.
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should be:
@@ -210,5 +198,3 @@ Feature: `wp cli` tasks
       """
       17"current":
       """
-    And STDERR should be empty
-    And the return code should be 0

@@ -24,7 +24,7 @@ $configurator = new Configurator( WP_CLI_ROOT . '/utils/make-phar-spec.php' );
 list( $args, $assoc_args, $runtime_config ) = $configurator->parse_args( array_slice( $GLOBALS['argv'], 1 ) );
 
 if ( ! isset( $args[0] ) || empty( $args[0] ) ) {
-	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version]\n";
+	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version] [--build=cli]\n";
 	exit(1);
 }
 
@@ -60,11 +60,11 @@ function add_file( $phar, $path ) {
 		if ( null === $strip_res ) {
 			if ( 'cli' === BUILD ) {
 				$strips = array(
-					'\/(?:behat|composer|gherkin)\/src',
+					'\/(?:behat|composer|gherkin)\/src\/',
 					'\/phpunit\/',
-					'\/nb\/oxymel',
+					'\/nb\/oxymel\/',
 					'-command\/src\/',
-					'\/wp-cli\/[^\n]+-command\/',
+					'\/wp-cli\/[^\n]+?-command\/',
 					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
 					'\/(?:dealerdirect|squizlabs|wimg)\/',
 				);
@@ -149,6 +149,7 @@ if ( 'cli' === BUILD ) {
 		->in(WP_CLI_VENDOR_DIR . '/symfony/filesystem')
 		->in(WP_CLI_VENDOR_DIR . '/symfony/process')
 		->in(WP_CLI_VENDOR_DIR . '/justinrainbow/json-schema')
+		->exclude('demo')
 		->exclude('nb/oxymel/OxymelTest.php')
 		->exclude('composer/spdx-licenses')
 		->exclude('composer/composer/src/Composer/Command')
