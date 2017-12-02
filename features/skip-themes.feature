@@ -1,9 +1,11 @@
 Feature: Skipping themes
-  Given download:
-    | path                            | url                                                       |
-    | {CACHE_DIR}/classic.1.6.zip     | https://downloads.wordpress.org/theme/classic.1.6.zip     |
-    | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
-    | {CACHE_DIR}/sidespied.1.0.3.zip | https://downloads.wordpress.org/theme/sidespied.1.0.3.zip |
+
+  Background:
+    Given download:
+      | path                            | url                                                       |
+      | {CACHE_DIR}/classic.1.6.zip     | https://downloads.wordpress.org/theme/classic.1.6.zip     |
+      | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
+      | {CACHE_DIR}/sidespied.1.0.3.zip | https://downloads.wordpress.org/theme/sidespied.1.0.3.zip |
 
   Scenario: Skipping themes via global flag
     Given a WP install
