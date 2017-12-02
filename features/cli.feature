@@ -136,8 +136,7 @@ Feature: `wp cli` tasks
     0.14.1
     """
 
-  # Temp put back @require-php-5.6
-  @require-php-5.6 @github-api
+  @github-api
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
@@ -152,8 +151,7 @@ Feature: `wp cli` tasks
       Success: Updated WP-CLI to the latest nightly release.
       """
 
-  # Temp put back @less-than-php-7
-  @github-api @less-than-php-7
+  @github-api
   Scenario: Install WP-CLI stable
     Given an empty directory
     And a new Phar with version "0.14.0" and cli build
