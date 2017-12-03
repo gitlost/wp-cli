@@ -109,10 +109,6 @@ Feature: Skipping themes
 
   Scenario: Skipping multiple themes via config file
     Given a WP install
-    And download:
-      | path                            | url                                                       |
-      | {CACHE_DIR}/classic.1.6.zip     | https://downloads.wordpress.org/theme/classic.1.6.zip     |
-      | {CACHE_DIR}/espied.1.2.2.zip    | https://downloads.wordpress.org/theme/espied.1.2.2.zip    |
     And a wp-cli.yml file:
       """
       skip-themes:
