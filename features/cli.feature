@@ -151,7 +151,6 @@ Feature: `wp cli` tasks
       Success: Updated WP-CLI to the latest nightly release.
       """
 
-
   @github-api
   Scenario: Install WP-CLI stable
     Given an empty directory

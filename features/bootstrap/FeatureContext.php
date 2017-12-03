@@ -82,9 +82,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	);
 
 	/**
-	 * Flag whether `wp_cli_test` database dropped already or not. (For performance reasons.)
+	 * Variables for `do_mysqli()`.
 	 */
-	private static $have_dropped_db = false;
+	private static $dbh = null; // Database handle.
+	private static $db_selected = false; // Whether database selected (opened).
 
 	/**
 	 * Array of background process ids started by the current scenario. Used to terminate them at the end of the scenario.
@@ -93,7 +94,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	/**
 	 * Array of variables available as {VARIABLE_NAME}. Some are always set: CORE_CONFIG_SETTINGS, SRC_DIR, CACHE_DIR, WP_VERSION-version-latest. Some are step-dependent:
-	 * RUN_DIR, SUITE_CACHE_DIR, COMPOSER_LOCAL_REPOSITORY, PHAR_PATH. Scenarios can define their own variables using "Given save" steps. Variables are reset for each scenario.
+	 * RUN_DIR, SUITE_CACHE_DIR, COMPOSER_LOCAL_REPOSITORY, COMPOSER_PATH, PHAR_PATH. Scenarios can define their own variables using "Given save" steps. Variables are reset for each scenario.
 	 */
 	public $variables = array();
 
@@ -465,6 +466,12 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
+	/**
+	 * Build a phar based on whatever's in the directory from which behat is run.
+	 *
+	 * @param string $version Version to set it to. (Note: has no correspondence with the actual version of the contained source.)
+	 * @param string $build If set to "cli" will do a fast build without any bundled commands - "cli" command only. Defaults to '' (full build).
+	 */
 	public function build_phar( $version = 'same', $build = '' ) {
 		$this->variables['PHAR_PATH'] = $this->variables['RUN_DIR'] . '/' . uniqid( "wp-cli-build-", TRUE ) . '.phar';
 
@@ -489,6 +496,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		) )->run_check();
 	}
 
+	/**
+	 * Download a released phar from github.com. Note: not currently used in any test.
+	 */
 	public function download_phar( $version = 'same' ) {
 		if ( 'same' === $version ) {
 			$version = WP_CLI_VERSION;
@@ -544,20 +554,26 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
+	/**
+	 * Create the `$db_settings['dbname']` test database. Called on a "Given a database" step and on the various "Given a WP install..." steps.
+	 */
 	public function create_db() {
 		$dbname = self::$db_settings['dbname'];
-		self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "CREATE DATABASE IF NOT EXISTS `$dbname` CHARSET 'UTF8'" ) );
-		self::$have_dropped_db = false;
+		self::do_mysqli( "CREATE DATABASE IF NOT EXISTS `$dbname` CHARSET 'UTF8'" );
 	}
 
+	/**
+	 * Drop the `$db_settings['dbname']` test database. Done at the beginning of every scenario.
+	 */
 	public function drop_db() {
-		if ( ! self::$have_dropped_db ) {
-			$dbname = self::$db_settings['dbname'];
-			self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "DROP DATABASE IF EXISTS `$dbname`" ) );
-			self::$have_dropped_db = true;
-		}
+		$dbname = self::$db_settings['dbname'];
+		self::do_mysqli( "DROP DATABASE IF EXISTS `$dbname`" );
+		self::$db_selected = false;
 	}
 
+	/**
+	 * Run a process from the RUN_DIR directory (or a sub-directory of it if given `$path`).
+	 */
 	public function proc( $command, $assoc_args = array(), $path = '' ) {
 		if ( !empty( $assoc_args ) )
 			$command .= Utils\assoc_args_to_str( $assoc_args );
@@ -624,6 +640,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$wp_config_code = str_replace( $token, "$line\n\n$token", $wp_config_code );
 	}
 
+	/**
+	 * "Downloads" wp in the sense that it copies the version downloaded and cached by `cache_wp_files()` from CACHE_DIR to RUN_DIR (or a sub-directory of it if given `$subdir`).
+	 */
 	public function download_wp( $subdir = '' ) {
 		$dest_dir = $this->variables['RUN_DIR'];
 
@@ -634,7 +653,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		self::copy_dir( self::$cache_dir, $dest_dir );
 
-		// disable emailing
+		// Disable emailing - otherwise will get "sh: 1: -t: not found" error message on Travis (as PHP ini `sendmail_from` not set by default).
 		mkdir( $dest_dir . '/wp-content/mu-plugins' );
 		copy( __DIR__ . '/../extra/no-mail.php', $dest_dir . '/wp-content/mu-plugins/no-mail.php' );
 	}
@@ -701,7 +720,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		if ( $install_cache_path && file_exists( $install_cache_path ) ) {
 			self::copy_dir( $install_cache_path, $run_dir );
-			self::run_sql( 'mysql --no-defaults --no-auto-rehash --quick', array( 'execute' => "SOURCE {$install_cache_path}.sql" ), true /*add_database*/ );
+			self::do_mysqli_source( $install_cache_path . '.sql' );
 		} else {
 			$this->proc( 'wp core install', $install_args, $subdir )->run_check();
 			if ( $install_cache_path ) {
@@ -709,7 +728,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 				self::dir_diff_copy( $run_dir, self::$cache_dir, $install_cache_path );
 				$install_cache_sql = $install_cache_path . '.sql';
 				self::run_sql( 'mysqldump --no-defaults --skip-comments', array( 'result-file' => $install_cache_sql ), true /*add_database*/ );
-				file_put_contents( $install_cache_sql, preg_replace( '/^\/\*[^*]+\*\/;\n/m', '', file_get_contents( $install_cache_sql ) ) ); // Remove conditional statements.
+				// Remove conditional and lock tables statements.
+				file_put_contents( $install_cache_sql, preg_replace( array( '/^\/\*[^*]+\*\/;\n/m', '/^(?:UN)?LOCK TABLES[^;]*;\n/m' ), '', file_get_contents( $install_cache_sql ) ) );
 			}
 		}
 	}
@@ -782,6 +802,69 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$this->variables['COMPOSER_PATH'] = exec('which composer');
 		}
 		$this->proc( $this->variables['COMPOSER_PATH'] . ' ' . $cmd )->run_check();
+	}
+
+	/**
+	 * Do a MySQL query with `$db_settings`, using the PHP mysqli extension. Slightly faster than `run_sql()`.
+	 *
+	 * @param string $sql_cmd MySQL query.
+	 * @param bool $open_database Whether to open (select) the database or not.
+	 * @param bool $multi_query Whether the query contains multiple statements or not.
+	 * @param bool $no_log If set won't log timing if using log run times.
+	 */
+	private static function do_mysqli( $sql_cmd, $open_database = false, $multi_query = false, $no_log = false ) {
+		$start_time = microtime( true );
+
+		if ( null === self::$dbh ) {
+			if ( ! ( self::$dbh = mysqli_connect( self::$db_settings['dbhost'], self::$db_settings['dbuser'], self::$db_settings['dbpass'] ) ) ) {
+				throw new \RuntimeException(
+					sprintf( "Failed to connect to MySQL database host '%s', user '%s', pass '%s'.", self::$db_settings['dbhost'], self::$db_settings['dbuser'], self::$db_settings['dbpass'] )
+				);
+			}
+		}
+		if ( $open_database && ! self::$db_selected ) {
+			if ( ! mysqli_select_db( self::$dbh, self::$db_settings['dbname'] ) ) {
+				throw new \RuntimeException( sprintf( "Failed to open MySQL database name '%s'.", self::$db_settings['dbname'] ) );
+			}
+			self::$db_selected = true;
+		}
+		if ( $multi_query ) {
+			if ( ! mysqli_multi_query( self::$dbh, $sql_cmd ) ) {
+				throw new \RuntimeException( sprintf( "Failed to execute MySQL query '%s': %d: %s", $sql_cmd, mysqli_errno( self::$dbh ), mysqli_error( self::$dbh ) ) );
+			}
+			// Throw away the stored results (otherwise will get "out of sync" errors).
+			while ( mysqli_more_results( self::$dbh ) ) {
+				mysqli_next_result( self::$dbh );
+			}
+		} else {
+			if ( ! mysqli_query( self::$dbh, $sql_cmd ) ) {
+				throw new \RuntimeException( sprintf( "Failed to execute MySQL query '%s': %d: %s", $sql_cmd, mysqli_errno( self::$dbh ), mysqli_error( self::$dbh ) ) );
+			}
+		}
+		if ( self::$log_run_times && ! $no_log ) {
+			self::log_proc_method_run_time( 'do_mysqli ' . $sql_cmd, $start_time );
+		}
+	}
+
+	/**
+	 * Do a MySQL SOURCE command using the PHP mysqli extension. Slightly faster than doing a mysql SOURCE command using `run_sql()`.
+	 *
+	 * @param string $source_file Name of MySQL source ".sql" file.
+	 */
+	private static function do_mysqli_source( $source_file ) {
+		$start_time = microtime( true );
+
+		static $files = array();
+
+		if ( ! isset( $files[ $source_file ] ) ) {
+			$files[ $source_file ] = file_get_contents( $source_file );
+		}
+
+		self::do_mysqli( $files[ $source_file ], true /*open_database*/, true /*multi_query*/, true /*no_log*/ );
+
+		if ( self::$log_run_times ) {
+			self::log_proc_method_run_time( 'do_mysqli_source ' . $source_file, $start_time );
+		}
 	}
 
 	/**
