@@ -8,7 +8,7 @@ Feature: Skipping themes
       | {CACHE_DIR}/sidespied.1.0.3.zip | https://downloads.wordpress.org/theme/sidespied.1.0.3.zip |
 
   Scenario: Skipping themes via global flag
-    Given a WP install
+    Given a WP installation
     And I run `wp theme install {CACHE_DIR}/classic.1.6.zip`
     And I run `wp theme install {CACHE_DIR}/espied.1.2.2.zip --activate`
 
@@ -54,7 +54,7 @@ Feature: Skipping themes
       """
 
   Scenario: Skip parent and child themes
-    Given a WP install
+    Given a WP installation
     And I run `wp theme install {CACHE_DIR}/espied.1.2.2.zip {CACHE_DIR}/sidespied.1.0.3.zip`
 
     When I run `wp theme activate espied`
@@ -108,7 +108,7 @@ Feature: Skipping themes
       """
 
   Scenario: Skipping multiple themes via config file
-    Given a WP install
+    Given a WP installation
     And a wp-cli.yml file:
       """
       skip-themes:

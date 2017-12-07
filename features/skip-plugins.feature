@@ -1,7 +1,7 @@
 Feature: Skipping plugins
 
   Scenario: Skipping plugins via global flag
-    Given a WP install
+    Given a WP installation
     And I run `wp plugin activate hello akismet`
 
     When I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`
@@ -47,7 +47,7 @@ Feature: Skipping plugins
       """
 
   Scenario: Skipping multiple plugins via config file
-    Given a WP install
+    Given a WP installation
     And a wp-cli.yml file:
       """
       skip-plugins:
@@ -64,7 +64,7 @@ Feature: Skipping plugins
     And the return code should be 255
 
   Scenario: Skipping all plugins via config file
-    Given a WP install
+    Given a WP installation
     And a wp-cli.yml file:
       """
       skip-plugins: true
@@ -79,7 +79,7 @@ Feature: Skipping plugins
     And the return code should be 255
 
   Scenario: Skip network active plugins
-    Given a WP multisite install
+    Given a WP multisite installation
 
     When I successfully try `wp plugin deactivate akismet hello`
     Then STDERR should be:
