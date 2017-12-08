@@ -388,7 +388,7 @@ class CLI_Command extends WP_CLI_Command {
 			do {
 				$response = Utils\http_request( 'GET', $url, null, $headers, $options );
 
-				if ( ! $response->success || 200 != $response->status_code ) { // Non-strict check to allow for non-int status code in old WP versions when using stream not curl.
+				if ( ! $response->success || 200 !== (int) $response->status_code ) {
 					$msg = sprintf( 'Failed to get latest version (HTTP code %d) (%susing GITHUB_TOKEN).', $response->status_code, $github_token ? '' : 'NOT ' );
 					if ( 403 === $response->status_code && $cache_data ) {
 						WP_CLI::warning( $msg . ' - using stale cache data.' );
@@ -469,7 +469,7 @@ class CLI_Command extends WP_CLI_Command {
 		if ( empty( $updates ) && preg_match( '#-alpha-(.+)$#', WP_CLI_VERSION, $matches ) ) {
 			$version_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/NIGHTLY_VERSION';
 			$response = Utils\http_request( 'GET', $version_url );
-			if ( ! $response->success || 200 != $response->status_code ) { // Non-strict check to allow for non-int status code in old WP versions when using stream not curl.
+			if ( ! $response->success || 200 !== (int) $response->status_code ) {
 				WP_CLI::error( sprintf( 'Failed to get current nightly version (HTTP code %d)', $response->status_code ) );
 			}
 			$nightly_version = trim( $response->body );

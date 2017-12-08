@@ -386,7 +386,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			$wp_versions = array();
 
 			$response = Requests::get( 'https://api.wordpress.org/core/version-check/1.7/', null, array( 'timeout' => 30 ) );
-			if ( 200 === $response->status_code && ( $body = json_decode( $response->body ) ) && is_object( $body ) && isset( $body->offers ) && is_array( $body->offers ) ) {
+			if ( 200 === (int) $response->status_code && ( $body = json_decode( $response->body ) ) && is_object( $body ) && isset( $body->offers ) && is_array( $body->offers ) ) {
 				// Latest version alias.
 				$wp_versions["{WP_VERSION-latest}"] = count( $body->offers ) ? $body->offers[0]->version : '';
 				foreach ( $body->offers as $offer ) {
