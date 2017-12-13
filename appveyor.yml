@@ -9,8 +9,8 @@ services:
   - mysql
 
 branches:
-  except:
-    - gh-pages
+  only:
+    - github-api
 
 cache:
   - '%LOCALAPPDATA%\Composer\files'
