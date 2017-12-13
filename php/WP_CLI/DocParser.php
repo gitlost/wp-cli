@@ -64,7 +64,7 @@ class DocParser {
 
 		$longdesc = substr( $this->docComment, strlen( $shortdesc ) );
 
-		$longdesc = preg_replace( '/^@.*\z/ms', '', $longdesc );
+		$longdesc = trim( preg_replace( '/^@.*\z/ms', '', $longdesc ) );
 
 		return $longdesc;
 	}
