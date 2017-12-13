@@ -1544,4 +1544,3 @@ Feature: WP-CLI Commands
       """
       core custom-subcommand
       """
->>>>>>> upstream/master
