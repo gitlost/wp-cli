@@ -1,6 +1,6 @@
 build: off
 clone_folder: c:\projects\wp-cli
-platform: x86
+platform: x64
 shallow_clone: true
 skip_tags: true
 version: '{build}'
@@ -33,7 +33,7 @@ install:
   # Install Composer
   - ps: mkdir c:\projects\wp-cli-tools -Force
   - cd c:\projects\wp-cli-tools
-  - ps: Invoke-WebRequest https://getcomposer.org/composer.phar  -Outfile composer.phar
+  - ps: Invoke-WebRequest https://getcomposer.org/composer.phar -Outfile composer.phar
   - ps: Add-Content composer.bat "@php c:\projects\wp-cli-tools\composer.phar %*"
   - RefreshEnv
 
