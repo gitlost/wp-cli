@@ -109,7 +109,8 @@ class Extractor {
 		if ( ! file_exists( $dest ) ) {
 			mkdir( $dest, 0777, true );
 		}
-		$cmd = Utils\esc_cmd( 'tar xz --strip-components=1 --directory=%2$s -f %1$s', $tarball, $dest );
+		// Need --force-local for Windows to avoid "C:" being interpreted as referring to remote machine.
+		$cmd = Utils\esc_cmd( 'tar xz --force-local --strip-components=1 --directory=%2$s -f %1$s', $tarball, $dest );
 		$process_run = WP_CLI::launch( $cmd, false /*exit_on_error*/, true /*return_detailed*/ );
 		if ( 0 !== $process_run->return_code ) {
 			throw new \Exception( sprintf( 'Failed to execute `%s`: %s.', $cmd, self::tar_error_msg( $process_run ) ) );
