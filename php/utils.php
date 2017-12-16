@@ -790,6 +790,9 @@ function get_temp_dir() {
 	// `sys_get_temp_dir()` introduced PHP 5.2.1. Will always return something.
 	$temp = trailingslashit( sys_get_temp_dir() );
 
+	// Normalize to *nix directory separators.
+	$temp = str_replace( '\\', '/', $temp );
+
 	if ( ! is_writable( $temp ) ) {
 		\WP_CLI::warning( "Temp directory isn't writable: {$temp}" );
 	}
