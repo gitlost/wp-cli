@@ -40,6 +40,11 @@ esac
 
 # Pass in the path to php so that wp-cli knows which one
 # to use if it re-launches itself to run other commands.
-export WP_CLI_PHP_USED="$php"
+WP_CLI_PHP_USED="$php"
+case $("$php" -r "echo PHP_OS;") in
+	WINNT*)
+		WP_CLI_PHP_USED="$(cygpath -w -a -- "$WP_CLI_PHP_USED")" ;;
+esac
+export WP_CLI_PHP_USED
 
 exec "$php" $WP_CLI_PHP_ARGS "$SCRIPT_PATH" "$@"
