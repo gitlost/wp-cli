@@ -1358,6 +1358,10 @@ function proc_open_compat( $cmd, $descriptorspec, &$pipes, $cwd = null, $env = n
 			$other_options = array();
 		}
 	}
+	if ( null === $env ) {
+		$env = array();
+		$env['PATH'] = getenv( 'PATH' );
+	}
 	return proc_open( $cmd, $descriptorspec, $pipes, $cwd, $env, $other_options );
 }
 
