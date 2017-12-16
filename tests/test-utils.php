@@ -339,19 +339,20 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 
 	public function testGetTempDir() {
 		$this->assertTrue( '/' === substr( Utils\get_temp_dir(), -1 ) );
+		$this->assertTrue( false === strpos( Utils\get_temp_dir(), '\\' ) );
 
 		// INI directive `sys_temp_dir` introduced PHP 5.5.0.
 		if ( version_compare( PHP_VERSION, '5.5.0', '>=' ) ) {
 
 			// `sys_temp_dir` set to unwritable.
 
-			$cmd = 'php ' . escapeshellarg( '-dsys_temp_dir=\\tmp\\' ) . ' php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'echo WP_CLI\\Utils\\get_temp_dir();' ) . ' 2>&1';
+			$cmd = 'php ' . escapeshellarg( '-dsys_temp_dir=:\\tmp\\' ) . ' php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'echo WP_CLI\\Utils\\get_temp_dir();' ) . ' 2>&1';
 			$output = array();
 			exec( $cmd, $output );
 			$output = trim( implode( "\n", $output ) );
 			$this->assertTrue( false !== strpos( $output, 'Warning' ) );
 			$this->assertTrue( false !== strpos( $output, 'writable' ) );
-			$this->assertTrue( false !== strpos( $output, '\\tmp/' ) );
+			$this->assertTrue( false !== strpos( $output, '/tmp/' ) );
 
 			// `sys_temp_dir` unset.
 
