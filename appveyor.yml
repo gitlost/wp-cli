@@ -19,7 +19,7 @@ cache:
   - c:\projects\wp-cli-tools -> appveyor.yml
 
 environment:
-  - MYSQL_PWD: Password12!
+  MYSQL_PWD: Password12!
 
 init:
   - set PATH=c:\projects\wp-cli-tools;C:\Program Files\Git\bin;C:\Program Files\Java\jdk1.8.0\bin;C:\Program Files\MySQL\MySQL Server 5.7\bin;%PATH%
