@@ -46,9 +46,9 @@ install:
 
 # AFTER services have been launched.
 before_test:
-  - mysql -e 'CREATE DATABASE wp_cli_test;' -uroot
-  - mysql -e 'GRANT ALL PRIVILEGES ON wp_cli_test.* TO "wp_cli_test"@"localhost" IDENTIFIED BY "password1"' -uroot
-  - mysql -e 'GRANT ALL PRIVILEGES ON wp_cli_test_scaffold.* TO "wp_cli_test"@"localhost" IDENTIFIED BY "password1"' -uroot
+  - mysql -e 'CREATE DATABASE wp_cli_test;' --user=root
+  - mysql -e 'GRANT ALL PRIVILEGES ON wp_cli_test.* TO "wp_cli_test"@"localhost" IDENTIFIED BY "password1"' --user=root
+  - mysql -e 'GRANT ALL PRIVILEGES ON wp_cli_test_scaffold.* TO "wp_cli_test"@"localhost" IDENTIFIED BY "password1"' --user=root
 
 test_script:
   # Run phpunit.
