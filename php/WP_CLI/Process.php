@@ -49,7 +49,7 @@ class Process {
 	 *
 	 * @return Process
 	 */
-	public static function create( $command, $cwd = null, $env = array() ) {
+	public static function create( $command, $cwd = null, $env = null ) {
 		$proc = new self;
 
 		$proc->command = $command;
