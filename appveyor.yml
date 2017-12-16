@@ -1,6 +1,6 @@
 build: off
 clone_folder: c:\projects\wp-cli
-platform: x64
+platform: x86
 shallow_clone: true
 skip_tags: true
 version: '{build}'
