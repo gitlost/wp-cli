@@ -25,7 +25,7 @@ $configurator = new Configurator( WP_CLI_ROOT . '/utils/make-phar-spec.php' );
 list( $args, $assoc_args, $runtime_config ) = $configurator->parse_args( array_slice( $GLOBALS['argv'], 1 ) );
 
 if ( ! isset( $args[0] ) || empty( $args[0] ) ) {
-	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version] [--build=cli]\n";
+	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version] [--build=cli]" . PHP_EOL;
 	exit(1);
 }
 
@@ -51,8 +51,9 @@ if ( isset( $runtime_config['version'] ) ) {
 function add_file( $phar, $path ) {
 	$key = str_replace( WP_CLI_BASE_PATH, '', $path );
 
-	if ( !BE_QUIET )
-		echo "$key - $path\n";
+	if ( ! BE_QUIET ) {
+		echo "$key - $path" . PHP_EOL;
+	}
 
 	// Warning: needs to be synced with ScaffoldPackageCommand::package_tests() `$copy_source[ $wp_cli_root ]`.
 	static $scaffold_package_phps = array(
@@ -112,8 +113,9 @@ function add_file( $phar, $path ) {
 function set_file_contents( $phar, $path, $content ) {
 	$key = str_replace( WP_CLI_BASE_PATH, '', $path );
 
-	if ( !BE_QUIET )
-		echo "$key - $path\n";
+	if ( ! BE_QUIET ) {
+		echo "$key - $path" . PHP_EOL;
+	}
 
 	$phar[ $key ] = $content;
 }
@@ -275,5 +277,5 @@ $phar->stopBuffering();
 chmod( DEST_PATH, 0755 ); // Make executable.
 
 if ( ! BE_QUIET ) {
-	echo "Generated " . DEST_PATH . "\n";
+	echo "Generated " . DEST_PATH . PHP_EOL;
 }
