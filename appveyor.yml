@@ -53,5 +53,7 @@ before_test:
 test_script:
   # Run phpunit.
   - vendor\bin\phpunit
+  # Run functional tests.
+  - vendor\bin\behat features/validation.feature
 
 on_finish:
