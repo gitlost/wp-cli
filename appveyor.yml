@@ -7,6 +7,7 @@ version: '{build}'
 
 services:
   - mysql
+  - iis
 
 branches:
   only:
@@ -39,6 +40,10 @@ install:
   - ps: Invoke-WebRequest https://getcomposer.org/composer.phar -Outfile composer.phar
   - ps: Add-Content composer.bat "@php c:\projects\wp-cli-tools\composer.phar %*"
   - RefreshEnv
+
+  # Make sure Windows' IIS services are running.
+  - ps: Start-Service W3SVC
+  - ps: Start-Service WAS
 
   # Install wp-cli dependencies.
   - cd "%APPVEYOR_BUILD_FOLDER%"
