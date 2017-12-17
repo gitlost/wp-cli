@@ -361,6 +361,7 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 			exec( $cmd, $output );
 			$output = trim( implode( "\n", $output ) );
 			$this->assertTrue( '/' === substr( $output, -1 ) );
+			$this->assertTrue( false === strpos( $output, '\\' ) );
 		}
 	}
 

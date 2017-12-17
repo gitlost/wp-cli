@@ -128,26 +128,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'BEHAT_RUN' => 1,
 			'HOME' => sys_get_temp_dir() . '/wp-cli-home',
 		);
-		if ( $config_path = getenv( 'WP_CLI_CONFIG_PATH' ) ) {
-			$env['WP_CLI_CONFIG_PATH'] = $config_path;
-		}
-		if ( $term = getenv( 'TERM' ) ) {
-			$env['TERM'] = $term;
-		}
-		if ( $php_args = getenv( 'WP_CLI_PHP_ARGS' ) ) {
-			$env['WP_CLI_PHP_ARGS'] = $php_args;
-		}
-		if ( $php_used = getenv( 'WP_CLI_PHP_USED' ) ) {
-			$env['WP_CLI_PHP_USED'] = $php_used;
-		}
-		if ( $php = getenv( 'WP_CLI_PHP' ) ) {
-			$env['WP_CLI_PHP'] = $php;
-		}
-		if ( $travis_build_dir = getenv( 'TRAVIS_BUILD_DIR' ) ) {
-			$env['TRAVIS_BUILD_DIR'] = $travis_build_dir;
-		}
-		if ( $github_token = getenv( 'GITHUB_TOKEN' ) ) {
-			$env['GITHUB_TOKEN'] = $github_token;
+		$env_keys = array( 'GITHUB_TOKEN', 'SYSTEMROOT', 'TERM', 'TMP', 'TRAVIS_BUILD_DIR', 'WP_CLI_CONFIG_PATH', 'WP_CLI_PHP', 'WP_CLI_PHP_ARGS', 'WP_CLI_PHP_USED' );
+		foreach ( $env_keys as $env_key ) {
+			if ( $env_val = getenv( $env_key ) ) {
+				$env[ $env_key ] = $env_val;
+			}
 		}
 		return $env;
 	}
