@@ -18,7 +18,7 @@ Feature: Create shortcuts to specific WordPress installs
     When I run `wp @foo core is-installed`
     Then the return code should be 0
 
-    When I run `cd bar; wp @foo core is-installed`
+    When I run `cd bar && wp @foo core is-installed`
     Then the return code should be 0
 
   Scenario: Error when invalid alias provided
@@ -122,15 +122,12 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I run `wp eval --skip-wordpress 'echo realpath( getenv( "RUN_DIR" ) );'`
-    Then save STDOUT as {TEST_DIR}
-
     When I run `wp cli alias`
     Then STDOUT should be YAML containing:
       """
       @all: Run command against every registered alias.
       @foo:
-        path: {TEST_DIR}/foo
+        path: {RUN_DIR}/foo
       """
 
     When I run `wp cli aliases`
@@ -138,13 +135,13 @@ Feature: Create shortcuts to specific WordPress installs
       """
       @all: Run command against every registered alias.
       @foo:
-        path: {TEST_DIR}/foo
+        path: {RUN_DIR}/foo
       """
 
     When I run `wp cli alias --format=json`
     Then STDOUT should be JSON containing:
       """
-      {"@all":"Run command against every registered alias.","@foo":{"path":"{TEST_DIR}/foo"}}
+      {"@all":"Run command against every registered alias.","@foo":{"path":"{RUN_DIR}/foo"}}
       """
 
   Scenario: Defining a project alias completely overrides a global alias
@@ -354,7 +351,7 @@ Feature: Create shortcuts to specific WordPress installs
       @foo core is-installed --allow-root --debug
       """
 
-    When I try `cd bar; wp @bar core is-installed --allow-root --debug`
+    When I try `cd bar && wp @bar core is-installed --allow-root --debug`
     Then the return code should be 0
     And STDERR should contain:
       """

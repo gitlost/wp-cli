@@ -773,6 +773,20 @@ function trailingslashit( $string ) {
 }
 
 /**
+ * Normalizes directory separators to slashes.
+ *
+ * @access public
+ * @category System
+ *
+ * @param string $path Path to convert.
+ *
+ * @return string Path with all backslashes replaced by slashes.
+ */
+function normalize_directory_separators( $path ) {
+	return str_replace( '\\', '/', $path );
+}
+
+/**
  * Get the system's temp directory. Warns user if it isn't writable.
  *
  * @access public
@@ -788,10 +802,7 @@ function get_temp_dir() {
 	}
 
 	// `sys_get_temp_dir()` introduced PHP 5.2.1. Will always return something.
-	$temp = trailingslashit( sys_get_temp_dir() );
-
-	// Normalize to *nix directory separators.
-	$temp = str_replace( '\\', '/', $temp );
+	$temp = trailingslashit( normalize_directory_separators( sys_get_temp_dir() ) );
 
 	if ( ! is_writable( $temp ) ) {
 		\WP_CLI::warning( "Temp directory isn't writable: {$temp}" );
@@ -1357,6 +1368,15 @@ function proc_open_compat( $cmd, $descriptorspec, &$pipes, $cwd = null, $env = n
 	if ( is_windows() ) {
 		// Need to encompass the whole command in double quotes - PHP bug https://bugs.php.net/bug.php?id=49139
 		$cmd = '"' . _proc_open_compat_win_env( $cmd, $env ) . '"';
+		// If environment array set, make sure certain entries are set otherwise can cause Windows `getaddrinfo()` and `mysqli_connect()` to crap out.
+		if ( null !== $env ) {
+			$env_names = array( 'HOME', 'PATH', 'SYSTEMROOT', 'TERM', 'TMP' ); // Probably only SYSTEMROOT and TMP are needed, but the others can't hurt.
+			foreach ( $env_names as $env_name ) {
+				if ( ! isset( $env[ $env_name ] ) && ( $env_val = getenv( $env_name ) ) ) {
+					$env[ $env_name ] = $env_val;
+				}
+			}
+		}
 	}
 	return proc_open( $cmd, $descriptorspec, $pipes, $cwd, $env, $other_options );
 }

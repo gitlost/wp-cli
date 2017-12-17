@@ -21,8 +21,8 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
 			foreach( $composer->autoload->files as $file ) {
 				$contents .= '  - ' . dirname( dirname( dirname( __FILE__ ) ) ) . '/' . $file . PHP_EOL;
 			}
-			@mkdir( sys_get_temp_dir() . '/wp-cli-package-test/' );
-			$project_config = sys_get_temp_dir() . '/wp-cli-package-test/config.yml';
+			@mkdir( Utils\get_temp_dir() . 'wp-cli-package-test/' );
+			$project_config = Utils\get_temp_dir() . 'wp-cli-package-test/config.yml';
 			file_put_contents( $project_config, $contents );
 			putenv( 'WP_CLI_CONFIG_PATH=' . $project_config );
 		}
@@ -126,7 +126,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$env = array(
 			'PATH' =>  $bin_dir . PATH_SEPARATOR . $vendor_dir . PATH_SEPARATOR . getenv( 'PATH' ),
 			'BEHAT_RUN' => 1,
-			'HOME' => sys_get_temp_dir() . '/wp-cli-home',
+			'HOME' => Utils\get_temp_dir() . 'wp-cli-home',
 		);
 		$env_keys = array( 'GITHUB_TOKEN', 'SYSTEMROOT', 'TERM', 'TMP', 'TRAVIS_BUILD_DIR', 'WP_CLI_CONFIG_PATH', 'WP_CLI_PHP', 'WP_CLI_PHP_ARGS', 'WP_CLI_PHP_USED' );
 		foreach ( $env_keys as $env_key ) {
@@ -143,7 +143,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	private static function cache_wp_files() {
 		$wp_version_suffix = ( $wp_version = getenv( 'WP_VERSION' ) ) ? "-$wp_version" : '';
-		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-download-cache' . $wp_version_suffix;
+		self::$cache_dir = Utils\get_temp_dir() . 'wp-cli-test-core-download-cache' . $wp_version_suffix;
 
 		if ( is_readable( self::$cache_dir . '/wp-config-sample.php' ) )
 			return;
@@ -175,7 +175,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		// Remove install cache if any (not setting the static var).
 		$wp_version_suffix = ( $wp_version = getenv( 'WP_VERSION' ) ) ? "-$wp_version" : '';
-		$install_cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache' . $wp_version_suffix;
+		$install_cache_dir = Utils\get_temp_dir() . 'wp-cli-test-core-install-cache' . $wp_version_suffix;
 		if ( file_exists( $install_cache_dir ) ) {
 			self::remove_dir( $install_cache_dir );
 		}
@@ -298,7 +298,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		if ( self::$suite_cache_dir ) {
 			self::remove_dir( self::$suite_cache_dir );
 		}
-		self::$suite_cache_dir = sys_get_temp_dir() . '/' . uniqid( 'wp-cli-test-suite-cache-' . self::$temp_dir_infix . '-', TRUE );
+		self::$suite_cache_dir = Utils\get_temp_dir() . uniqid( 'wp-cli-test-suite-cache-' . self::$temp_dir_infix . '-', TRUE );
 		mkdir( self::$suite_cache_dir );
 		return self::$suite_cache_dir;
 	}
@@ -446,7 +446,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public function create_run_dir() {
 		if ( !isset( $this->variables['RUN_DIR'] ) ) {
-			self::$run_dir = $this->variables['RUN_DIR'] = sys_get_temp_dir() . '/' . uniqid( 'wp-cli-test-run-' . self::$temp_dir_infix . '-', TRUE );
+			self::$run_dir = $this->variables['RUN_DIR'] = Utils\get_temp_dir() . uniqid( 'wp-cli-test-run-' . self::$temp_dir_infix . '-', TRUE );
 			mkdir( $this->variables['RUN_DIR'] );
 		}
 	}
@@ -509,7 +509,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 * CACHE_DIR is a cache for downloaded test data such as images. Lives until manually deleted.
 	 */
 	private function set_cache_dir() {
-		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
+		$path = Utils\get_temp_dir() . 'wp-cli-test-cache';
 		if ( ! file_exists( $path ) ) {
 			mkdir( $path );
 		}
@@ -674,7 +674,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public function install_wp( $subdir = '' ) {
 		$wp_version_suffix = ( $wp_version = getenv( 'WP_VERSION' ) ) ? "-$wp_version" : '';
-		self::$install_cache_dir = sys_get_temp_dir() . '/wp-cli-test-core-install-cache' . $wp_version_suffix;
+		self::$install_cache_dir = Utils\get_temp_dir() . 'wp-cli-test-core-install-cache' . $wp_version_suffix;
 		if ( ! file_exists( self::$install_cache_dir ) ) {
 			mkdir( self::$install_cache_dir );
 		}
@@ -747,11 +747,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	public function composer_add_wp_cli_local_repository() {
 		if ( ! self::$composer_local_repository ) {
-			self::$composer_local_repository = sys_get_temp_dir() . '/' . uniqid( "wp-cli-composer-local-", TRUE );
+			self::$composer_local_repository = Utils\get_temp_dir() . uniqid( "wp-cli-composer-local-", TRUE );
 			mkdir( self::$composer_local_repository );
 
-			$env = self::get_process_env_variables();
-			$src = isset( $env['TRAVIS_BUILD_DIR'] ) ? $env['TRAVIS_BUILD_DIR'] : realpath( __DIR__ . '/../../' );
+			$src = getenv( 'TRAVIS_BUILD_DIR' ) ?: realpath( __DIR__ . '/../../' );
 
 			self::copy_dir( $src, self::$composer_local_repository . '/' );
 			self::remove_dir( self::$composer_local_repository . '/.git' );

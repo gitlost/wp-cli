@@ -30,6 +30,9 @@ $steps->When( '/^I launch in the background `([^`]+)`$/',
 $steps->When( '/^I (run|try|mistakenly try|successfully try) `([^`]+)`$/',
 	function ( $world, $mode, $cmd, $return_code = 0, $stdout_empty = '' ) {
 		$cmd = $world->replace_variables( $cmd );
+		if ( Utils\is_windows() ) {
+			$cmd = _wp_cli_esc_cmd_win( $cmd );
+		}
 		$world->result = invoke_proc( $world->proc( $cmd ), $mode );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}
@@ -38,6 +41,9 @@ $steps->When( '/^I (run|try|mistakenly try|successfully try) `([^`]+)`$/',
 $steps->When( "/^I (run|try) `([^`]+)` from '([^\s]+)'$/",
 	function ( $world, $mode, $cmd, $subdir ) {
 		$cmd = $world->replace_variables( $cmd );
+		if ( Utils\is_windows() ) {
+			$cmd = _wp_cli_esc_cmd_win( $cmd );
+		}
 		$world->result = invoke_proc( $world->proc( $cmd, array(), $subdir ), $mode );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}

@@ -3,6 +3,7 @@
 namespace WP_CLI;
 
 use Mustangostang\Spyc;
+use WP_CLI\Utils;
 
 /**
  * Handles file- and runtime-based configuration values.
@@ -349,8 +350,9 @@ class Configurator {
 	 */
 	private static function absolutize( &$path, $base ) {
 		if ( ! empty( $path ) && ! \WP_CLI\Utils\is_path_absolute( $path ) ) {
-			$path = $base . DIRECTORY_SEPARATOR . $path;
+			$path = $base . '/' . $path;
 		}
+		$path = Utils\normalize_directory_separators( $path );
 	}
 
 }
