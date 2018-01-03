@@ -44,7 +44,10 @@ class Help_Command extends WP_CLI_Command {
 			$out = substr_replace( $out, $subcommands_header, $matches[1][1], strlen( $subcommands ) );
 		}
 
-		$out .= self::parse_reference_links( $command->get_longdesc() );
+		if ( $longdesc = self::parse_reference_links( $command->get_longdesc() ) ) {
+			// Normalize newlines between parts.
+			$out = rtrim( $out, "\n" ) . "\n\n" . ltrim( $longdesc, "\n" );
+		}
 
 		// definition lists
 		$out = preg_replace_callback( '/([^\n]+)\n: (.+?)(\n\n|$)/s', array( __CLASS__, 'rewrap_param_desc' ), $out );
