@@ -2,6 +2,8 @@
 
 set -ex
 
+env
+
 # Run the unit tests
 phpunit
 
