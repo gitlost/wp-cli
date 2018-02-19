@@ -129,7 +129,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			'BEHAT_RUN' => 1,
 			'HOME' => Utils\get_temp_dir() . 'wp-cli-home',
 		);
-		$env_keys = array( 'GITHUB_TOKEN', 'SYSTEMROOT', 'TERM', 'TMP', 'TRAVIS_BUILD_DIR', 'WP_CLI_CONFIG_PATH', 'WP_CLI_PHP', 'WP_CLI_PHP_ARGS', 'WP_CLI_PHP_USED' );
+		$env_keys = array( 'GITHUB_TOKEN', 'SHELL', 'SYSTEMROOT', 'TERM', 'TMP', 'TRAVIS_BUILD_DIR', 'WP_CLI_CONFIG_PATH', 'WP_CLI_PHP', 'WP_CLI_PHP_ARGS', 'WP_CLI_PHP_USED' );
 		foreach ( $env_keys as $env_key ) {
 			if ( $env_val = getenv( $env_key ) ) {
 				$env[ $env_key ] = $env_val;

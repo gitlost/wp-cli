@@ -86,7 +86,7 @@ function add_file( $phar, $path ) {
 					'\/phpunit\/',
 					'\/nb\/oxymel\/',
 					'-command\/src\/',
-					'\/wp-cli\/[^\n]+?-command\/',
+					'\/wp-cli\/(?:[^\n]+?-command|wp-config-transformer)\/',
 					'\/symfony\/(?!finder|polyfill-mbstring)[^\/]+\/',
 					'\/(?:dealerdirect|squizlabs|wimg)\/',
 				);

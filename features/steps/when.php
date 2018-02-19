@@ -2,7 +2,8 @@
 
 use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode,
-    WP_CLI\Process;
+    WP_CLI\Process,
+    WP_CLI\Utils;
 
 function invoke_proc( $proc, $mode ) {
 	$map = array(
