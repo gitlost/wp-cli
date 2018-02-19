@@ -165,7 +165,7 @@ Feature: Run a WP-CLI command
       )
       """
 
-    When I run `wp <flag> --no-exit_error run 'option get foo$bar'`
+    When I run `wp <flag> --no-exit_error run 'option pluck foo$bar barfoo'`
     Then STDOUT should be:
       """
       returned: NULL

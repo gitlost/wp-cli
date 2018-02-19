@@ -9,7 +9,7 @@ if ( file_exists( WP_CLI_ROOT . '/vendor/autoload.php' ) ) {
 	define( 'WP_CLI_BASE_PATH', dirname( dirname( dirname( WP_CLI_ROOT ) ) ) );
 	define( 'WP_CLI_VENDOR_DIR' , dirname( dirname( WP_CLI_ROOT ) ) );
 } else {
-	echo 'Missing vendor/autoload.php';
+	fwrite( STDERR, 'Missing vendor/autoload.php' . PHP_EOL );
 	exit(1);
 }
 require WP_CLI_VENDOR_DIR . '/autoload.php';
@@ -25,7 +25,7 @@ $configurator = new Configurator( WP_CLI_ROOT . '/utils/make-phar-spec.php' );
 list( $args, $assoc_args, $runtime_config ) = $configurator->parse_args( array_slice( $GLOBALS['argv'], 1 ) );
 
 if ( ! isset( $args[0] ) || empty( $args[0] ) ) {
-	echo "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version] [--build=cli]" . PHP_EOL;
+	fwrite( STDERR, "usage: php -dphar.readonly=0 $argv[0] <path> [--quiet] [--version=same|patch|minor|major|x.y.z] [--store-version] [--build=cli]" . PHP_EOL );
 	exit(1);
 }
 
@@ -118,6 +118,53 @@ function set_file_contents( $phar, $path, $content ) {
 	}
 
 	$phar[ $key ] = $content;
+}
+
+function get_composer_versions( $current_version ) {
+	$composer_lock_path = WP_CLI_ROOT . '/composer.lock';
+	if ( ! ( $get_composer_lock = file_get_contents( $composer_lock_path ) ) || ! ( $composer_lock = json_decode( $get_composer_lock, true ) ) ) {
+		fwrite( STDERR, sprintf( "Warning: Failed to read '%s'." . PHP_EOL, $composer_lock_path ) );
+		return '';
+	}
+	if ( ! isset( $composer_lock['packages'] ) ) {
+		fwrite( STDERR, sprintf( "Warning: No packages in '%s'." . PHP_EOL, $composer_lock_path ) );
+		return '';
+	}
+	$vendor_versions = array( implode( ' ', array( 'wp-cli/wp-cli', $current_version, date( 'c' ) ) ) );
+	$missing_names = $missing_versions = $missing_references = 0;
+	foreach ( $composer_lock['packages'] as $package ) {
+		if ( isset( $package['name'] ) ) {
+			$vendor_version = array( $package['name'] );
+			if ( isset( $package['version'] ) ) {
+				$vendor_version[] = $package['version'];
+			} else {
+				$vendor_version[] = 'unknown_version';
+				$missing_versions++;
+			}
+			if ( isset( $package['source'] ) && isset( $package['source']['reference'] ) ) {
+				$vendor_version[] = $package['source']['reference'];
+			} elseif( isset( $package['dist'] ) && isset( $package['dist']['reference'] ) ) {
+				$vendor_version[] = $package['dist']['reference'];
+			} else {
+				$vendor_version[] = 'unknown_reference';
+				$missing_references++;
+			}
+			$vendor_versions[] = implode( ' ', $vendor_version );
+		} else {
+			$vendor_versions[] = implode( ' ', array( 'unknown_package', 'unknown_version', 'unknown_reference' ) );
+			$missing_names++;
+		}
+	}
+	if ( $missing_names ) {
+		fwrite( STDERR, sprintf( "Warning: %d package names missing from '%s'." . PHP_EOL, $missing_names, $composer_lock_path ) );
+	}
+	if ( $missing_versions ) {
+		fwrite( STDERR, sprintf( "Warning: %d package versions missing from '%s'." . PHP_EOL, $missing_versions, $composer_lock_path ) );
+	}
+	if ( $missing_references ) {
+		fwrite( STDERR, sprintf( "Warning: %d package references missing from '%s'." . PHP_EOL, $missing_references, $composer_lock_path ) );
+	}
+	return implode( "\n", $vendor_versions );
 }
 
 if ( file_exists( DEST_PATH ) ) {
@@ -259,6 +306,7 @@ if ( 'cli' !== BUILD ) {
 }
 add_file( $phar, WP_CLI_VENDOR_DIR . '/rmccue/requests/library/Requests/Transport/cacert.pem' );
 
+set_file_contents( $phar, WP_CLI_ROOT . '/COMPOSER_VERSIONS', get_composer_versions( $current_version ) );
 set_file_contents( $phar, WP_CLI_ROOT . '/VERSION', $current_version );
 
 $phar_boot = str_replace( WP_CLI_BASE_PATH, '', WP_CLI_ROOT . '/php/boot-phar.php' );

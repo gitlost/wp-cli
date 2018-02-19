@@ -63,6 +63,8 @@ class CLI_Command extends WP_CLI_Command {
 	 *
 	 * Helpful for diagnostic purposes, this command shares:
 	 *
+	 * * OS information.
+	 * * Shell information.
 	 * * PHP binary used.
 	 * * PHP binary version.
 	 * * php.ini configuration file used (which is typically different than web).
@@ -89,14 +91,16 @@ class CLI_Command extends WP_CLI_Command {
 	 *
 	 *     # Display various data about the CLI environment.
 	 *     $ wp cli info
-	 *     PHP binary: /usr/bin/php5
-	 *     PHP version:    5.5.9-1ubuntu4.16
-	 *     php.ini used:   /etc/php5/cli/php.ini
+	 *     OS:  Linux 4.10.0-42-generic #46~16.04.1-Ubuntu SMP Mon Dec 4 15:57:59 UTC 2017 x86_64
+	 *     Shell:   /usr/bin/zsh
+	 *     PHP binary:  /usr/bin/php
+	 *     PHP version: 7.1.12-1+ubuntu16.04.1+deb.sury.org+1
+	 *     php.ini used:    /etc/php/7.1/cli/php.ini
 	 *     WP-CLI root dir:    phar://wp-cli.phar
 	 *     WP-CLI packages dir:    /home/person/.wp-cli/packages/
 	 *     WP-CLI global config:
 	 *     WP-CLI project config:
-	 *     WP-CLI version: 0.24.1
+	 *     WP-CLI version: 1.5.0
 	 */
 	public function info( $_, $assoc_args ) {
 		$php_bin = Utils\get_php_binary();
@@ -126,18 +130,29 @@ class CLI_Command extends WP_CLI_Command {
 
 			WP_CLI::line( json_encode( $info ) );
 		} else {
-			WP_CLI::line( "OS:\t" . $system_os );
-			WP_CLI::line( "Shell:\t" . $shell );
-			WP_CLI::line( "PHP binary:\t" . $php_bin );
-			WP_CLI::line( "PHP version:\t" . PHP_VERSION );
-			WP_CLI::line( "php.ini used:\t" . get_cfg_var( 'cfg_file_path' ) );
-			WP_CLI::line( "WP-CLI root dir:\t" . WP_CLI_ROOT );
-			WP_CLI::line( "WP-CLI vendor dir:\t" . WP_CLI_VENDOR_DIR );
-			WP_CLI::line( "WP_CLI phar path:\t" . ( defined( 'WP_CLI_PHAR_PATH' ) ? WP_CLI_PHAR_PATH : '' ) );
-			WP_CLI::line( "WP-CLI packages dir:\t" . $packages_dir );
-			WP_CLI::line( "WP-CLI global config:\t" . $runner->global_config_path );
-			WP_CLI::line( "WP-CLI project config:\t" . $runner->project_config_path );
-			WP_CLI::line( "WP-CLI version:\t" . WP_CLI_VERSION );
+
+			$info = array(
+				array( 'OS', $system_os ),
+				array( 'Shell', $shell ),
+				array( 'PHP binary', $php_bin ),
+				array( 'PHP version', PHP_VERSION ),
+				array( 'php.ini used', get_cfg_var( 'cfg_file_path' ) ),
+				array( 'WP-CLI root dir', WP_CLI_ROOT ),
+				array( 'WP-CLI vendor dir', WP_CLI_VENDOR_DIR ),
+				array( 'WP_CLI phar path', ( defined( 'WP_CLI_PHAR_PATH' ) ? WP_CLI_PHAR_PATH : '' ) ),
+				array( 'WP-CLI packages dir', $packages_dir ),
+				array( 'WP-CLI global config', $runner->global_config_path ),
+				array( 'WP-CLI project config', $runner->project_config_path ),
+				array( 'WP-CLI version', WP_CLI_VERSION ),
+			);
+
+			$info_table = new \cli\Table();
+			$info_table->setRows( $info );
+			$info_table->setRenderer( new \cli\table\Ascii() );
+			$lines = array_slice( $info_table->getDisplayLines(), 2 );
+			foreach ( $lines as $line ) {
+				\WP_CLI::line( $line );
+			}
 		}
 	}
 
