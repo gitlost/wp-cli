@@ -32,18 +32,18 @@ Feature: Utilities that do NOT depend on WordPress code
   @require-php-5.5
   Scenario: Check `Utils\get_temp_dir()` when `sys_temp_dir` directive set
     # `sys_temp_dir` set to unwritable.
-    When I try `{INVOKE_WP_CLI_WITH_PHP_ARGS--dsys_temp_dir=\\tmp\\} --skip-wordpress eval 'echo WP_CLI\Utils\get_temp_dir();'`
+    When I try `{INVOKE_WP_CLI_WITH_PHP_ARGS--dsys_temp_dir=\\no_such_directory/} --skip-wordpress eval 'echo WP_CLI\Utils\get_temp_dir();'`
     Then STDERR should contain:
       """
       Warning: Temp directory isn't writable
       """
     And STDERR should contain:
       """
-      \tmp/
+      /no_such_directory/
       """
     And STDOUT should be:
       """
-      \tmp/
+      /no_such_directory/
       """
     And the return code should be 0
 
