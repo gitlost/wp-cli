@@ -350,7 +350,8 @@ function pick_fields( $item, $fields ) {
  * @access public
  * @category Input
  *
- * @param  string  $content  Some form of text to edit (e.g. post content)
+ * @param  string  $input    Some form of text to edit (e.g. post content)
+ * @param  string  $filename Optional. File name to use as base for temporary file. Default 'WP-CLI'.
  * @return string|bool       Edited text, if file is saved from editor; false, if no change to file.
  */
 function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
@@ -362,7 +363,7 @@ function launch_editor_for_input( $input, $filename = 'WP-CLI' ) {
 	do {
 		$tmpfile = basename( $filename );
 		$tmpfile = preg_replace( '|\.[^.]*$|', '', $tmpfile );
-		$tmpfile .= '-' . substr( md5( mt_rand() ), 0, 6 );
+		$tmpfile .= '-' . substr( md5( (string) mt_rand() ), 0, 6 );
 		$tmpfile = $tmpdir . $tmpfile . '.tmp';
 		$fp = fopen( $tmpfile, 'xb' );
 		if ( ! $fp && is_writable( $tmpdir ) && file_exists( $tmpfile ) ) {
@@ -773,6 +774,30 @@ function trailingslashit( $string ) {
 }
 
 /**
+ * Normalizes directory separators to slashes.
+ *
+ * @access public
+ * @category System
+ *
+ * @param string $path Path to convert.
+ *
+ * @return string Path with all backslashes replaced by slashes.
+ */
+function normalize_directory_separators( $path ) {
+	return str_replace( '\\', '/', $path );
+}
+
+/**
+ * Convert Windows EOLs to *nix.
+ *
+ * @param string $str String to convert.
+ * @return string String with carriage return / newline pairs reduced to newlines.
+ */
+function normalize_eols( $str ) {
+	return str_replace( "\r\n", "\n", $str );
+}
+
+/**
  * Get the system's temp directory. Warns user if it isn't writable.
  *
  * @access public
@@ -788,7 +813,7 @@ function get_temp_dir() {
 	}
 
 	// `sys_get_temp_dir()` introduced PHP 5.2.1. Will always return something.
-	$temp = trailingslashit( sys_get_temp_dir() );
+	$temp = trailingslashit( normalize_directory_separators( sys_get_temp_dir() ) );
 
 	if ( ! is_writable( $temp ) ) {
 		\WP_CLI::warning( "Temp directory isn't writable: {$temp}" );
@@ -1101,7 +1126,9 @@ function glob_brace( $pattern, $dummy_flags = null ) {
 function get_suggestion( $target, array $options, $threshold = 2 ) {
 
 	$suggestion_map = array(
+		'add' => 'create',
 		'check' => 'check-update',
+		'capability' => 'cap',
 		'clear' => 'flush',
 		'decrement' => 'decr',
 		'del' => 'delete',
@@ -1117,6 +1144,7 @@ function get_suggestion( $target, array $options, $threshold = 2 ) {
 		'regen' => 'regenerate',
 		'rep' => 'replace',
 		'repl' => 'replace',
+		'trash' => 'delete',
 		'v' => 'version',
 	);
 
@@ -1127,6 +1155,7 @@ function get_suggestion( $target, array $options, $threshold = 2 ) {
 	if ( empty( $options ) ) {
 		return '';
 	}
+	$levenshtein = array();
 	foreach ( $options as $option ) {
 		$distance = levenshtein( $option, $target );
 		$levenshtein[ $option ] = $distance;
@@ -1248,6 +1277,30 @@ function check_proc_available( $context = null, $return = false ) {
 }
 
 /**
+ * Wrapper around strtotime() that always interprets the string with a default timezone of UTC.
+ *
+ * @param string $str A date/time string.
+ * @param int    $now  Optional. The timestamp which is used as a base for the calculation of relative dates.
+ *
+ * @return int|bool Returns a timestamp on success, false otherwise.
+ */
+function strtotime_gmt( $str, $now = null ) {
+	$get = date_default_timezone_get();
+	if ( 'UTC' !== $get ) {
+		date_default_timezone_set( 'UTC' );
+	}
+	if ( null === $now ) {
+		$ret = strtotime( $str );
+	} else {
+		$ret = strtotime( $str, $now );
+	}
+	if ( 'UTC' !== $get ) {
+		date_default_timezone_set( $get );
+	}
+	return $ret;
+}
+
+/**
  * Returns past tense of verb, with limited accuracy. Only regular verbs catered for, apart from "reset".
  *
  * @param string $verb Verb to return past tense of.
@@ -1323,12 +1376,21 @@ function get_php_binary() {
  * @param array $env Array of environment variables.
  * @param array $other_options Array of additional options (Windows only).
  *
- * @return string Command stripped of any environment variable settings.
+ * @return resource|false Returns resource representing the process on success; false on failure.
  */
 function proc_open_compat( $cmd, $descriptorspec, &$pipes, $cwd = null, $env = null, $other_options = null ) {
 	if ( is_windows() ) {
 		// Need to encompass the whole command in double quotes - PHP bug https://bugs.php.net/bug.php?id=49139
 		$cmd = '"' . _proc_open_compat_win_env( $cmd, $env ) . '"';
+		// If environment array set, make sure certain entries are set otherwise can cause Windows `getaddrinfo()` and `mysqli_connect()` to crap out.
+		if ( null !== $env ) {
+			$env_names = array( 'HOME', 'PATH', 'SYSTEMROOT', 'TERM', 'TMP' ); // Probably only SYSTEMROOT and TMP are needed, but the others can't hurt.
+			foreach ( $env_names as $env_name ) {
+				if ( ! isset( $env[ $env_name ] ) && ( $env_val = getenv( $env_name ) ) ) {
+					$env[ $env_name ] = $env_val;
+				}
+			}
+		}
 	}
 	return proc_open( $cmd, $descriptorspec, $pipes, $cwd, $env, $other_options );
 }
@@ -1376,6 +1438,24 @@ function esc_like( $text ) {
 }
 
 /**
+ * Escapes (backticks) MySQL identifiers (aka schema object names) - i.e. column names, table names, and database/index/alias/view etc names.
+ * See https://dev.mysql.com/doc/refman/5.5/en/identifiers.html
+ *
+ * @param string|array $idents A single identifier or an array of identifiers.
+ * @return string|array An escaped string if given a string, or an array of escaped strings if given an array of strings.
+ */
+function esc_sql_ident( $idents ) {
+	$backtick = function ( $v ) {
+		// Escape any backticks in the identifier by doubling.
+		return '`' . str_replace( '`', '``', $v ) . '`';
+	};
+	if ( is_string( $idents ) ) {
+		return $backtick( $idents );
+	}
+	return array_map( $backtick, $idents );
+}
+
+/**
  * Check whether a given string is a valid JSON representation.
  *
  * @param string $argument       String to evaluate.
@@ -1385,7 +1465,7 @@ function esc_like( $text ) {
  * @return bool Whether the provided string is a valid JSON representation.
  */
 function is_json( $argument, $ignore_scalars = true ) {
-	if ( empty( $argument ) || ! is_string( $argument ) ) {
+	if ( ! is_string( $argument ) || '' === $argument ) {
 		return false;
 	}
 

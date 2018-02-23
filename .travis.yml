@@ -7,6 +7,8 @@ php: 7.1
 env:
   global:
     - WP_CLI_BIN_DIR=/tmp/wp-cli-phar
+    - TEST_COMMANDS=0
+    - TEST_COMMANDS_GLOB=*-command
 
 before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
@@ -28,7 +30,7 @@ jobs:
     - stage: test
       script: ./ci/test.sh
       php: 7.0
-      env: WP_VERSION=latest
+      env: WP_VERSION=latest WP_CLI_TEST_LOG_RUN_TIMES='stdout,40,40'
     - stage: test
       script: ./ci/test.sh
       php: 5.6

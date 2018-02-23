@@ -10,9 +10,8 @@ Feature: Check `utils/make-phar.php` output
       WP_CLI::add_command( 'command example', 'Dealerdirect\Composer\Plugin\Installers\PHPCodeSniffer\Plugin' );
       """
 
-    When I try `php -derror_log='' {PHAR_PATH} --require=custom-cmd.php help`
-    Then the return code should be 1
-    And STDERR should contain:
+    When I mistakenly try `php -derror_log='' {PHAR_PATH} --require=custom-cmd.php help`
+    Then STDERR should contain:
       """
       Error: Callable
       """
@@ -20,7 +19,6 @@ Feature: Check `utils/make-phar.php` output
       """
       PHP Warning
       """
-    And STDOUT should be empty
 
     When I try `grep '/dealerdirect\|/squizlabs\|/wimg' {PHAR_PATH}`
     Then the return code should be 1

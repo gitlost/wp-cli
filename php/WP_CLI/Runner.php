@@ -616,9 +616,14 @@ class Runner {
 			list( $args[0], $args[1] ) = array( 'language', 'core' );
 		}
 
-		// core verify-checksums  ->  checksum core
-		if ( array( 'core', 'verify-checksums' ) == array_slice( $args, 0, 2 ) ) {
-			list( $args[0], $args[1] ) = array( 'checksum', 'core' );
+		// checksum core  ->  core verify-checksums
+		if ( array( 'checksum', 'core' ) == array_slice( $args, 0, 2 ) ) {
+			list( $args[0], $args[1] ) = array( 'core', 'verify-checksums' );
+		}
+
+		// checksum plugin  ->  plugin verify-checksums
+		if ( array( 'checksum', 'plugin' ) == array_slice( $args, 0, 2 ) ) {
+			list( $args[0], $args[1] ) = array( 'plugin', 'verify-checksums' );
 		}
 
 		// site create --site_id=  ->  site create --network_id=
@@ -723,6 +728,29 @@ class Runner {
 			}
 		}
 
+		// config get --[global|constant]=<global|constant> --> config get <name> --type=constant|variable
+		// config get --> config list
+		if ( count( $args ) === 2
+			&& 'config' === $args[0]
+			&& 'get' === $args[1] ) {
+			if ( isset( $assoc_args['global'] ) ) {
+				$name = $assoc_args['global'];
+				$type = 'variable';
+				unset( $assoc_args['global'] );
+			} elseif ( isset( $assoc_args['constant'] ) ) {
+				$name = $assoc_args['constant'];
+				$type = 'constant';
+				unset( $assoc_args['constant'] );
+			}
+			if ( ! empty( $name ) && ! empty( $type ) ) {
+				$args[] = $name;
+				$assoc_args['type'] = $type;
+			} else {
+				// We had a 'config get' without a '<name>', so assume 'list' was wanted.
+				$args[1] = 'list';
+			}
+		}
+
 		return array( $args, $assoc_args );
 	}
 
@@ -763,11 +791,22 @@ class Runner {
 	 * @return bool
 	 */
 	private function wp_exists() {
+		return file_exists( ABSPATH . 'wp-includes/version.php' );
+	}
+
+	/**
+	 * Are WordPress core files readable?
+	 *
+	 * @return bool
+	 */
+	private function wp_is_readable() {
 		return is_readable( ABSPATH . 'wp-includes/version.php' );
 	}
 
 	private function check_wp_version() {
-		if ( ! $this->wp_exists() ) {
+		$wp_exists = $this->wp_exists();
+		$wp_is_readable = $this->wp_is_readable();
+		if ( ! $wp_exists || ! $wp_is_readable ) {
 			$this->show_synopsis_if_composite_command();
 			// If the command doesn't exist use as error.
 			$args = $this->cmd_starts_with( array( 'help' ) ) ? array_slice( $this->arguments, 1 ) : $this->arguments;
@@ -777,6 +816,12 @@ class Runner {
 					WP_CLI::warning( "No WordPress install found. If the command '" . implode( ' ', $args ) . "' is in a plugin or theme, pass --path=`path/to/wordpress`." );
 				}
 				WP_CLI::error( $suggestion_or_disabled );
+			}
+
+			if ( $wp_exists && ! $wp_is_readable ) {
+				WP_CLI::error(
+					'It seems, the WordPress core files do not have the proper file permissions.'
+				);
 			}
 			WP_CLI::error(
 				"This does not seem to be a WordPress install.\n" .
@@ -1578,7 +1623,7 @@ class Runner {
 		}
 
 		// Only check for update when a human is operating.
-		if ( ! function_exists( 'posix_isatty' ) || ! posix_isatty( STDOUT ) ) {
+		if ( Utils\isPiped() ) {
 			return;
 		}
 
@@ -1610,6 +1655,18 @@ class Runner {
 		// In case the operation fails, ensure the timestamp has been updated.
 		$cache->write( $cache_key, time() );
 
+		// Ask before doing remote request.
+		$current_command = implode( ' ', $this->arguments );
+		$msg = sprintf(
+			"(Note you can control whether and when to auto-check for updates with the 'WP_CLI_DISABLE_AUTO_CHECK_UPDATE' and 'WP_CLI_AUTO_CHECK_UPDATE_DAYS' environment variables.)\n" .
+			'You have version %s. Would you like to check if an update of WP-CLI is available?', WP_CLI_VERSION
+		);
+		if ( ! WP_CLI::ask( $msg ) ) {
+			WP_CLI::log( sprintf( "Continuing with your current command '%s'...", $current_command ) );
+			return;
+		}
+
+		WP_CLI::log( 'Checking for an update of WP-CLI...' );
 		// Check whether any updates are available.
 		ob_start();
 		WP_CLI::run_command(
@@ -1624,9 +1681,12 @@ class Runner {
 		}
 
 		// Looks like an update is available, so let's prompt to update.
+		WP_CLI::log( sprintf( "Update found - invoking 'cli update' (please note that if you decide to update, your current command '%s' will not complete)...", $current_command ) );
+
 		WP_CLI::run_command( array( 'cli', 'update' ) );
-		// If the Phar was replaced, we can't proceed with the original process.
-		exit;
+
+		// If the Phar was replaced, we've exited so don't get here.
+		WP_CLI::log( sprintf( "Continuing with your current command '%s'...", $current_command ) );
 	}
 
 	/**

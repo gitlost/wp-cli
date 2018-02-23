@@ -37,6 +37,7 @@ Feature: Skipping plugins
       """
       Call to undefined function hello_dolly()
       """
+    And the return code should be 255
 
     # No plugins should be loaded when --skip-plugins doesn't have a value
     When I run `wp --skip-plugins eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`
@@ -60,6 +61,7 @@ Feature: Skipping plugins
       """
       Call to undefined function hello_dolly()
       """
+    And the return code should be 255
 
   Scenario: Skipping all plugins via config file
     Given a WP installation
@@ -74,11 +76,12 @@ Feature: Skipping plugins
       """
       Call to undefined function hello_dolly()
       """
+    And the return code should be 255
 
   Scenario: Skip network active plugins
     Given a WP multisite installation
 
-    When I try `wp plugin deactivate akismet hello`
+    When I successfully try `wp plugin deactivate akismet hello`
     Then STDERR should be:
       """
       Warning: Plugin 'akismet' isn't active.
@@ -88,7 +91,6 @@ Feature: Skipping plugins
       """
       Success: Plugins already deactivated.
       """
-    And the return code should be 0
 
     When I run `wp plugin activate --network akismet hello`
     And I run `wp eval 'var_export( defined("AKISMET_VERSION") );var_export( function_exists( "hello_dolly" ) );'`

@@ -36,7 +36,7 @@ function checkString( $output, $expected, $action, $message = false ) {
 	switch ( $action ) {
 
 	case 'be':
-		$r = $expected === rtrim( $output, "\n" );
+		$r = $expected === rtrim( _wp_cli_nocr( $output ), "\n" );
 		break;
 
 	case 'contain':
@@ -198,3 +198,27 @@ function checkThatYamlStringContainsYamlString( $actualYaml, $expectedYaml ) {
 	return compareContents( $expectedValue, $actualValue );
 }
 
+/**
+ * Helper to strip carriage returns from input for Windows compat.
+ *
+ * @param string|array String or array of strings to strip.
+ * @return string|array String or array stripped of carriage returns.
+ */
+function _wp_cli_nocr( $str_or_arr ) {
+	if ( is_string( $str_or_arr ) ) {
+		return str_replace( "\r", '', $str_or_arr );
+	}
+	return array_map( function ( $str ) {
+		return str_replace( "\r", '', $str );
+	}, $str_or_arr );
+}
+
+/**
+ * Helper to convert *nix shell escaped command to Windows. Primitive.
+ *
+ * @param string $cmd Command to convert.
+ * @return string Command escaped for Windows - ie. single quotes converted to double quotes and vice versa.
+ */
+function _wp_cli_esc_cmd_win( $cmd ) {
+	return str_replace( array( "'", '"', '<esc>' ), array( '<esc>', "'", '"' ), $cmd );
+}

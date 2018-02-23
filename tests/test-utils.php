@@ -319,6 +319,17 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		putenv( false === $homepath ? 'HOMEPATH' : "HOME=$homepath" );
 	}
 
+	public function testStrtotimeGmt() {
+		$get = date_default_timezone_get();
+
+		$date = 'Fri, 30 May 2008 04:20:12';
+
+		date_default_timezone_set( 'America/Godthab' ); // -2h in northern summer.
+		$this->assertSame( strtotime( $date ) - 2 * 60 * 60, Utils\strtotime_gmt( $date ) );
+
+		date_default_timezone_set( $get );
+	}
+
 	public function testTrailingslashit() {
 		$this->assertSame( 'a/', Utils\trailingslashit( 'a' ) );
 		$this->assertSame( 'a/', Utils\trailingslashit( 'a/' ) );
@@ -326,30 +337,12 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		$this->assertSame( 'a/', Utils\trailingslashit( 'a\\//\\' ) );
 	}
 
+	public function testNormalizeEols() {
+		$this->assertSame( "\na\ra\na\n", Utils\normalize_eols( "\r\na\ra\r\na\r\n" ) );
+	}
+
 	public function testGetTempDir() {
 		$this->assertTrue( '/' === substr( Utils\get_temp_dir(), -1 ) );
-
-		// INI directive `sys_temp_dir` introduced PHP 5.5.0.
-		if ( version_compare( PHP_VERSION, '5.5.0', '>=' ) ) {
-
-			// `sys_temp_dir` set to unwritable.
-
-			$cmd = 'php ' . escapeshellarg( '-dsys_temp_dir=\\tmp\\' ) . ' php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'echo WP_CLI\\Utils\\get_temp_dir();' ) . ' 2>&1';
-			$output = array();
-			exec( $cmd, $output );
-			$output = trim( implode( "\n", $output ) );
-			$this->assertTrue( false !== strpos( $output, 'Warning' ) );
-			$this->assertTrue( false !== strpos( $output, 'writable' ) );
-			$this->assertTrue( false !== strpos( $output, '\\tmp/' ) );
-
-			// `sys_temp_dir` unset.
-
-			$cmd = 'php ' . escapeshellarg( '-dsys_temp_dir=' ) . ' php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'echo WP_CLI\\Utils\\get_temp_dir();' ) . ' 2>&1';
-			$output = array();
-			exec( $cmd, $output );
-			$output = trim( implode( "\n", $output ) );
-			$this->assertTrue( '/' === substr( $output, -1 ) );
-		}
 	}
 
 	public function testHttpRequestBadAddress() {
@@ -447,38 +440,6 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 		$class_wp_cli_logger->setValue( $prev_logger );
 	}
 
-	public function testRunMysqlCommandProcDisabled() {
-		$err_msg = 'Error: Cannot do \'run_mysql_command\': The PHP functions `proc_open()` and/or `proc_close()` are disabled';
-
-		$cmd = 'php -ddisable_functions=proc_open php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'WP_CLI\\Utils\\run_mysql_command( null, array() );' ) . ' 2>&1';
-		$output = array();
-		exec( $cmd, $output );
-		$output = trim( implode( "\n", $output ) );
-		$this->assertTrue( false !== strpos( $output, $err_msg ) );
-
-		$cmd = 'php -ddisable_functions=proc_close php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'WP_CLI\\Utils\\run_mysql_command( null, array() );' ) . ' 2>&1';
-		$output = array();
-		exec( $cmd, $output );
-		$output = trim( implode( "\n", $output ) );
-		$this->assertTrue( false !== strpos( $output, $err_msg ) );
-	}
-
-	public function testLaunchEditorForInputProcDisabled() {
-		$err_msg = 'Error: Cannot do \'launch_editor_for_input\': The PHP functions `proc_open()` and/or `proc_close()` are disabled';
-
-		$cmd = 'php -ddisable_functions=proc_open php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'WP_CLI\\Utils\\launch_editor_for_input( null, null );' ) . ' 2>&1';
-		$output = array();
-		exec( $cmd, $output );
-		$output = trim( implode( "\n", $output ) );
-		$this->assertTrue( false !== strpos( $output, $err_msg ) );
-
-		$cmd = 'php -ddisable_functions=proc_close php/boot-fs.php --skip-wordpress eval ' . escapeshellarg( 'WP_CLI\\Utils\\launch_editor_for_input( null, null );' ) . ' 2>&1';
-		$output = array();
-		exec( $cmd, $output );
-		$output = trim( implode( "\n", $output ) );
-		$this->assertTrue( false !== strpos( $output, $err_msg ) );
-	}
-
 	/**
 	 * @dataProvider dataPastTenseVerb
 	 */
@@ -524,13 +485,16 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 
 		$dir = __DIR__ . '/data/expand_globs/';
 		$expected = array_map( function ( $v ) use ( $dir ) { return $dir . $v; }, $expected );
+		sort( $expected );
 
 		putenv( 'WP_CLI_TEST_EXPAND_GLOBS_NO_GLOB_BRACE=0' );
 		$out = Utils\expand_globs( $dir . $path );
+		sort( $out );
 		$this->assertSame( $expected, $out );
 
 		putenv( 'WP_CLI_TEST_EXPAND_GLOBS_NO_GLOB_BRACE=1' );
 		$out = Utils\expand_globs( $dir . $path );
+		sort( $out );
 		$this->assertSame( $expected, $out );
 
 		putenv( false === $expand_globs_no_glob_brace ? 'WP_CLI_TEST_EXPAND_GLOBS_NO_GLOB_BRACE' : "WP_CLI_TEST_EXPAND_GLOBS_NO_GLOB_BRACE=$expand_globs_no_glob_brace" );
@@ -707,6 +671,10 @@ class UtilsTest extends PHPUnit_Framework_TestCase {
 			array( '{"key1":"value1","key2":"value2"}', false, true ),
 			array( '["value1","value2"]', true, true ),
 			array( '["value1","value2"]', false, true ),
+			array( '0', true, false ),
+			array( '0', false, true ),
+			array( '', true, false ),
+			array( '', false, false ),
 		);
 	}
 

@@ -38,29 +38,32 @@ class Extractor {
 	 * @param string $dest
 	 */
 	private static function extract_zip( $zipfile, $dest ) {
+		if ( class_exists( 'PharData' ) && ! getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' ) ) {
+			try {
+				self::copy_overwrite_files( 'phar://' . $zipfile, $dest, 1 /*strip_components*/ );
+				return;
+			} catch ( \Exception $e ) {
+				WP_CLI::warning( sprintf( 'Falling back to ZipArchive. PharData failed: %s.', $e->getMessage() ) );
+			}
+		}
 		if ( ! class_exists( 'ZipArchive' ) ) {
-			throw new \Exception( 'Extracting a zip file requires ZipArchive.' );
+			throw new \Exception( 'Extracting a zip file requires ZipArchive or PharData.' );
 		}
 		$zip = new ZipArchive();
 		$res = $zip->open( $zipfile );
-		if ( true === $res ) {
-			$tempdir = implode(
-				DIRECTORY_SEPARATOR,
-				array(
-					dirname( $zipfile ),
-					Utils\basename( $zipfile, '.zip' ),
-					$zip->getNameIndex( 0 ),
-				)
-			);
-
-			$zip->extractTo( dirname( $tempdir ) );
-			$zip->close();
-
-			self::copy_overwrite_files( $tempdir, $dest );
-			self::rmdir( dirname( $tempdir ) );
-		} else {
-			throw new \Exception( sprintf( "ZipArchive failed to unzip '%s': %s.", $zipfile, self::zip_error_msg( $res ) ) );
+		if ( true !== $res ) {
+			throw new \Exception( sprintf( "ZipArchive failed to open '%s': %s.", $zipfile, self::zip_error_msg( $res ) ) );
 		}
+		$tempdir = Utils\get_temp_dir() . uniqid( 'wp-cli-extract-zip-', true );
+
+		if ( ! $zip->extractTo( $tempdir ) ) {
+			throw new \Exception( sprintf( "ZipArchive failed to extract '%s' to temporary directory '%s'.", $zipfile, $tempdir ) );
+		}
+		if ( ! $zip->close() ) {
+			throw new \Exception( sprintf( "ZipArchive failed to close '%s'.", $zipfile ) );
+		}
+		self::copy_overwrite_files( $tempdir, $dest, 1 /*strip_components*/ );
+		self::rmdir( $tempdir );
 	}
 
 	/**
@@ -71,31 +74,43 @@ class Extractor {
 	 */
 	private static function extract_tarball( $tarball, $dest ) {
 
-		if ( class_exists( 'PharData' ) ) {
+		if ( class_exists( 'PharData' ) && ! getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' ) ) {
 			try {
-				$phar = new PharData( $tarball );
-				$tempdir = implode(
-					DIRECTORY_SEPARATOR,
-					array(
-						dirname( $tarball ),
-						Utils\basename( $tarball, '.tar.gz' ),
-						$phar->getFilename(),
-					)
-				);
+				// Check if PHP bug #75273 likely to be triggered and copy to temporary tar if so.
+				$pre_tar = false;
+				// Only checking Ubuntu (and derivatives) as unfortunately Debian doesn't sign its PHP build so not easy to check for it.
+				if ( false !== strpos( PHP_VERSION, 'ubuntu' ) ) {
+					$tar_size = filesize( $tarball );
+					$pre_tar = $tar_size > 4 * 1024 * 1024 && $tar_size % ( 8 * 1024 ) < 10;
+				}
+				if ( $pre_tar ) {
+					$temp_tar = Utils\get_temp_dir() . uniqid( 'wp-cli-extract-', true ) . '.tar';
+					if ( false === ( $contents = file_get_contents( 'compress.zlib://' . $tarball ) ) || false === file_put_contents( $temp_tar, $contents ) ) {
+						throw new \Exception( sprintf( "Failed to create temporary tar '%s'.", $temp_tar ) );
+					}
 
-				$phar->extractTo( dirname( $tempdir ), null, true );
+					self::copy_overwrite_files( 'phar://' . $temp_tar, $dest, 1 /*strip_components*/ );
+					unlink( $temp_tar );
+				} else {
 
-				self::copy_overwrite_files( $tempdir, $dest );
-
-				self::rmdir( dirname( $tempdir ) );
+					self::copy_overwrite_files( 'phar://' . $tarball, $dest, 1 /*strip_components*/ );
+				}
 				return;
 			} catch ( \Exception $e ) {
-				WP_CLI::warning( "PharData failed, falling back to 'tar xz' (" . $e->getMessage() . ')' );
+				// Can fail on Debian due to PHP bug #75273 so don't warn but fall through silently if message matches.
+				if ( $pre_tar || sprintf( 'unable to decompress gzipped phar archive "%s" to temporary file', $tarball ) !== $e->getMessage() ) {
+					WP_CLI::warning( sprintf( "Falling back to 'tar xz'. PharData failed: %s.", $e->getMessage() ) );
+				}
 				// Fall through to trying `tar xz` below
 			}
 		}
-		// Note: directory must exist for tar --directory to work.
-		$cmd = Utils\esc_cmd( 'tar xz --strip-components=1 --directory=%s -f %s', $dest, $tarball );
+
+		// Directory must exist for tar --directory to work.
+		if ( ! file_exists( $dest ) ) {
+			mkdir( $dest, 0777, true );
+		}
+		// Need --force-local for Windows to avoid "C:" being interpreted as referring to remote machine.
+		$cmd = Utils\esc_cmd( 'tar xz --force-local --strip-components=1 --directory=%2$s -f %1$s', $tarball, $dest );
 		$process_run = WP_CLI::launch( $cmd, false /*exit_on_error*/, true /*return_detailed*/ );
 		if ( 0 !== $process_run->return_code ) {
 			throw new \Exception( sprintf( 'Failed to execute `%s`: %s.', $cmd, self::tar_error_msg( $process_run ) ) );
@@ -108,40 +123,37 @@ class Extractor {
 	 * @param string $source
 	 * @param string $dest
 	 */
-	public static function copy_overwrite_files( $source, $dest ) {
-		$iterator = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator( $source, RecursiveDirectoryIterator::SKIP_DOTS ),
-			RecursiveIteratorIterator::SELF_FIRST
-		);
-
-		$error = 0;
-
-		if ( ! is_dir( $dest ) ) {
-			mkdir( $dest, 0777, true );
+	public static function copy_overwrite_files( $source, $dest, $strip_components = 0 ) {
+		if ( false === ( $files = scandir( $source ) ) ) {
+			$error = error_get_last();
+			throw new \Exception( sprintf( "Failed to scan source directory '%s': %s", $source, $error['message'] ) );
 		}
 
-		foreach ( $iterator as $item ) {
+		if ( ! file_exists( $dest ) && ! mkdir( $dest, 0777, true ) ) {
+			$error = error_get_last();
+			throw new \Exception( sprintf( "Failed to create destination directory '%s': %s", $dest, $error['message'] ) );
+		}
 
-			$dest_path = $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
+		foreach ( array_diff( $files, array( '.', '..' ) ) as $file ) {
 
-			if ( $item->isDir() ) {
-				if ( ! is_dir( $dest_path ) ) {
-					mkdir( $dest_path );
+			$source_file = $source . '/' . $file;
+			$dest_file = $dest . '/' . $file;
+
+			if ( $strip_components > 0 ) {
+				if ( is_dir( $source_file ) ) {
+					self::copy_overwrite_files( $source_file, $dest, $strip_components - 1 );
 				}
 			} else {
-				if ( file_exists( $dest_path ) && is_writable( $dest_path ) ) {
-					copy( $item, $dest_path );
-				} elseif ( ! file_exists( $dest_path ) ) {
-					copy( $item, $dest_path );
+
+				if ( is_dir( $source_file ) ) {
+					self::copy_overwrite_files( $source_file, $dest_file );
 				} else {
-					$error = 1;
-					WP_CLI::warning( "Unable to copy '" . $iterator->getSubPathName() . "' to current directory." );
+					if ( ! copy( $source_file, $dest_file ) ) {
+						$error = error_get_last();
+						throw new \Exception( sprintf( "Failed to copy '%s' to target '%s': %s.", $source_file, $dest_file, $error['message'] ) );
+					}
 				}
 			}
-		}
-
-		if ( $error ) {
-			throw new \Exception( 'There was an error overwriting existing files.' );
 		}
 	}
 

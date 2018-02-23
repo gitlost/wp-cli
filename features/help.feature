@@ -9,42 +9,36 @@ Feature: Get help about WP-CLI commands
         Run 'wp help <command>' to get more information on a specific command.
 
       """
-    And STDERR should be empty
 
     When I run `wp help core`
     Then STDOUT should contain:
       """
         wp core
       """
-    And STDERR should be empty
 
     When I run `wp help core download`
     Then STDOUT should contain:
       """
         wp core download
       """
-    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should contain:
       """
         wp help
       """
-    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should contain:
       """
       GLOBAL PARAMETERS
       """
-    And STDERR should be empty
 
     When I run `wp post list --post_type=post --posts_per_page=5 --help`
     Then STDOUT should contain:
       """
       wp post list
       """
-    And STDERR should be empty
 
   # Prior to WP 4.3 widgets & others used PHP 4 style constructors and prior to WP 3.9 wpdb used the mysql extension which can all lead (depending on PHP version) to PHP Deprecated notices.
   @require-wp-4.3
@@ -57,36 +51,33 @@ Feature: Get help about WP-CLI commands
         Run 'wp help <command>' to get more information on a specific command.
 
       """
-    And STDERR should be empty
 
     When I run `wp help core`
     Then STDOUT should contain:
       """
         wp core
       """
-    And STDERR should be empty
 
     When I run `wp help core download`
     Then STDOUT should contain:
       """
         wp core download
       """
-    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should contain:
       """
         wp help
       """
-    And STDERR should be empty
 
     When I run `wp help help`
     Then STDOUT should contain:
       """
       GLOBAL PARAMETERS
       """
-    And STDERR should be empty
 
+  # Fixed in trunk, WP isn't compatible with PHP 7.2 due to `__autoload()` in "wp-includes/compat.php".
+  @less-than-php-7.2
   Scenario: Help when WordPress is downloaded but not installed
     Given an empty directory
 
@@ -96,7 +87,6 @@ Feature: Get help about WP-CLI commands
       """
       wp config create
       """
-    And STDERR should be empty
 
     When I run `wp config create {CORE_CONFIG_SETTINGS}`
     And I run `wp help core install`
@@ -104,44 +94,37 @@ Feature: Get help about WP-CLI commands
       """
       wp core install
       """
-    And STDERR should be empty
 
     When I run `wp help core is-installed`
     Then STDOUT should contain:
       """
       wp core is-installed
       """
-    And STDERR should be empty
 
     When I run `wp help core`
     Then STDOUT should contain:
       """
       wp core
       """
-    And STDERR should be empty
 
     When I run `wp help config`
     Then STDOUT should contain:
       """
       wp config
       """
-    And STDERR should be empty
 
     When I run `wp help db`
     Then STDOUT should contain:
       """
       wp db
       """
-    And STDERR should be empty
 
-    When I try `wp help non-existent-command`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command`
+    Then STDERR should be:
       """
       Warning: Can’t select database. We were able to connect to the database server (which means your username and password is okay) but not able to select the `wp_cli_test` database.
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
     # Bug: if `WP_DEBUG` (or `WP_DEBUG_DISPLAY') is defined falsey than a db error won't be trapped.
     Given a define-wp-debug-false.php file:
@@ -149,192 +132,154 @@ Feature: Get help about WP-CLI commands
       <?php define( 'WP_DEBUG', false );
       """
 
-    When I try `wp help core --require=define-wp-debug-false.php`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help core --require=define-wp-debug-false.php`
+    Then STDERR should be:
       """
       Error: Can’t select database. We were able to connect to the database server (which means your username and password is okay) but not able to select the `wp_cli_test` database.
       """
-    And STDOUT should be empty
 
   Scenario: Help for nonexistent commands
     Given a WP installation
 
-    When I try `wp help non-existent-command`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command`
+    Then STDERR should be:
       """
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help non-existent-command --path=/nowhere`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command --path=/nowhere`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'non-existent-command' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help non-existent-command non-existent-subcommand`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command non-existent-subcommand`
+    Then STDERR should be:
       """
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help non-existent-command non-existent-subcommand --path=/nowhere`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command non-existent-subcommand --path=/nowhere`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'non-existent-command non-existent-subcommand' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
   Scenario: Help for nonexistent commands without a WP install
     Given an empty directory
 
-    When I try `wp help non-existent-command`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help non-existent-command`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'non-existent-command' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-command' is not a registered wp command. See 'wp help' for available commands.
       """
-    And STDOUT should be empty
 
   Scenario: Help for specially treated commands with nonexistent subcommands
     Given a WP installation
 
-    When I try `wp help config non-existent-subcommand`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help config non-existent-subcommand`
+    Then STDERR should be:
       """
       Error: 'non-existent-subcommand' is not a registered subcommand of 'config'. See 'wp help config' for available subcommands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help config non-existent-subcommand --path=/nowhere`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help config non-existent-subcommand --path=/nowhere`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'config non-existent-subcommand' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-subcommand' is not a registered subcommand of 'config'. See 'wp help config' for available subcommands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help core non-existent-subcommand`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help core non-existent-subcommand`
+    Then STDERR should be:
       """
       Error: 'non-existent-subcommand' is not a registered subcommand of 'core'. See 'wp help core' for available subcommands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help core non-existent-subcommand --path=/nowhere`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help core non-existent-subcommand --path=/nowhere`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'core non-existent-subcommand' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-subcommand' is not a registered subcommand of 'core'. See 'wp help core' for available subcommands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help db non-existent-subcommand`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help db non-existent-subcommand`
+    Then STDERR should be:
       """
       Error: 'non-existent-subcommand' is not a registered subcommand of 'db'. See 'wp help db' for available subcommands.
       """
-    And STDOUT should be empty
 
-    When I try `wp help db non-existent-subcommand --path=/nowhere`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help db non-existent-subcommand --path=/nowhere`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'db non-existent-subcommand' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'non-existent-subcommand' is not a registered subcommand of 'db'. See 'wp help db' for available subcommands.
       """
-    And STDOUT should be empty
 
   Scenario: Suggestions for command typos in help
     Given an empty directory
 
-    When I try `wp help confi`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help confi`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'confi' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'confi' is not a registered wp command. See 'wp help' for available commands.
       Did you mean 'config'?
       """
-    And STDOUT should be empty
 
-    When I try `wp help cor`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help cor`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'cor' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'cor' is not a registered wp command. See 'wp help' for available commands.
       Did you mean 'core'?
       """
-    And STDOUT should be empty
 
-    When I try `wp help d`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help d`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'd' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'd' is not a registered wp command. See 'wp help' for available commands.
       Did you mean 'db'?
       """
-    And STDOUT should be empty
 
-    When I try `wp help packag`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help packag`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'packag' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'packag' is not a registered wp command. See 'wp help' for available commands.
       Did you mean 'package'?
       """
-    And STDOUT should be empty
 
   Scenario: Suggestions for subcommand typos in help of specially treated commands
     Given an empty directory
 
-    When I try `wp help config creat`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help config creat`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'config creat' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'creat' is not a registered subcommand of 'config'. See 'wp help config' for available subcommands.
       Did you mean 'create'?
       """
-    And STDOUT should be empty
 
-    When I try `wp help core versio`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help core versio`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'core versio' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'versio' is not a registered subcommand of 'core'. See 'wp help core' for available subcommands.
       Did you mean 'version'?
       """
-    And STDOUT should be empty
 
-    When I try `wp help db chec`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help db chec`
+    Then STDERR should be:
       """
       Warning: No WordPress install found. If the command 'db chec' is in a plugin or theme, pass --path=`path/to/wordpress`.
       Error: 'chec' is not a registered subcommand of 'db'. See 'wp help db' for available subcommands.
       Did you mean 'check'?
       """
-    And STDOUT should be empty
 
   Scenario: No WordPress install warning or suggestions for disabled commands
     Given an empty directory
@@ -344,21 +289,17 @@ Feature: Get help about WP-CLI commands
         db
       """
 
-    When I try `wp help db`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help db`
+    Then STDERR should be:
       """
       Error: The 'db' command has been disabled from the config file.
       """
-    And STDOUT should be empty
 
-    When I try `wp help db chec`
-    Then the return code should be 1
-    And STDERR should be:
+    When I mistakenly try `wp help db chec`
+    Then STDERR should be:
       """
       Error: The 'db' command has been disabled from the config file.
       """
-    And STDOUT should be empty
 
   Scenario: Help for third-party commands
     Given a WP installation
@@ -383,14 +324,12 @@ Feature: Get help about WP-CLI commands
       """
       A dummy command.
       """
-    And STDERR should be empty
 
     When I run `wp help test-help`
     Then STDOUT should contain:
       """
       wp test-help
       """
-    And STDERR should be empty
 
   Scenario: Help for incomplete commands
     Given an empty directory
@@ -675,7 +614,6 @@ Feature: Get help about WP-CLI commands
             the target site is specified.
 
       """
-    And STDERR should be empty
 
     When I run `COLUMNS=80 wp help test-wordwrap my_command | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:
@@ -751,7 +689,6 @@ Feature: Get help about WP-CLI commands
             specified.
 
       """
-    And STDERR should be empty
 
     When I run `TERM=vt100 COLUMNS=40 wp help test-wordwrap my_command | sed '/\-\-ssh/d' | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:
@@ -784,7 +721,6 @@ Feature: Get help about WP-CLI commands
             Pretend request came from given URL. In multisite, this argument is how the target site is specified.
 
       """
-    And STDERR should be empty
 
   Scenario: Help for commands with subcommands should wordwrap well
     Given a WP installation
@@ -890,7 +826,6 @@ Feature: Get help about WP-CLI commands
                             longgg description.
 
       """
-    And STDERR should be empty
 
     When I run `TERM=vt100 COLUMNS=80 wp help test-wordwrap | awk '{print length, $0}' | sort -nr | head -1 | cut -f1 -d" "`
     Then STDOUT should be:

@@ -78,9 +78,7 @@ Feature: Prompt user for input
       """
 
     When I run `echo 'bar' | wp foobar foo --prompt=flag1`
-    Then the return code should be 0
-    And STDERR should be empty
-    And STDOUT should contain:
+    Then STDOUT should contain:
       """
       arg: foo
       """

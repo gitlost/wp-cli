@@ -17,9 +17,8 @@ Feature: Argument validation
     Given an empty directory
     And WP files
 
-    When I try `wp core config`
-    Then the return code should be 1
-    And STDERR should contain:
+    When I mistakenly try `wp core config`
+    Then STDERR should contain:
       """
       Parameter errors:
       """
@@ -28,9 +27,8 @@ Feature: Argument validation
       missing --dbname parameter
       """
 
-    When I try `wp core config --invalid --other-invalid`
-    Then the return code should be 1
-    And STDERR should contain:
+    When I mistakenly try `wp core config --invalid --other-invalid`
+    Then STDERR should contain:
       """
       unknown --invalid parameter
       """
@@ -39,10 +37,8 @@ Feature: Argument validation
       unknown --other-invalid parameter
       """
 
-    When I try `wp core version invalid`
-    Then the return code should be 1
-    And STDERR should contain:
+    When I mistakenly try `wp core version invalid`
+    Then STDERR should contain:
       """
       Error: Too many positional arguments: invalid
       """
-    And STDOUT should be empty

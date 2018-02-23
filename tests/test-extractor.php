@@ -7,19 +7,22 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 
 	static $copy_overwrite_files_prefix = 'wp-cli-test-utils-copy-overwrite-files-';
 
-	static $expected_wp = array(
-		'index1.php',
-		'license2.php',
-		'wp-admin/',
-		'wp-admin/about3.php',
-		'wp-admin/includes/',
-		'wp-admin/includes/file4.php',
-		'wp-admin/widgets5.php',
-		'wp-config6.php',
-		'wp-includes/',
-		'wp-includes/file7.php',
-		'xmlrpc8.php',
+	static $expected_top = array(
+		'wordpress/',
+		'wordpress/index1.php',
+		'wordpress/license2.php',
+		'wordpress/wp-admin/',
+		'wordpress/wp-admin/about3.php',
+		'wordpress/wp-admin/includes/',
+		'wordpress/wp-admin/includes/file4.php',
+		'wordpress/wp-admin/widgets5.php',
+		'wordpress/wp-config6.php',
+		'wordpress/wp-includes/',
+		'wordpress/wp-includes/file7.php',
+		'wordpress/xmlrpc8.php',
 	);
+
+	static $expected_wp = null;
 
 	static $logger = null;
 	static $prev_logger = null;
@@ -34,6 +37,13 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 
 		self::$logger = new \WP_CLI\Loggers\Execution;
 		WP_CLI::set_logger( self::$logger );
+
+		// Init expected_wp.
+		if ( null === self::$expected_wp ) {
+			self::$expected_wp = array_values( array_filter( array_map( function ( $v ) {
+				return substr( $v, strlen( 'wordpress/' ) );
+			}, self::$expected_top ) ) );
+		}
 
 		// Remove any failed tests detritus.
 		$temp_dirs = Utils\get_temp_dir() . self::$copy_overwrite_files_prefix . '*';
@@ -55,10 +65,6 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		$this->assertTrue( is_dir( $wp_dir ) );
 		Extractor::rmdir( $wp_dir );
 		$this->assertFalse( file_exists( $wp_dir ) );
-
-		$this->assertTrue( is_dir( $temp_dir ) );
-		Extractor::rmdir( $temp_dir );
-		$this->assertFalse( file_exists( $temp_dir ) );
 	}
 
 	public function test_err_rmdir() {
@@ -77,12 +83,80 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 
 		$dest_dir = $temp_dir . '/dest';
 
+		// Top level src dir, no strip_components.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$this->assertSame( self::$expected_top, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		// Wordpress dir, no strip_components.
+
 		Extractor::copy_overwrite_files( $wp_dir, $dest_dir );
 
 		$files = self::recursive_scandir( $dest_dir );
 
 		$this->assertSame( self::$expected_wp, $files );
 		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		// Top level src dir, strip_components 1.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 1 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$this->assertSame( self::$expected_wp, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		// Wordpress dir, strip_components 1.
+
+		Extractor::copy_overwrite_files( $wp_dir, $dest_dir, 1 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'about3.php',
+			'file7.php',
+			'includes/',
+			'includes/file4.php',
+			'widgets5.php',
+		);
+		$this->assertSame( $expected, $files );
+
+		// Top level src dir, strip_components 2 (same as Wordpress dir, strip_components 1).
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 2 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'about3.php',
+			'file7.php',
+			'includes/',
+			'includes/file4.php',
+			'widgets5.php',
+		);
+		$this->assertSame( $expected, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		// Top level src dir, strip_components 3.
+
+		Extractor::copy_overwrite_files( $src_dir, $dest_dir, 3 /*strip_components*/ );
+
+		$files = self::recursive_scandir( $dest_dir );
+
+		$expected = array(
+			'file4.php',
+		);
+		$this->assertSame( $expected, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
 
 		// Clean up.
 		Extractor::rmdir( $temp_dir );
@@ -104,6 +178,8 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 			$this->markTestSkipped( 'tar not installed.' );
 		}
 
+		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+
 		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
 
 		$tarball = $temp_dir . '/test.tar.gz';
@@ -112,25 +188,55 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		// Create test tarball.
 		$output = array();
 		$return_var = -1;
-		// Need --force-local for Windows to avoid "C:" being interpreted as being on remote machine.
-		exec( Utils\esc_cmd( 'tar czvf %1$s --force-local --directory=%2$s/src wordpress', $tarball, $temp_dir ), $output, $return_var );
+		// Need --force-local for Windows to avoid "C:" being interpreted as being on remote machine, and redirect for Mac as outputs verbosely on STDERR.
+		$cmd = 'tar czvf %1$s' . ( Utils\is_windows() ? ' --force-local' : '' ) . ' --directory=%2$s/src wordpress 2>&1';
+		exec( Utils\esc_cmd( $cmd, $tarball, $temp_dir ), $output, $return_var );
 		$this->assertSame( 0, $return_var );
 		$this->assertFalse( empty( $output ) );
+
+		// Normalize (Mac) output.
+		$output = array_map( function ( $v ) {
+			if ( 'a ' === substr( $v, 0, 2 ) ) {
+				$v = substr( $v, 2 );
+			}
+			if ( '/' !== substr( $v, -1 ) && false === strpos( $v, '.' ) ) {
+				$v .= '/';
+			}
+			return $v;
+		}, $output );
 		sort( $output );
+
 		$this->assertSame( self::recursive_scandir( $src_dir ), $output );
 
 		// Test.
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
 		Extractor::extract( $tarball, $dest_dir );
 
 		$files = self::recursive_scandir( $dest_dir );
 		$this->assertSame( self::$expected_wp, $files );
 		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL=1' );
+		Extractor::extract( $tarball, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
 
 		// Clean up.
 		Extractor::rmdir( $temp_dir );
+
+		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
 	}
 
 	public function test_err_extract_tarball() {
+		$extractor_shell = getenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL' );
 		// Non-existent.
 		$msg = '';
 		try {
@@ -139,7 +245,7 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 			$msg = $e->getMessage();
 		}
 		$this->assertTrue( false !== strpos( $msg, 'no-such-tar' ) );
-		$this->assertTrue( 0 === strpos( self::$logger->stderr, 'Warning: PharData failed' ) );
+		$this->assertTrue( 0 === strpos( self::$logger->stderr, "Warning: Falling back to 'tar xz'. PharData failed" ) );
 		$this->assertTrue( false !== strpos( self::$logger->stderr, 'no-such-tar' ) );
 
 		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
@@ -155,14 +261,46 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		}
 		unlink( $zero_tar );
 		$this->assertTrue( false !== strpos( $msg, 'zero-tar' ) );
-		$this->assertTrue( 0 === strpos( self::$logger->stderr, 'Warning: PharData failed' ) );
+		$this->assertTrue( 0 === strpos( self::$logger->stderr, "Warning: Falling back to 'tar xz'. PharData failed" ) );
 		$this->assertTrue( false !== strpos( self::$logger->stderr, 'zero-tar' ) );
+
+		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_SHELL=1' );
+		// Non-existent.
+		$msg = '';
+		try {
+			Extractor::extract( 'no-such-tar.tar.gz', 'dest-dir' );
+		} catch ( \Exception $e ) {
+			$msg = $e->getMessage();
+		}
+		$this->assertTrue( false !== strpos( $msg, 'no-such-tar' ) );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+
+		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
+
+		// Zero-length.
+		$zero_tar = Utils\get_temp_dir() . 'zero-tar.tar.gz';
+		touch( $zero_tar );
+		$msg = '';
+		try {
+			Extractor::extract( $zero_tar, 'dest-dir' );
+		} catch ( \Exception $e ) {
+			$msg = $e->getMessage();
+		}
+		unlink( $zero_tar );
+		$this->assertTrue( false !== strpos( $msg, 'zero-tar' ) );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+
+		putenv( false === $extractor_shell ? 'WP_CLI_TEST_EXTRACTOR_SHELL' : "WP_CLI_TEST_EXTRACTOR_SHELL=$extractor_shell" );
 	}
 
 	public function test_extract_zip() {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			$this->markTestSkipped( 'ZipArchive not installed.' );
 		}
+
+		$extractor_zip_archive = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
 
 		list( $temp_dir, $src_dir, $wp_dir ) = self::create_test_directory_structure();
 
@@ -186,14 +324,25 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		$this->assertTrue( $result );
 
 		// Test.
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
 		Extractor::extract( $zipfile, $dest_dir );
 
 		$files = self::recursive_scandir( $dest_dir );
 		$this->assertSame( self::$expected_wp, $files );
 		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=1' );
+		Extractor::extract( $zipfile, $dest_dir );
+
+		$files = self::recursive_scandir( $dest_dir );
+		$this->assertSame( self::$expected_wp, $files );
+		$this->assertTrue( empty( self::$logger->stderr ) );
+		Extractor::rmdir( $dest_dir );
 
 		// Clean up.
 		Extractor::rmdir( $temp_dir );
+		putenv( false === $extractor_zip_archive ? 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' : "WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=$extractor_zip_archive" );
 	}
 
 	public function test_err_extract_zip() {
@@ -201,6 +350,41 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 			$this->markTestSkipped( 'ZipArchive not installed.' );
 		}
 
+		$extractor_zip_archive = getenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' );
+		// Non-existent.
+		$msg = '';
+		try {
+			Extractor::extract( 'no-such-zip.zip', 'dest-dir' );
+		} catch ( \Exception $e ) {
+			$msg = $e->getMessage();
+		}
+		$this->assertTrue( false !== strpos( $msg, 'no-such-zip' ) );
+		$this->assertFalse( empty( self::$logger->stderr ) );
+
+		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
+
+		// Zero-length - NO error surprisingly with PharData.
+		$zero_zip = Utils\get_temp_dir() . 'zero-zip.zip';
+		$dest_dir = Utils\get_temp_dir() . 'dest-dir';
+		touch( $zero_zip );
+		$msg = '';
+		try {
+			Extractor::extract( $zero_zip, $dest_dir );
+		} catch ( \Exception $e ) {
+			$msg = $e->getMessage();
+		}
+		unlink( $zero_zip );
+		$this->assertTrue( '' === $msg );
+		$this->assertFalse( empty( self::$logger->stderr ) );
+		$this->assertTrue( is_dir( $dest_dir ) );
+		$this->assertSame( array(), self::recursive_scandir( $dest_dir ) );
+		rmdir( $dest_dir );
+
+		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
+
+		putenv( 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=1' );
 		// Non-existent.
 		$msg = '';
 		try {
@@ -213,18 +397,24 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 
 		self::$logger->stderr = self::$logger->stdout = ''; // Reset logger.
 
-		// Zero-length.
+		// Zero-length - No error surprisingly with ZipArchive either.
 		$zero_zip = Utils\get_temp_dir() . 'zero-zip.zip';
+		$dest_dir = Utils\get_temp_dir() . 'dest-dir';
 		touch( $zero_zip );
 		$msg = '';
 		try {
-			Extractor::extract( $zero_zip, 'dest-dir' );
+			Extractor::extract( $zero_zip, $dest_dir );
 		} catch ( \Exception $e ) {
 			$msg = $e->getMessage();
 		}
 		unlink( $zero_zip );
-		$this->assertTrue( false !== strpos( $msg, 'zero-zip' ) );
+		$this->assertTrue( '' === $msg );
 		$this->assertTrue( empty( self::$logger->stderr ) );
+		$this->assertTrue( is_dir( $dest_dir ) );
+		$this->assertSame( array(), self::recursive_scandir( $dest_dir ) );
+		rmdir( $dest_dir );
+
+		putenv( false === $extractor_zip_archive ? 'WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE' : "WP_CLI_TEST_EXTRACTOR_ZIP_ARCHIVE=$extractor_zip_archive" );
 	}
 
 	public function test_err_extract() {
@@ -246,13 +436,12 @@ class Extractor_Test extends PHPUnit_Framework_TestCase {
 		mkdir( $src_dir );
 
 		$wp_dir = $src_dir . '/wordpress';
-		mkdir( $wp_dir );
 
-		foreach ( self::$expected_wp as $file ) {
+		foreach ( self::$expected_top as $file ) {
 			if ( 0 === substr_compare( $file, '/', -1 ) ) {
-				mkdir( $wp_dir . '/' . $file );
+				mkdir( $src_dir . '/' . $file );
 			} else {
-				touch( $wp_dir . '/' . $file );
+				touch( $src_dir . '/' . $file );
 			}
 		}
 

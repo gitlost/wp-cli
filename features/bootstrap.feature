@@ -148,7 +148,7 @@ Feature: Bootstrap WP-CLI
   Scenario: Override command bundled with freshly built PHAR
 
     Given an empty directory
-    And a new Phar with the same version
+    And a new Phar with the same version and cli build
     And a cli-override-command/cli.php file:
       """
       <?php

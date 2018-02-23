@@ -35,12 +35,18 @@ $steps->Given( '/^an empty cache/',
 $steps->Given( '/^an? ([^\s]+) file:$/',
 	function ( $world, $path, PyStringNode $content ) {
 		$content = (string) $content . "\n";
-		$full_path = $world->variables['RUN_DIR'] . "/$path";
-		$dir = dirname( $full_path );
+		$path = $world->replace_variables( $path );
+		if ( ! WP_CLI\Utils\is_path_absolute( $path ) ) {
+			$path = $world->variables['RUN_DIR'] . "/$path";
+		}
+		if ( 0 !== strpos( $path, sys_get_temp_dir() ) ) {
+			throw new RuntimeException( sprintf( "Attempted to create a file '%s' that is not in the temp directory '%s'. " . __FILE__ . ':' . __LINE__, $path, sys_get_temp_dir() ) );
+		}
+		$dir = dirname( $path );
 		if ( ! file_exists( $dir ) ) {
 			mkdir( $dir, 0777, true /*recursive*/ );
 		}
-		file_put_contents( $full_path, $content );
+		file_put_contents( $path, $content );
 	}
 );
 
@@ -69,31 +75,31 @@ $steps->Given( '/^a database$/',
 	}
 );
 
-$steps->Given( '/^a WP (install|installation)$/',
+$steps->Given( '/^a WP install(?:ation)?$/',
 	function ( $world ) {
 		$world->install_wp();
 	}
 );
 
-$steps->Given( "/^a WP (install|installation) in '([^\s]+)'$/",
-	function ( $world, $_, $subdir ) {
+$steps->Given( "/^a WP install(?:ation)? in '([^\s]+)'$/",
+	function ( $world, $subdir ) {
 		$world->install_wp( $subdir );
 	}
 );
 
-$steps->Given( '/^a WP (install|installation) with Composer$/',
+$steps->Given( '/^a WP install(?:ation)? with Composer$/',
 	function ( $world ) {
 		$world->install_wp_with_composer();
 	}
 );
 
-$steps->Given( "/^a WP (install|installation) with Composer and a custom vendor directory '([^\s]+)'$/",
-	function ( $world, $_, $vendor_directory ) {
+$steps->Given( "/^a WP install(?:ation)? with Composer and a custom vendor directory '([^\s]+)'$/",
+	function ( $world, $vendor_directory ) {
 		$world->install_wp_with_composer( $vendor_directory );
 	}
 );
 
-$steps->Given( '/^a WP multisite (subdirectory|subdomain)?\s?(install|installation)$/',
+$steps->Given( '/^a WP multisite (subdirectory|subdomain)?\s?install(?:ation)?$/',
 	function ( $world, $type = 'subdirectory' ) {
 		$world->install_wp();
 		$subdomains = ! empty( $type ) && 'subdomain' === $type ? 1 : 0;
@@ -158,9 +164,9 @@ $steps->Given( '/^save (STDOUT|STDERR) ([\'].+[^\'])?\s?as \{(\w+)\}$/',
 	}
 );
 
-$steps->Given( '/^a new Phar with (?:the same version|version "([^"]+)")$/',
-	function ( $world, $version = 'same' ) {
-		$world->build_phar( $version );
+$steps->Given( '/^a new Phar with (?:the same version|version "([^"]+)")(?: and (cli) build)?$/',
+	function ( $world, $version = 'same', $build = '' ) {
+		$world->build_phar( $version, $build );
 	}
 );
 

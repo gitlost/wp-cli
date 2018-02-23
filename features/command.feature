@@ -15,12 +15,6 @@ Feature: WP-CLI Commands
       wp cap <command>
       """
 
-    When I run `wp checksum --help`
-    Then STDOUT should contain:
-      """
-      wp checksum <command>
-      """
-
     When I run `wp comment --help`
     Then STDOUT should contain:
       """
@@ -260,9 +254,8 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'command example', 'Non_Existent_Class' );
       """
 
-    When I try `wp --require=custom-cmd.php help`
-    Then the return code should be 1
-    And STDERR should contain:
+    When I mistakenly try `wp --require=custom-cmd.php help`
+    Then STDERR should contain:
       """
       Callable "Non_Existent_Class" does not exist, and cannot be registered as `wp command example`.
       """
@@ -285,7 +278,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'command', 'Custom_Command_Class' );
       """
 
-    When I try `wp --require=custom-cmd.php command invalid`
+    When I mistakenly try `wp --require=custom-cmd.php command invalid`
     Then STDERR should contain:
       """
       Error: 'invalid' is not a registered subcommand of 'command'. See 'wp help command' for available subcommands.
@@ -322,7 +315,7 @@ Feature: WP-CLI Commands
       My awesome closure command
       """
 
-    When I try `wp --require=custom-cmd.php foo bar --burrito`
+    When I mistakenly try `wp --require=custom-cmd.php foo bar --burrito`
     Then STDERR should contain:
       """
       unknown --burrito parameter
@@ -365,7 +358,7 @@ Feature: WP-CLI Commands
       My awesome function command
       """
 
-    When I try `wp --require=custom-cmd.php foo bar --burrito`
+    When I mistakenly try `wp --require=custom-cmd.php foo bar --burrito`
     Then STDERR should contain:
       """
       unknown --burrito parameter
@@ -415,7 +408,7 @@ Feature: WP-CLI Commands
       My awesome class method command
       """
 
-    When I try `wp --require=custom-cmd.php foo bar --burrito`
+    When I mistakenly try `wp --require=custom-cmd.php foo bar --burrito`
     Then STDERR should contain:
       """
       unknown --burrito parameter
@@ -460,7 +453,7 @@ Feature: WP-CLI Commands
       My awesome class method command
       """
 
-    When I try `wp --require=custom-cmd.php foo bar --burrito`
+    When I mistakenly try `wp --require=custom-cmd.php foo bar --burrito`
     Then STDERR should contain:
       """
       unknown --burrito parameter
@@ -501,7 +494,6 @@ Feature: WP-CLI Commands
       """
       bar
       """
-    And STDERR should be empty
 
   Scenario: Use an invalid class method as a command
     Given an empty directory
@@ -525,7 +517,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'bar', array( $foo, 'bar' ) );
       """
 
-    When I try `wp --require=custom-cmd.php bar`
+    When I mistakenly try `wp --require=custom-cmd.php bar`
     Then STDERR should contain:
       """
       Error: Callable ["Foo_Class","bar"] does not exist, and cannot be registered as `wp bar`.
@@ -623,13 +615,13 @@ Feature: WP-CLI Commands
           ---
       """
 
-    When I try `wp foo nana --apple=fuji`
+    When I mistakenly try `wp foo nana --apple=fuji`
     Then STDERR should contain:
       """
       Error: Invalid value specified for positional arg.
       """
 
-    When I try `wp foo hello --apple=fuji --meal=snack`
+    When I mistakenly try `wp foo hello --apple=fuji --meal=snack`
     Then STDERR should contain:
       """
       Invalid value specified for 'meal' (A type of meal.)
@@ -769,11 +761,104 @@ Feature: WP-CLI Commands
     When I run `wp help foo`
     Then STDOUT should contain:
       """
+      NAME
+
+        wp foo
+
+      DESCRIPTION
+
+        My awesome function command
+
+      SYNOPSIS
+
+        wp foo 
+
+      EXAMPLES 
+
+        # Run the custom foo command
+
+      GLOBAL PARAMETERS
+
+      """
+
+    # With synopsis, appended.
+    Given a hello-command.php file:
+      """
+      <?php
+        $hello_command = function( $args, $assoc_args ) {
+            list( $name ) = $args;
+            $type = $assoc_args['type'];
+            WP_CLI::$type( "Hello, $name!" );
+            if ( isset( $assoc_args['honk'] ) ) {
+                WP_CLI::log( 'Honk!' );
+            }
+        };
+        WP_CLI::add_command( 'example hello', $hello_command, array(
+            'shortdesc' => 'Prints a greeting.',
+            'synopsis' => array(
+                array(
+                    'type'      => 'positional',
+                    'name'      => 'name',
+                    'description' => 'Name of person to greet.',
+                    'optional'  => false,
+                    'repeating' => false,
+                ),
+                array(
+                    'type'     => 'assoc',
+                    'name'     => 'type',
+                    'optional' => true,
+                    'default'  => 'success',
+                    'options'  => array( 'success', 'error' ),
+                ),
+                array(
+                    'type'     => 'flag',
+                    'name'     => 'honk',
+                    'optional' => true,
+                ),
+            ),
+            'when' => 'after_wp_load',
+            'longdesc'    => "\r\n## EXAMPLES\n\n# Say hello to Newman\nwp example hello Newman\nSuccess: Hello, Newman!",
+      ) );
+      """
+
+    When I run `wp --require=hello-command.php help example hello`
+    Then STDOUT should contain:
+      """
+      NAME
+
+        wp example hello
+
+      DESCRIPTION
+
+        Prints a greeting.
+
+      SYNOPSIS
+
+        wp example hello <name> [--type=<type>] [--honk]
+
+      OPTIONS
+
+        <name>
+          Name of person to greet.
+
+        [--type=<type>]
+        ---
+        default: success
+        options:
+        - success
+        - error
+        ---
+
+        [--honk]
+
       EXAMPLES
-      """
-    And STDOUT should contain:
-      """
-      # Run the custom foo command
+
+        # Say hello to Newman
+        wp example hello Newman
+        Success: Hello, Newman!
+
+      GLOBAL PARAMETERS
+
       """
 
   Scenario: Register a command with default and accepted arguments.
@@ -846,7 +931,6 @@ Feature: WP-CLI Commands
       shop:
       burrito:
       """
-    And STDERR should be empty
 
     When I run `wp --require=test-cmd.php foo ''`
     Then STDOUT should be YAML containing:
@@ -855,7 +939,6 @@ Feature: WP-CLI Commands
       shop:
       burrito:
       """
-    And STDERR should be empty
 
     When I run `wp --require=test-cmd.php foo apple --burrito=veggies`
     Then STDOUT should be YAML containing:
@@ -864,29 +947,28 @@ Feature: WP-CLI Commands
       shop:
       burrito: veggies
       """
-    And STDERR should be empty
 
-    When I try `wp --require=test-cmd.php foo apple --burrito=meat`
+    When I mistakenly try `wp --require=test-cmd.php foo apple --burrito=meat`
     Then STDERR should contain:
       """
       Error: Parameter errors:
        Invalid value specified for 'burrito' (This is the burrito argument.)
       """
 
-    When I try `wp --require=test-cmd.php foo apple --burrito=''`
+    When I mistakenly try `wp --require=test-cmd.php foo apple --burrito=''`
     Then STDERR should contain:
       """
       Error: Parameter errors:
        Invalid value specified for 'burrito' (This is the burrito argument.)
       """
 
-    When I try `wp --require=test-cmd.php foo apple taco_del_mar`
+    When I mistakenly try `wp --require=test-cmd.php foo apple taco_del_mar`
     Then STDERR should contain:
       """
       Error: Invalid value specified for positional arg.
       """
 
-    When I try `wp --require=test-cmd.php foo apple 'cha cha cha' taco_del_mar`
+    When I mistakenly try `wp --require=test-cmd.php foo apple 'cha cha cha' taco_del_mar`
     Then STDERR should contain:
       """
       Error: Invalid value specified for positional arg.
@@ -899,7 +981,6 @@ Feature: WP-CLI Commands
       shop: cha cha cha
       burrito:
       """
-    And STDERR should be empty
 
   Scenario: Register a command with default and accepted arguments, part two
     Given an empty directory
@@ -933,16 +1014,14 @@ Feature: WP-CLI Commands
       """
       burrito:
       """
-    And STDERR should be empty
 
     When I run `wp --require=test-cmd.php foo beans`
     Then STDOUT should be YAML containing:
       """
       burrito: beans
       """
-    And STDERR should be empty
 
-    When I try `wp --require=test-cmd.php foo apple`
+    When I mistakenly try `wp --require=test-cmd.php foo apple`
     Then STDERR should be:
       """
       Error: Invalid value specified for positional arg.
@@ -1047,24 +1126,23 @@ Feature: WP-CLI Commands
       """
       bar
       """
-    And STDERR should be empty
 
   Scenario: WP-CLI suggests matching commands when user entry contains typos
     Given a WP installation
 
-    When I try `wp clu`
+    When I mistakenly try `wp clu`
     Then STDERR should contain:
       """
       Did you mean 'cli'?
       """
 
-    When I try `wp cli nfo`
+    When I mistakenly try `wp cli nfo`
     Then STDERR should contain:
       """
       Did you mean 'info'?
       """
 
-    When I try `wp cli beyondlevenshteinthreshold`
+    When I mistakenly try `wp cli beyondlevenshteinthreshold`
     Then STDERR should not contain:
       """
       Did you mean
@@ -1073,13 +1151,13 @@ Feature: WP-CLI Commands
   Scenario: WP-CLI suggests matching parameters when user entry contains typos
     Given an empty directory
 
-    When I try `wp cli info --quie`
+    When I mistakenly try `wp cli info --quie`
     Then STDERR should contain:
       """
       Did you mean '--quiet'?
       """
 
-    When I try `wp cli info --forma=json`
+    When I mistakenly try `wp cli info --forma=json`
     Then STDERR should contain:
       """
       Did you mean '--format'?
@@ -1098,7 +1176,7 @@ Feature: WP-CLI Commands
       WP_CLI::add_command( 'test-command-2', function () {} );
       """
 
-    When I try `wp --require=abort-add-command.php`
+    When I successfully try `wp --require=abort-add-command.php`
     Then STDOUT should contain:
       """
       test-command-1
@@ -1111,7 +1189,6 @@ Feature: WP-CLI Commands
       """
       Warning: Aborting the addition of the command 'test-command-2' with reason: Testing hooks..
       """
-    And the return code should be 0
 
   Scenario: Adding a command can depend on a previous command having been added before
     Given an empty directory
@@ -1192,28 +1269,24 @@ Feature: WP-CLI Commands
       """
       test-command
       """
-    And STDERR should be empty
 
     When I run `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: Command additions should work as must-use plugins
     Given a WP installation
@@ -1241,28 +1314,24 @@ Feature: WP-CLI Commands
       """
       test-command
       """
-    And STDERR should be empty
 
     When I run `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: Command additions should work when registered on after_wp_load
     Given a WP installation
@@ -1292,28 +1361,24 @@ Feature: WP-CLI Commands
       """
       test-command
       """
-    And STDERR should be empty
 
     When I run `wp help test-command`
     Then STDOUT should contain:
       """
       sub-command
       """
-    And STDERR should be empty
 
     When I run `wp test-command sub-command`
     Then STDOUT should contain:
       """
       Success: test-command sub-command
       """
-    And STDERR should be empty
 
     When I run `wp unknown-parent child-command`
     Then STDOUT should contain:
       """
       Success: unknown-parent child-command
       """
-    And STDERR should be empty
 
   Scenario: The command should fire on `after_wp_load`
     Given a WP installation
@@ -1347,21 +1412,18 @@ Feature: WP-CLI Commands
       """
       bool(true)
       """
-    And the return code should be 0
 
     When I run `wp command before_wp_load`
     Then STDOUT should contain:
       """
       bool(false)
       """
-    And the return code should be 0
 
-    When I try `wp command after_wp_load --path=/tmp`
+    When I mistakenly try `wp command after_wp_load --path=/tmp`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
       """
-    And the return code should be 1
 
   Scenario: The command should fire on `before_wp_load`
     Given a WP installation
@@ -1392,20 +1454,16 @@ Feature: WP-CLI Commands
       """
 
     When I run `wp command before_wp_load`
-    Then STDERR should be empty
-    And STDOUT should contain:
+    Then STDOUT should contain:
       """
       bool(false)
       """
-    And the return code should be 0
 
     When I run `wp command after_wp_load`
-    Then STDERR should be empty
-    And STDOUT should contain:
+    Then STDOUT should contain:
       """
       bool(true)
       """
-    And the return code should be 0
 
   Scenario: Command hook should fires as expected on __invoke()
     Given a WP installation
@@ -1436,14 +1494,12 @@ Feature: WP-CLI Commands
       """
       bool(true)
       """
-    And the return code should be 0
 
-    When I try `wp command --path=/tmp`
+    When I mistakenly try `wp command --path=/tmp`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
       """
-    And the return code should be 1
 
   Scenario: Command namespaces can be added and are shown in help
     Given an empty directory
@@ -1466,7 +1522,6 @@ Feature: WP-CLI Commands
       """
       My Command Namespace Description.
       """
-    And STDERR should be empty
 
   Scenario: Command namespaces are only added when the command does not exist
     Given an empty directory
@@ -1495,7 +1550,6 @@ Feature: WP-CLI Commands
       """
       My Actual Namespaced Command.
       """
-    And STDERR should be empty
 
   Scenario: Command namespaces are replaced by commands of the same name
     Given an empty directory
@@ -1524,7 +1578,6 @@ Feature: WP-CLI Commands
       """
       My Actual Namespaced Command.
       """
-    And STDERR should be empty
 
   Scenario: Empty command namespaces show a notice when invoked
     Given an empty directory
@@ -1543,7 +1596,6 @@ Feature: WP-CLI Commands
       """
       The namespace my-namespaced-command does not contain any usable commands in the current context.
       """
-    And STDERR should be empty
 
   Scenario: Late-registered command should appear in command usage
     Given a WP installation

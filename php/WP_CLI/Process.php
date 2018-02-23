@@ -49,7 +49,7 @@ class Process {
 	 *
 	 * @return Process
 	 */
-	public static function create( $command, $cwd = null, $env = array() ) {
+	public static function create( $command, $cwd = null, $env = null ) {
 		$proc = new self;
 
 		$proc->command = $command;
@@ -128,6 +128,27 @@ class Process {
 		$r = $this->run();
 
 		if ( $r->return_code || ! empty( $r->stderr ) ) {
+			throw new \RuntimeException( $r );
+		}
+
+		return $r;
+	}
+
+	/**
+	 * Run the command, but throw an Exception if the non-null args aren't as given.
+	 *
+	 * @return ProcessRun
+	 */
+	public function run_check_args( $return_code = null, $stderr_empty = null, $stdout_empty = null ) {
+		$r = $this->run();
+
+		if ( null !== $return_code && $r->return_code !== $return_code ) {
+			throw new \RuntimeException( $r );
+		}
+		if ( null !== $stderr_empty && empty( $r->stderr ) !== $stderr_empty ) {
+			throw new \RuntimeException( $r );
+		}
+		if ( null !== $stdout_empty && empty( $r->stdout ) !== $stdout_empty ) {
 			throw new \RuntimeException( $r );
 		}
 

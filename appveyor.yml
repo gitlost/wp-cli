@@ -1,0 +1,59 @@
+build: off
+clone_folder: c:\projects\wp-cli
+platform: x64
+shallow_clone: true
+skip_tags: true
+version: '{build}'
+
+services:
+  - mysql
+
+branches:
+  only:
+    - github-api
+
+cache:
+  - '%LOCALAPPDATA%\Composer\files'
+  - c:\ProgramData\chocolatey\bin -> appveyor.yml
+  - c:\ProgramData\chocolatey\lib -> appveyor.yml
+  - c:\projects\wp-cli-tools -> appveyor.yml
+
+environment:
+  MYSQL_PWD: Password12!
+
+init:
+  - set PATH=c:\projects\wp-cli-tools;C:\Program Files\Git\bin;C:\cygwin64\bin;C:\Program Files\Java\jdk1.8.0\bin;C:\Program Files\MySQL\MySQL Server 5.7\bin;%PATH%
+  - setx COMPOSER_NO_INTERACTION 1
+  - git config --global core.autocrlf input
+  - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_BRANCH) - $($env:APPVEYOR_REPO_COMMIT)"
+
+# BEFORE services are launched.
+install:
+  # Install PHP via WebPI.
+  - cInst webpicommandline -y
+  - WebPICMD /Install /Products:"PHP70" /AcceptEULA
+
+  # Install Composer
+  - ps: mkdir c:\projects\wp-cli-tools -Force
+  - cd c:\projects\wp-cli-tools
+  - ps: Invoke-WebRequest https://getcomposer.org/composer.phar -Outfile composer.phar
+  - ps: Add-Content composer.bat "@php c:\projects\wp-cli-tools\composer.phar %*"
+  - RefreshEnv
+
+  # Install wp-cli dependencies.
+  - cd "%APPVEYOR_BUILD_FOLDER%"
+  - composer install --no-interaction --prefer-source
+
+# AFTER services have been launched.
+before_test:
+  - mysql -e "CREATE DATABASE wp_cli_test charset 'utf8';" --user=root
+  - mysql -e "GRANT ALL PRIVILEGES ON wp_cli_test.* TO wp_cli_test@localhost IDENTIFIED BY 'password1'" --user=root
+  - mysql -e "GRANT ALL PRIVILEGES ON wp_cli_test_scaffold.* TO wp_cli_test@localhost IDENTIFIED BY 'password1'" --user=root
+
+test_script:
+  # Run phpunit.
+  - vendor\bin\phpunit
+  # Run functional tests.
+  - vendor\bin\behat features/validation.feature
+
+on_finish:

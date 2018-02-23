@@ -130,18 +130,29 @@ class CLI_Command extends WP_CLI_Command {
 
 			WP_CLI::line( json_encode( $info ) );
 		} else {
-			WP_CLI::line( "OS:\t" . $system_os );
-			WP_CLI::line( "Shell:\t" . $shell );
-			WP_CLI::line( "PHP binary:\t" . $php_bin );
-			WP_CLI::line( "PHP version:\t" . PHP_VERSION );
-			WP_CLI::line( "php.ini used:\t" . get_cfg_var( 'cfg_file_path' ) );
-			WP_CLI::line( "WP-CLI root dir:\t" . WP_CLI_ROOT );
-			WP_CLI::line( "WP-CLI vendor dir:\t" . WP_CLI_VENDOR_DIR );
-			WP_CLI::line( "WP_CLI phar path:\t" . ( defined( 'WP_CLI_PHAR_PATH' ) ? WP_CLI_PHAR_PATH : '' ) );
-			WP_CLI::line( "WP-CLI packages dir:\t" . $packages_dir );
-			WP_CLI::line( "WP-CLI global config:\t" . $runner->global_config_path );
-			WP_CLI::line( "WP-CLI project config:\t" . $runner->project_config_path );
-			WP_CLI::line( "WP-CLI version:\t" . WP_CLI_VERSION );
+
+			$info = array(
+				array( 'OS', $system_os ),
+				array( 'Shell', $shell ),
+				array( 'PHP binary', $php_bin ),
+				array( 'PHP version', PHP_VERSION ),
+				array( 'php.ini used', get_cfg_var( 'cfg_file_path' ) ),
+				array( 'WP-CLI root dir', WP_CLI_ROOT ),
+				array( 'WP-CLI vendor dir', WP_CLI_VENDOR_DIR ),
+				array( 'WP_CLI phar path', ( defined( 'WP_CLI_PHAR_PATH' ) ? WP_CLI_PHAR_PATH : '' ) ),
+				array( 'WP-CLI packages dir', $packages_dir ),
+				array( 'WP-CLI global config', $runner->global_config_path ),
+				array( 'WP-CLI project config', $runner->project_config_path ),
+				array( 'WP-CLI version', WP_CLI_VERSION ),
+			);
+
+			$info_table = new \cli\Table();
+			$info_table->setRows( $info );
+			$info_table->setRenderer( new \cli\table\Ascii() );
+			$lines = array_slice( $info_table->getDisplayLines(), 2 );
+			foreach ( $lines as $line ) {
+				\WP_CLI::line( $line );
+			}
 		}
 	}
 
@@ -269,11 +280,15 @@ class CLI_Command extends WP_CLI_Command {
 		}
 
 		if ( Utils\get_flag_value( $assoc_args, 'nightly' ) ) {
-			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest nightly?', WP_CLI_VERSION ), $assoc_args );
+			if ( ! WP_CLI::ask( sprintf( 'You have version %s. Would you like to update to the latest nightly?', WP_CLI_VERSION ), $assoc_args ) ) {
+				return;
+			}
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar.md5';
 		} elseif ( Utils\get_flag_value( $assoc_args, 'stable' ) ) {
-			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to the latest stable release?', WP_CLI_VERSION ), $assoc_args );
+			if ( ! WP_CLI::ask( sprintf( 'You have version %s. Would you like to update to the latest stable release?', WP_CLI_VERSION ), $assoc_args ) ) {
+				return;
+			}
 			$download_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar';
 			$md5_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar.md5';
 		} else {
@@ -288,7 +303,9 @@ class CLI_Command extends WP_CLI_Command {
 
 			$newest = $updates[0];
 
-			WP_CLI::confirm( sprintf( 'You have version %s. Would you like to update to %s?', WP_CLI_VERSION, $newest['version'] ), $assoc_args );
+			if ( ! WP_CLI::ask( sprintf( 'You have version %s. Would you like to update to %s?', WP_CLI_VERSION, $newest['version'] ), $assoc_args ) ) {
+				return;
+			}
 
 			$download_url = $newest['package_url'];
 			$md5_url = str_replace( '.phar', '.phar.md5', $download_url );
@@ -322,7 +339,7 @@ class CLI_Command extends WP_CLI_Command {
 		$php_binary = Utils\get_php_binary();
 		$process = WP_CLI\Process::create( "{$php_binary} $temp --info {$allow_root}" );
 		$result = $process->run();
-		if ( 0 !== $result->return_code || false === stripos( $result->stdout, 'WP-CLI version:' ) ) {
+		if ( 0 !== $result->return_code || false === stripos( $result->stdout, 'WP-CLI version' ) ) {
 			$multi_line = explode( PHP_EOL, $result->stderr );
 			WP_CLI::error_multi_line( $multi_line );
 			WP_CLI::error( 'The downloaded PHAR is broken, try running wp cli update again.' );
@@ -350,13 +367,16 @@ class CLI_Command extends WP_CLI_Command {
 			$updated_version = $newest['version'];
 		}
 		WP_CLI::success( sprintf( 'Updated WP-CLI to %s.', $updated_version ) );
+		// As the Phar was replaced, we must exit to avoid PHP errors.
+		exit;
 	}
 
 	/**
 	 * Returns update information.
 	 */
 	private function get_updates( $assoc_args ) {
-		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?per_page=100';
+		// Get by last updated descending.
+		$url = 'https://api.github.com/repos/wp-cli/wp-cli/releases?sort=updated&per_page=100';
 
 		$options = array(
 			'timeout' => 30,
@@ -369,13 +389,65 @@ class CLI_Command extends WP_CLI_Command {
 			$headers['Authorization'] = 'token ' . $github_token;
 		}
 
-		$response = Utils\http_request( 'GET', $url, null, $headers, $options );
+		$release_data = array();
+		$cache_data = null;
 
-		if ( ! $response->success || 200 !== $response->status_code ) {
-			WP_CLI::error( sprintf( 'Failed to get latest version (HTTP code %d).', $response->status_code ) );
+		// See if there's cached data. This is a transient, valid only for `max-age` seconds.
+		$cache = WP_CLI::get_cache();
+		$cache_key = 'github_releases';
+
+		if ( $cache->has( $cache_key ) && ( $cache_data = unserialize( $cache->read( $cache_key ) ) ) ) {
+			// Do some basic integrity checking.
+			if ( ! isset( $cache_data['time'], $cache_data['max_age'], $cache_data['release_data'] )
+					|| ! is_int( $cache_data['time'] ) || ! is_int( $cache_data['max_age'] ) || ! is_array( $cache_data['release_data'] ) ) {
+				$cache_data = null;
+			} elseif ( time() <= $cache_data['time'] + $cache_data['max_age'] ) {
+				$release_data = $cache_data['release_data'];
+			}
 		}
 
-		$release_data = json_decode( $response->body );
+		if ( ! $release_data ) {
+			// No cached transient.
+			$max_age = $time = 0;
+			do {
+				$response = Utils\http_request( 'GET', $url, null, $headers, $options );
+
+				if ( ! $response->success || 200 !== (int) $response->status_code ) {
+					$msg = sprintf( 'Failed to get latest version (HTTP code %d) (%susing GITHUB_TOKEN).', $response->status_code, $github_token ? '' : 'NOT ' );
+					if ( 403 === $response->status_code && $cache_data ) {
+						WP_CLI::warning( $msg . ' - using stale cache data.' );
+						$max_age = 0; // Make sure not to write stale data to cache.
+						$release_data = $cache_data['release_data'];
+						break;
+					}
+					WP_CLI::error( $msg );
+				}
+
+				if ( ! $max_age && isset( $response->headers['cache-control'] ) && preg_match( '/max-age=([0-9]+)/', $response->headers['cache-control'], $matches ) ) {
+					$max_age = (int) $matches[1];
+					if ( empty( $response->headers['date'] ) || false === ( $time = Utils\strtotime_gmt( $response->headers['date'] ) ) ) {
+						$time = time();
+					}
+				}
+
+				// Reduce the data to what's used.
+				$release_data = array_merge( $release_data, array_map(
+					function ( $v ) {
+						return (object) array(
+							'tag_name' => $v->tag_name,
+							'assets' => array( (object) array( 'browser_download_url' => $v->assets[0]->browser_download_url ) ),
+						);
+					}, json_decode( $response->body ) )
+				);
+
+				// Loop while have paged data ("next" link).
+			} while ( ! empty( $response->headers['link'] ) && preg_match( '/<([^>]+)>; rel="next"/', $response->headers['link'], $matches ) && ( $url = $matches[1] ) );
+
+			if ( $max_age ) {
+				$cache->write( $cache_key, serialize( compact( 'max_age', 'time', 'release_data' ) ) );
+			}
+		}
+		unset( $cache_data, $response );
 
 		$updates = array(
 			'major'      => false,
@@ -421,7 +493,7 @@ class CLI_Command extends WP_CLI_Command {
 		if ( empty( $updates ) && preg_match( '#-alpha-(.+)$#', WP_CLI_VERSION, $matches ) ) {
 			$version_url = 'https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/NIGHTLY_VERSION';
 			$response = Utils\http_request( 'GET', $version_url );
-			if ( ! $response->success || 200 !== $response->status_code ) {
+			if ( ! $response->success || 200 !== (int) $response->status_code ) {
 				WP_CLI::error( sprintf( 'Failed to get current nightly version (HTTP code %d)', $response->status_code ) );
 			}
 			$nightly_version = trim( $response->body );

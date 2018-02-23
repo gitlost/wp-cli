@@ -30,7 +30,7 @@ Feature: `wp cli` tasks
   Scenario: Ability to set a custom version when building
     Given an empty directory
     And save the {SRC_DIR}/VERSION file as {TRUE_VERSION}
-    And a new Phar with version "1.2.3"
+    And a new Phar with version "1.2.3" and cli build
 
     When I run `{PHAR_PATH} cli version`
     Then STDOUT should be:
@@ -45,19 +45,18 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Check for updates
     Given an empty directory
-    And a new Phar with version "0.0.0"
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should contain:
     """
     package_url
     """
-    And STDERR should be empty
 
   @github-api
   Scenario: Do WP-CLI Update
     Given an empty directory
-    And a new Phar with version "0.0.0"
+    And a new Phar with version "0.0.0" and cli build
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -78,8 +77,6 @@ Feature: `wp cli` tasks
     """
     Success:
     """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --info`
     Then STDOUT should contain:
@@ -100,7 +97,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -117,8 +114,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to 0.14.1
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} --version`
     Then STDOUT should be:
@@ -129,7 +124,7 @@ Feature: `wp cli` tasks
   @github-api
   Scenario: Not a patch update from 0.14.0
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --no-patch --yes`
     Then STDOUT should contain:
@@ -140,13 +135,11 @@ Feature: `wp cli` tasks
     """
     0.14.1
     """
-    And STDERR should be empty
-    And the return code should be 0
 
-  @require-php-5.6
+  @github-api
   Scenario: Install WP-CLI nightly
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
 
     When I run `{PHAR_PATH} cli update --nightly --yes`
     Then STDOUT should contain:
@@ -158,13 +151,10 @@ Feature: `wp cli` tasks
       Success: Updated WP-CLI to the latest nightly release.
       """
 
-    And STDERR should be empty
-    And the return code should be 0
-
   @github-api
   Scenario: Install WP-CLI stable
     Given an empty directory
-    And a new Phar with version "0.14.0"
+    And a new Phar with version "0.14.0" and cli build
     And a session file:
       """
       y
@@ -187,8 +177,6 @@ Feature: `wp cli` tasks
       """
       Success: Updated WP-CLI to the latest stable release.
       """
-    And STDERR should be empty
-    And the return code should be 0
 
     When I run `{PHAR_PATH} cli check-update`
     Then STDOUT should be:
@@ -202,6 +190,125 @@ Feature: `wp cli` tasks
       WP-CLI {UPDATE_VERSION}
       """
 
+  @github-api
+  Scenario: Install WP-CLI via auto-update
+    Given an empty directory
+    And an empty cache
+    And a new Phar with version "0.14.0" and cli build
+    And a session_no file:
+      """
+      n
+      """
+    And a session_yes_no file:
+      """
+      y
+      n
+      """
+    And a session_yes_yes file:
+      """
+      y
+      y
+      """
+
+    When I run `{PHAR_PATH} cli check-update --field=version | head -1`
+    Then STDOUT should not be empty
+    And save STDOUT as {UPDATE_VERSION}
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_no`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Continuing with your current command 'help'...
+      """
+    And STDOUT should contain:
+      """
+      wp <command>
+      """
+    And STDOUT should not contain:
+      """
+      Checking for an update
+      """
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_yes_no`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Checking for an update of WP-CLI...
+      Update found - invoking 'cli update' (please note that if you decide to update, your current command 'help' will not complete)...
+      """
+    And STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to update to {UPDATE_VERSION}? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Continuing with your current command 'help'...
+      """
+    And STDOUT should contain:
+      """
+      wp <command>
+      """
+    And STDOUT should not contain:
+      """
+      Downloading
+      """
+
+    Given a {SUITE_CACHE_DIR}/wp-cli-update-check file:
+      """
+      1
+      """
+    When I run `SHELL_PIPE=0 {PHAR_PATH} help < session_yes_yes`
+    Then STDOUT should contain:
+      """
+      You have version 0.14.0. Would you like to check if an update of WP-CLI is available? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Checking for an update of WP-CLI...
+      Update found - invoking 'cli update' (please note that if you decide to update, your current command 'help' will not complete)...
+      You have version 0.14.0. Would you like to update to {UPDATE_VERSION}? [y/n]
+      """
+    And STDOUT should contain:
+      """
+      Downloading from https://github.com/wp-cli/wp-cli/releases/download/v{UPDATE_VERSION}/wp-cli-{UPDATE_VERSION}.phar...
+      """
+    And STDOUT should contain:
+      """
+      New version works. Proceeding to replace.
+      """
+    And STDOUT should contain:
+      """
+      Success:
+      """
+    And STDOUT should not contain:
+      """
+      Continuing
+      """
+    And STDOUT should not contain:
+      """
+      wp <command>
+      """
+
+    When I run `{PHAR_PATH} cli check-update`
+    Then STDOUT should be:
+      """
+      Success: WP-CLI is at the latest version.
+      """
+
   Scenario: Dump the list of global parameters with values
     Given a WP installation
 
@@ -210,5 +317,3 @@ Feature: `wp cli` tasks
       """
       17"current":
       """
-    And STDERR should be empty
-    And the return code should be 0

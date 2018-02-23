@@ -16,7 +16,7 @@ class CommandFactory {
 	 * Create a new CompositeCommand (or Subcommand if class has __invoke())
 	 *
 	 * @param string $name Represents how the command should be invoked
-	 * @param string $callable A subclass of WP_CLI_Command, a function, or a closure
+	 * @param object|string|array $callable A subclass of WP_CLI_Command, a function, or a closure
 	 * @param mixed $parent The new command's parent Composite (or Root) command
 	 */
 	public static function create( $name, $callable, $parent ) {
@@ -60,11 +60,9 @@ class CommandFactory {
 	 * Create a new Subcommand instance.
 	 *
 	 * @param mixed $parent The new command's parent Composite command
-	 * @param string $name Represents how the command should be invoked
+	 * @param string|bool $name Represents how the command should be invoked. If false it's set from the docblock or reflection name.
 	 * @param mixed $callable A callable function or closure, or class name and method
 	 * @param object $reflection Reflection instance, for doc parsing
-	 * @param string $class A subclass of WP_CLI_Command
-	 * @param string $method Class method to be called upon invocation.
 	 */
 	private static function create_subcommand( $parent, $name, $callable, $reflection ) {
 		$doc_comment = self::get_doc_comment( $reflection );
@@ -149,7 +147,7 @@ class CommandFactory {
 	/**
 	 * Check whether a method is actually callable.
 	 *
-	 * @param ReflectionMethod $method
+	 * @param \ReflectionMethod $method
 	 * @return bool
 	 */
 	private static function is_good_method( $method ) {
@@ -159,7 +157,7 @@ class CommandFactory {
 	/**
 	 * Gets the document comment. Caters for PHP directive `opcache.save comments` being disabled.
 	 *
-	 * @param ReflectionMethod|ReflectionClass|ReflectionFunction $reflection Reflection instance.
+	 * @param \ReflectionMethod|\ReflectionClass|\ReflectionFunction $reflection Reflection instance.
 	 * @return string|false|null Doc comment string if any, false if none (same as `Reflection*::getDocComment()`), null if error.
 	 */
 	private static function get_doc_comment( $reflection ) {

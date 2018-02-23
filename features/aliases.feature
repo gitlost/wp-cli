@@ -9,23 +9,22 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I try `wp core is-installed`
+    When I mistakenly try `wp core is-installed`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
       """
-    And the return code should be 1
 
     When I run `wp @foo core is-installed`
     Then the return code should be 0
 
-    When I run `cd bar; wp @foo core is-installed`
+    When I run `cd bar && wp @foo core is-installed`
     Then the return code should be 0
 
   Scenario: Error when invalid alias provided
     Given an empty directory
 
-    When I try `wp @test option get home`
+    When I mistakenly try `wp @test option get home`
     Then STDERR should be:
       """
       Error: Alias '@test' not found.
@@ -39,7 +38,7 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I try `wp @test option get home`
+    When I mistakenly try `wp @test option get home`
     Then STDERR should be:
       """
       Error: Alias '@test' not found.
@@ -60,7 +59,7 @@ Feature: Create shortcuts to specific WordPress installs
       http://example.com
       """
 
-    When I try `wp @foo option get home --path=foo`
+    When I mistakenly try `wp @foo option get home --path=foo`
     Then STDERR should contain:
       """
       Parameter errors:
@@ -89,7 +88,7 @@ Feature: Create shortcuts to specific WordPress installs
       1
       """
 
-    When I try `wp @foo eval 'echo get_current_user_id();' --user=admin`
+    When I mistakenly try `wp @foo eval 'echo get_current_user_id();' --user=admin`
     Then STDERR should contain:
       """
       Parameter errors:
@@ -123,15 +122,12 @@ Feature: Create shortcuts to specific WordPress installs
         path: foo
       """
 
-    When I run `wp eval --skip-wordpress 'echo realpath( getenv( "RUN_DIR" ) );'`
-    Then save STDOUT as {TEST_DIR}
-
     When I run `wp cli alias`
     Then STDOUT should be YAML containing:
       """
       @all: Run command against every registered alias.
       @foo:
-        path: {TEST_DIR}/foo
+        path: {RUN_DIR}/foo
       """
 
     When I run `wp cli aliases`
@@ -139,13 +135,13 @@ Feature: Create shortcuts to specific WordPress installs
       """
       @all: Run command against every registered alias.
       @foo:
-        path: {TEST_DIR}/foo
+        path: {RUN_DIR}/foo
       """
 
     When I run `wp cli alias --format=json`
     Then STDOUT should be JSON containing:
       """
-      {"@all":"Run command against every registered alias.","@foo":{"path":"{TEST_DIR}/foo"}}
+      {"@all":"Run command against every registered alias.","@foo":{"path":"{RUN_DIR}/foo"}}
       """
 
   Scenario: Defining a project alias completely overrides a global alias
@@ -167,7 +163,7 @@ Feature: Create shortcuts to specific WordPress installs
       @foo:
         path: none-existent-install
       """
-    When I try `WP_CLI_CONFIG_PATH=config.yml wp @foo option get home`
+    When I mistakenly try `WP_CLI_CONFIG_PATH=config.yml wp @foo option get home`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
@@ -204,7 +200,7 @@ Feature: Create shortcuts to specific WordPress installs
       http://google.com
       """
 
-    When I try `wp @invalid option get home`
+    When I mistakenly try `wp @invalid option get home`
     Then STDERR should be:
       """
       Error: Group '@invalid' contains one or more invalid aliases: @baz
@@ -287,7 +283,7 @@ Feature: Create shortcuts to specific WordPress installs
   Scenario: Error when '@all' is used without aliases defined
     Given an empty directory
 
-    When I try `wp @all option get home`
+    When I mistakenly try `wp @all option get home`
     Then STDERR should be:
       """
       Error: Cannot use '@all' when no aliases are registered.
@@ -317,7 +313,7 @@ Feature: Create shortcuts to specific WordPress installs
       http://subsite.example.com
       """
 
-    When I try `wp @subsite option get siteurl --url=subsite.example.com`
+    When I mistakenly try `wp @subsite option get siteurl --url=subsite.example.com`
     Then STDERR should be:
       """
       Error: Parameter errors:
@@ -338,7 +334,7 @@ Feature: Create shortcuts to specific WordPress installs
         - @bar
       """
 
-    When I try `wp core is-installed --allow-root --debug`
+    When I mistakenly try `wp core is-installed --allow-root --debug`
     Then STDERR should contain:
       """
       Error: This does not seem to be a WordPress install.
@@ -347,7 +343,6 @@ Feature: Create shortcuts to specific WordPress installs
       """
       core is-installed --allow-root --debug
       """
-    And the return code should be 1
 
     When I try `wp @foo core is-installed --allow-root --debug`
     Then the return code should be 0
@@ -356,7 +351,7 @@ Feature: Create shortcuts to specific WordPress installs
       @foo core is-installed --allow-root --debug
       """
 
-    When I try `cd bar; wp @bar core is-installed --allow-root --debug`
+    When I try `cd bar && wp @bar core is-installed --allow-root --debug`
     Then the return code should be 0
     And STDERR should contain:
       """
@@ -392,12 +387,11 @@ Feature: Create shortcuts to specific WordPress installs
         - @bar
       """
 
-    When I try `{INVOKE_WP_CLI_WITH_PHP_ARGS--ddisable_functions=<func>} @foobar core is-installed`
+    When I mistakenly try `{INVOKE_WP_CLI_WITH_PHP_ARGS--ddisable_functions=<func>} @foobar core is-installed`
     Then STDERR should contain:
       """
       Error: Cannot do 'group alias': The PHP functions `proc_open()` and/or `proc_close()` are disabled
       """
-    And the return code should be 1
 
     Examples:
       | func       |

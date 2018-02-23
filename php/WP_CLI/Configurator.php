@@ -3,6 +3,7 @@
 namespace WP_CLI;
 
 use Mustangostang\Spyc;
+use WP_CLI\Utils;
 
 /**
  * Handles file- and runtime-based configuration values.
@@ -323,10 +324,15 @@ class Configurator {
 			$config['config create'] = $config['core config'];
 			unset( $config['core config'] );
 		}
-		// 'core verify-checksums' -> 'checksum core'
-		if ( isset( $config['core verify-checksums'] ) ) {
-			$config['checksum core'] = $config['core verify-checksums'];
-			unset( $config['core verify-checksums'] );
+		// 'checksum core' -> 'core verify-checksums'
+		if ( isset( $config['checksum core'] ) ) {
+			$config['core verify-checksums'] = $config['checksum core'];
+			unset( $config['checksum core'] );
+		}
+		// 'checksum plugin' -> 'plugin verify-checksums'
+		if ( isset( $config['checksum plugin'] ) ) {
+			$config['plugin verify-checksums'] = $config['checksum plugin'];
+			unset( $config['checksum plugin'] );
 		}
 
 		return $config;
@@ -349,8 +355,9 @@ class Configurator {
 	 */
 	private static function absolutize( &$path, $base ) {
 		if ( ! empty( $path ) && ! \WP_CLI\Utils\is_path_absolute( $path ) ) {
-			$path = $base . DIRECTORY_SEPARATOR . $path;
+			$path = $base . '/' . $path;
 		}
+		$path = Utils\normalize_directory_separators( $path );
 	}
 
 }

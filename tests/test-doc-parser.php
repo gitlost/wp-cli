@@ -40,6 +40,7 @@ EOB
 		);
 
 		$this->assertEquals( 'Rock and roll!', $doc->get_shortdesc() );
+		error_log( __FUNCTION__ . " longdesc=" . $doc->get_longdesc() . "<end>" );
 		$this->assertEquals( '', $doc->get_longdesc() );
 		$this->assertEquals( '', $doc->get_synopsis() );
 		$this->assertEquals( 'rock-on', $doc->get_tag('alias') );

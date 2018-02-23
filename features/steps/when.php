@@ -2,16 +2,19 @@
 
 use Behat\Gherkin\Node\PyStringNode,
     Behat\Gherkin\Node\TableNode,
-    WP_CLI\Process;
+    WP_CLI\Process,
+    WP_CLI\Utils;
 
 function invoke_proc( $proc, $mode ) {
 	$map = array(
-		'run' => 'run_check_stderr',
-		'try' => 'run'
+		'run' => array( 0, true, null ),
+		'try' => array( null, null, null ),
+		'mistakenly try' => array( 1, false, true ),
+		'successfully try' => array( 0, false, false ),
 	);
-	$method = $map[ $mode ];
+	$args = $map[ $mode ];
 
-	return $proc->$method();
+	return $proc->run_check_args( $args[0] /*return_code*/, $args[1] /*stderr_empty*/, $args[2] /*stdout_empty*/ );
 }
 
 function capture_email_sends( $stdout ) {
@@ -25,9 +28,12 @@ $steps->When( '/^I launch in the background `([^`]+)`$/',
 	}
 );
 
-$steps->When( '/^I (run|try) `([^`]+)`$/',
-	function ( $world, $mode, $cmd ) {
+$steps->When( '/^I (run|try|mistakenly try|successfully try) `([^`]+)`$/',
+	function ( $world, $mode, $cmd, $return_code = 0, $stdout_empty = '' ) {
 		$cmd = $world->replace_variables( $cmd );
+		if ( Utils\is_windows() ) {
+			$cmd = _wp_cli_esc_cmd_win( $cmd );
+		}
 		$world->result = invoke_proc( $world->proc( $cmd ), $mode );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}
@@ -36,6 +42,9 @@ $steps->When( '/^I (run|try) `([^`]+)`$/',
 $steps->When( "/^I (run|try) `([^`]+)` from '([^\s]+)'$/",
 	function ( $world, $mode, $cmd, $subdir ) {
 		$cmd = $world->replace_variables( $cmd );
+		if ( Utils\is_windows() ) {
+			$cmd = _wp_cli_esc_cmd_win( $cmd );
+		}
 		$world->result = invoke_proc( $world->proc( $cmd, array(), $subdir ), $mode );
 		list( $world->result->stdout, $world->email_sends ) = capture_email_sends( $world->result->stdout );
 	}
